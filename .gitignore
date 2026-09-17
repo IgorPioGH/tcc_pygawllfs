@@ -2,3 +2,7 @@ CLAUDE.md
 planoexecucao.md
 PyGAwLLfs/
 data/raw
+data/interim
+experiments/runs
+*.parquet
+.claude/
