@@ -1,2 +1,5 @@
 PyGAwLLfs/
 data/raw
+data/interim
+experiments/runs
+*.parquet
