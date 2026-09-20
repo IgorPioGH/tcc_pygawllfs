@@ -5,7 +5,7 @@ from pathlib import Path
 import holidays
 import pandas as pd
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -15,6 +15,8 @@ CORTE_VAL_FIM = "2025-11-01"
 SEMENTE = 42
 K_FOLDS = 5
 SUAVIZACAO = 20
+# Entre o ruído entre folds (0,001)
+TOLERANCIA = 0.01
 
 COLUNAS_TE = {
     "ICAO Empresa Aérea": "empresa_te",
@@ -41,7 +43,6 @@ def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
     df["dia_mes"] = df["Partida Prevista"].dt.day
     df["dia_ano"] = df["Partida Prevista"].dt.dayofyear
     df["trimestre"] = df["Partida Prevista"].dt.quarter
-    df["ano"] = df["Partida Prevista"].dt.year
     df["minuto"] = df["Partida Prevista"].dt.minute
     df["fim_semana"] = (df["dia_sem"] >= 5).astype(int)
     df["periodo_dia"] = df["hora"] // 6
@@ -174,6 +175,32 @@ def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
     return codificado, mapa_final, media_global
 
 
+def verifica_vazamento(df, coluna, codificado, media_global):
+    singletons = df[coluna].value_counts()[lambda x: x == 1].index
+    mascara = df[coluna].isin(singletons)
+    treino_filtrado = df.loc[mascara]
+    codificado_filtrado = codificado.loc[mascara]
+    medias_0_e_1 = codificado_filtrado.groupby(treino_filtrado["atrasado"]).mean()
+    try:
+        media_0 = medias_0_e_1[0]
+    except KeyError:
+        media_0 = media_global
+        logger.warning("Media 0 foi substituída pela média global")
+    try:
+        media_1 = medias_0_e_1[1]
+    except KeyError:
+        media_1 = media_global
+        logger.warning("Media 1 foi substituída pela média global")
+    # Se a diferença das médias for menor do que a tolerancia esta ok
+    if abs(media_0 - media_1) > TOLERANCIA:
+        raise ValueError(
+            f"A diferença entre as médias é muito grande: {abs(media_0 - media_1)}"
+        )
+    logger.info(f"Média 0: {media_0}")
+    logger.info(f"Média 1: {media_1}")
+    logger.info(f"Média Global: {media_global}")
+
+
 def remover_colunas_cruas(df):
     return df.drop(columns=COLUNAS_PARA_REMOVER, errors="ignore")
 
@@ -198,6 +225,8 @@ if __name__ == "__main__":
 
     for coluna, nome_novo in COLUNAS_TE.items():
         codificado, mapa, media = target_encoding_oof(treino, coluna, "atrasado")
+        # Roda uma vez por coluna e verifica que nenhuma linha de treino usou o próprio rótulo
+        verifica_vazamento(treino, coluna, codificado, media)
         treino[nome_novo] = codificado
         validacao[nome_novo] = validacao[coluna].map(mapa).fillna(media)
         teste[nome_novo] = teste[coluna].map(mapa).fillna(media)
@@ -215,3 +244,23 @@ if __name__ == "__main__":
         )  # menos alvo e atraso_min
         logger.info(f"{nome}: {len(conjunto)} linhas, {n_features} atributos")
         conjunto.to_parquet(f"data/processed/{nome}.parquet")
+    treino = pd.read_parquet(Path("data/processed/train.parquet"))
+    validacao = pd.read_parquet(Path("data/processed/val.parquet"))
+    treino["origem"] = "treino"
+    validacao["origem"] = "validacao"
+    treino_validacao = pd.concat([treino, validacao])
+    treino_validacao["chave"] = (
+        treino_validacao["origem"] + " " + treino_validacao["atrasado"].astype(str)
+    )
+    amostra, _ = train_test_split(
+        treino_validacao,
+        stratify=treino_validacao["chave"],
+        train_size=50_000,
+        random_state=42,
+    )
+    amostra = amostra.drop(columns="chave")
+    logger.info(f"Linhas por origem: {amostra['origem'].value_counts()}")
+    media_validacao = amostra.groupby("origem")["atrasado"].mean()
+    logger.info(f"Taxa de atraso por origem: {media_validacao}")
+    # Salvar em data/processed
+    amostra.to_parquet("data/processed/subamostra.parquet")
