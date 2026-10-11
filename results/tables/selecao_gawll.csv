@@ -1,0 +1,16 @@
+model,seed,n_features,features,f1_validacao,fitness
+logreg,42,8,dia_sem;trimestre;fim_semana;periodo_dia;tipo_linha_I;tipo_linha_N;empresa_te;origem_te,0.3432343234323432,0.350852395584386
+logreg,43,8,dia_sem;trimestre;fim_semana;periodo_dia;tipo_linha_I;tipo_linha_N;empresa_te;origem_te,0.3432343234323432,0.350852395584386
+logreg,44,10,hora;dia_ano;minuto;vespera_feriado;congestion_origem;congestion_destino;tipo_linha_C;empresa_te;origem_te;destino_te,0.3474671669793621,0.3536212719156369
+logreg,45,10,hora;dia_ano;minuto;vespera_feriado;congestion_origem;congestion_destino;tipo_linha_C;empresa_te;origem_te;destino_te,0.3474671669793621,0.3536212719156369
+logreg,46,9,hora;dia_sem;dia_ano;fim_semana;congestion_origem;congestion_destino;tipo_linha_C;empresa_te;origem_te,0.34528650646950093,0.3521738797883868
+random_forest,42,11,minuto;fim_semana;periodo_dia;congestion_destino;tipo_linha_C;tipo_linha_I;porte_origem_hub;porte_destino_grande;empresa_te;origem_te;destino_te,0.37092731829573933,0.3759225650332728
+random_forest,43,12,hora;dia_sem;minuto;congestion_origem;congestion_destino;tipo_linha_I;porte_origem_grande;porte_destino_hub;porte_destino_pequeno;empresa_te;origem_te;destino_te,0.36984589754269054,0.3741731175228712
+random_forest,44,9,hora;fim_semana;duracao_prevista_min;congestion_origem;congestion_destino;porte_destino_grande;empresa_te;origem_te;destino_te,0.36744560838033846,0.37388979966100755
+random_forest,45,12,hora;dia_sem;duracao_prevista_min;congestion_origem;congestion_destino;tipo_linha_G;tipo_linha_I;tipo_linha_N;porte_destino_grande;empresa_te;origem_te;destino_te,0.36920529801324503,0.37354532998401463
+random_forest,46,10,hora;dia_sem;periodo_dia;congestion_origem;congestion_destino;tipo_linha_C;tipo_linha_I;empresa_te;origem_te;destino_te,0.36882282040980313,0.37454981227746914
+xgboost,42,9,hora;dia_mes;fim_semana;duracao_prevista_min;congestion_destino;porte_origem_pequeno;porte_destino_hub;empresa_te;origem_te,0.36036911121903836,0.3669548324429335
+xgboost,43,12,hora;minuto;fim_semana;duracao_prevista_min;vespera_feriado;tipo_linha_C;porte_origem_medio;porte_destino_grande;porte_destino_hub;porte_destino_pequeno;empresa_te;origem_te,0.3620920876173447,0.3665743837960323
+xgboost,44,12,hora;minuto;fim_semana;duracao_prevista_min;vespera_feriado;congestion_destino;tipo_linha_G;tipo_linha_I;porte_origem_grande;porte_origem_pequeno;empresa_te;origem_te,0.36422613531047265,0.3686657505352977
+xgboost,45,8,hora;minuto;fim_semana;duracao_prevista_min;porte_destino_hub;porte_destino_medio;empresa_te;origem_te,0.35814360770577935,0.3654634941723534
+xgboost,46,10,hora;fim_semana;duracao_prevista_min;congestion_destino;tipo_linha_N;porte_destino_hub;porte_destino_pequeno;empresa_te;origem_te;destino_te,0.3616822429906542,0.3675520464067032

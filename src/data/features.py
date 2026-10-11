@@ -18,6 +18,9 @@ SUAVIZACAO = 20
 # Entre o ruído entre folds (0,001)
 TOLERANCIA = 0.01
 
+# Faixas de porte de aeroporto, do menor para o maior volume
+PORTES = ["pequeno", "medio", "grande", "hub"]
+
 COLUNAS_TE = {
     "ICAO Empresa Aérea": "empresa_te",
     "ICAO Aeródromo Origem": "origem_te",
@@ -127,7 +130,7 @@ def ajustar_porte_aeroporto(treino: pd.DataFrame) -> dict:
     faixas = pd.qcut(
         volume,
         q=4,
-        labels=["pequeno", "medio", "grande", "hub"],
+        labels=PORTES,
     )
     mapa = faixas.to_dict()
     return mapa
@@ -139,6 +142,13 @@ def aplicar_porte(df: pd.DataFrame, mapa: dict) -> pd.DataFrame:
 
     df["porte_destino"] = df["porte_destino"].fillna("pequeno")
     df["porte_origem"] = df["porte_origem"].fillna("pequeno")
+
+    # Categorias fixas: o get_dummies cria as 4 colunas mesmo que uma faixa não
+    # apareça neste conjunto, então treino, validação e teste têm sempre o mesmo
+    # esquema. Em ordem alfabética, a mesma que o get_dummies usava sobre texto.
+    tipo_porte = pd.CategoricalDtype(categories=sorted(PORTES))
+    df["porte_origem"] = df["porte_origem"].astype(tipo_porte)
+    df["porte_destino"] = df["porte_destino"].astype(tipo_porte)
 
     porte_dummies_origem = pd.get_dummies(
         df["porte_origem"], prefix="porte_origem", dtype=int

@@ -1,0 +1,4 @@
+method,model,rank_par_interacao,rank_pares_redundancia,precisao_top3,acerto_por_semente,n_pares
+gawll,logreg,21,2.5,0.667,0.0,45
+gawll,random_forest,1,2.5,1.0,1.0,45
+gawll,xgboost,1,2.5,1.0,1.0,45

@@ -1,0 +1,12 @@
+method,model,auc_relevante_ruido,precisao_top6,precisao_top4_diretas,rank_x1x2,rank_x3x4,rank_x5x6,rank_ruido,n_sementes
+gawll,logreg,0.983,0.933,0.5,5.7,1.5,3.5,8.4,5
+gawll,random_forest,1.0,1.0,1.0,1.5,3.5,5.5,8.5,5
+gawll,xgboost,1.0,1.0,1.0,1.5,3.5,5.5,8.5,5
+intrinseca,logreg,0.833,0.667,0.75,6.0,1.5,5.0,7.5,1
+intrinseca,random_forest,1.0,1.0,1.0,3.5,1.5,5.5,8.5,1
+intrinseca,xgboost,1.0,1.0,1.0,3.5,1.5,5.5,8.5,1
+permutation,logreg,0.708,0.667,0.5,6.6,1.5,5.9,6.75,5
+permutation,random_forest,0.833,0.833,1.0,1.5,3.5,7.5,7.5,5
+permutation,xgboost,0.908,0.867,1.0,1.5,3.5,6.6,7.95,5
+shap,random_forest,1.0,1.0,0.5,5.5,1.5,3.5,8.5,1
+shap,xgboost,1.0,1.0,1.0,3.5,1.5,5.5,8.5,1

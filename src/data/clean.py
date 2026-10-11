@@ -65,7 +65,7 @@ def assert_sem_vazamento(df: pd.DataFrame) -> None:
         "Situação Voo",
         "Código Justificativa",
         "atraso_min",
-        "Chegada Prevista",
+        "atrasado",
     ]
     encontradas = [coluna for coluna in proibidas if coluna in df.columns]
 

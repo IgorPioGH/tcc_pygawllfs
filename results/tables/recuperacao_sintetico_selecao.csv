@@ -1,0 +1,4 @@
+model,precisao,recall,f1,n_redundantes,n_ruido
+logreg,0.5,0.5,0.5,1.0,1.0
+random_forest,1.0,1.0,1.0,0.0,0.0
+xgboost,0.8,1.0,0.889,1.0,0.0
