@@ -19,7 +19,8 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 7 | Teste no pico sazonal (nov–dez) | **mantido** (documentado) | não | — (não trocar) |
 | 8 | Agregação das sementes, RBO e top-k na Etapa 11 | média das sementes; RBO estendido, p = 0,9 | não | segundos |
 | 9 | Parâmetros do sintético (β = 2, σ = 0,5, ρ = 0,9) | **mantido** | não | ~30 min |
-| 10 | Significado das letras do `Código Tipo Linha` | **a conferir** | não | — (só texto) |
+| 10 | Significado das letras do `Código Tipo Linha` | **a conferir** (muda a leitura de um par corroborado na Etapa 15) | não | — (só texto) |
+| 11 | Critérios da validação de domínio (Etapa 15) | top-10 por modelo; 1 p.p.; replicação ≥ 0,5; escala logit | talvez | ~1 min |
 
 ## 1. Bugs de mutação e elitismo — corrigidos
 
@@ -130,6 +131,34 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 - Conferir no dicionário de dados do VRA (ANAC) o significado de C, G, I e N e
   preencher em `docs/dicionario-features.md`. Não muda nenhum resultado.
 
+## 11. Critérios da validação de domínio (Etapa 15)
+
+Constantes no topo de `src/domain/validate_pairs.py`; rodar de novo leva ~1 min.
+Resultados em `docs/validacao-dominio.md`.
+
+- **Pares:** união do top-10 de cada modelo (`TOP_PARES_POR_MODELO`) — 25 pares;
+  10 controles do fundo do ranking (`N_CONTROLES`), sem repetir par de domínio.
+- **Redundância:** coeficiente de incerteza ≥ 0,8 (`LIMIAR_REDUNDANCIA`). Os
+  35 pares têm um vão entre 0,40 e 0,85, então qualquer valor nesse intervalo
+  dá a mesma classificação.
+- **Relevância prática:** desvio médio ≥ 1 ponto percentual (`LIMIAR_PP`),
+  nos dois anos. Com 1,7 milhão de voos, quase tudo passa do limiar de ruído;
+  sem esse piso, controles seriam "corroborados".
+- **Replicação:** correlação ≥ 0,5 entre os desvios por célula de 2024 e de
+  2025 (`LIMIAR_REPLICACAO`; convenção de correlação "forte"). Foi incluída
+  depois de a primeira versão (sem ela) corroborar `dia_ano` × empresa, cujo
+  padrão não se repete entre anos (r = 0,06) — choque pontual, não interação.
+- **Semana do ano no lugar de `dia_ano`:** na análise descritiva, cada célula
+  junta 7 dias; com o dia exato, cada célula seria uma data e o teste mediria
+  eventos de um dia. A redundância, porém, é medida com o `dia_ano` diário
+  (como o modelo o vê).
+- **Escala logit** para "sem interação" (padrão para resposta binária).
+  Alternativa: modelo aditivo nas probabilidades.
+- **Cobertura:** top-15 aeroportos e top-10 empresas (`TOP_CATEGORIAS`).
+- **Sensibilidade (verificada):** com `LIMIAR_PP = 0,75` o resultado é o mesmo
+  (2 corroborados); com 0,5, entra também `tipo_linha` × origem (0,75 e
+  1,18 p.p.; r = 0,60) — e, mesmo assim, nenhum controle passa.
+
 ## Perguntas para a reunião com o Prof. Tinós
 
 1. Os dois comportamentos do código (mutação e elitismo) são bugs? O TCC deve
@@ -138,4 +167,7 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
    impacto medido de ±0,002 no F1? (item 2)
 3. Sobre a leitura de redundância como interação no PyGAwLLfs (resultado do
    sintético, `docs/sintetico.md` §3): ele vê isso como propriedade
-   esperada do método?
+   esperada do método? Nos dados reais, 8 das 15 arestas do top-5 dos três
+   modelos são pares redundantes (`docs/validacao-dominio.md` §2).
+4. Os critérios da validação de domínio (1 p.p. e replicação entre anos) são
+   adequados, ou ele prefere um critério mais brando? (item 11)

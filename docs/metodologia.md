@@ -271,10 +271,11 @@ anterior produziu.
 | 9 | `src/importance/{intrinsic,permutation,shap_global}.py` | `importancia_{intrinseca,permutation,shap}.csv` |
 | 10 | `src/synthetic/{generate,aplicar_metodos,recovery}.py` | `sintetico_*.csv`, `recuperacao_sintetico*.csv` (~30 min) |
 | 11 | `src/compare/{rankings,stability,figuras}.py` | `concordancia*.csv`, `estabilidade*.csv`, figuras |
+| 15 | `src/domain/validate_pairs.py` | `dominio_pares.csv`, `dominio_celulas.csv`, grafo e heatmaps (~1 min) |
 | — | `src/data/{figuras,auditar_congestionamento}.py` | histograma do atraso; auditoria do congestionamento |
 
 Testes (scripts com `assert`): `tests/test_gawll.py`, `tests/test_importancia.py`,
-`tests/test_sintetico.py`, `tests/test_comparacao.py`.
+`tests/test_sintetico.py`, `tests/test_comparacao.py`, `tests/test_dominio.py`.
 
 O projeto e o clone `PyGAwLLfs/` (não versionado) têm, cada um, uma pasta
 `src/` sem `__init__.py`; elas se fundem no `sys.path`. Nunca criar
