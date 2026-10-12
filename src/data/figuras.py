@@ -87,7 +87,9 @@ def histograma_atraso(atraso_min: pd.Series, caminho_base: Path) -> None:
 
     caminho_base.parent.mkdir(parents=True, exist_ok=True)
     for extensao in ["png", "pdf"]:
-        fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200, facecolor="white")
+        # Sem a data de criação no PDF: a mesma figura gera sempre o mesmo arquivo
+        fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200, facecolor="white",
+                    metadata={"CreationDate": None} if extensao == "pdf" else None)
     plt.close(fig)
     logger.info(f"{total} voos | {fracao_atrasados:.4f} atrasados | "
                 f"{fracao_cauda:.4f} acima de {EIXO_MAX} min")

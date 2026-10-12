@@ -60,8 +60,9 @@ def baixar_arquivo(url: str, destino: Path) -> None:
     logger.info(f"Baixado: {destino.name}")
 
 
-# Diretório onde serão salvos os CSV
+# Diretório onde serão salvos os CSV (criado aqui: num clone novo, ele não existe)
 DATA_RAW = Path("data/raw")
+DATA_RAW.mkdir(parents=True, exist_ok=True)
 # Loop para fazer o download
 for ano in [2024, 2025]:
     for mes in MESES_PT:

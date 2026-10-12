@@ -66,7 +66,7 @@ from sklearn.linear_model import LogisticRegression  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.figuras import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO  # noqa: E402
+from src.compare.figuras import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
 from src.compare.rankings import MODELOS  # noqa: E402
 from src.importance import comum  # noqa: E402
 from src.interaction import graph  # noqa: E402
@@ -451,15 +451,6 @@ def figura_heatmap(tabela: pd.DataFrame, var_a: str, var_b: str, titulo: str,
                   "preveem; azul = menos. Escalas cortadas no percentil 98 (setas nas barras).",
                   x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
     salvar(fig, caminho_base)
-
-
-def salvar(fig, caminho_base: Path) -> None:
-    caminho_base.parent.mkdir(parents=True, exist_ok=True)
-    for extensao in ["png", "pdf"]:
-        fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200,
-                    facecolor="white", bbox_inches="tight")
-    plt.close(fig)
-    logger.info(f"Salvo: {caminho_base.name}.png e .pdf")
 
 
 # ---------------------------------------------------------------------------

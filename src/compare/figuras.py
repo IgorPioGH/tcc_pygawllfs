@@ -211,11 +211,19 @@ def figura_estabilidade(estabilidade: pd.DataFrame, caminho_base: Path) -> None:
     salvar(fig, caminho_base)
 
 
+# O PDF guarda a data de criação; sem ela, a mesma figura gera o mesmo arquivo,
+# e rodar o pipeline de novo não altera o que já está versionado no git
+METADADOS_PDF = {"CreationDate": None}
+
+
 def salvar(fig, caminho_base: Path) -> None:
+    """Salva em .png e .pdf (caminho_base sem extensão) e fecha a figura.
+    Usado por todas as figuras de src/compare/ e src/domain/."""
     caminho_base.parent.mkdir(parents=True, exist_ok=True)
     for extensao in ["png", "pdf"]:
         fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200,
-                    facecolor="white", bbox_inches="tight")
+                    facecolor="white", bbox_inches="tight",
+                    metadata=METADADOS_PDF if extensao == "pdf" else None)
     plt.close(fig)
     logger.info(f"Salvo: {caminho_base.name}.png e .pdf")
 

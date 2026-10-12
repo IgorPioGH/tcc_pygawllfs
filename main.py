@@ -156,8 +156,6 @@ def main() -> None:
         return
 
     configurar_log()
-    # O download.py grava em data/raw/ mas não cria a pasta: num clone novo, ela não existe
-    (RAIZ / "data" / "raw").mkdir(parents=True, exist_ok=True)
     logger.info(f"Etapas: {', '.join(e.nome for e in etapas)} | Python: {sys.executable}")
 
     duracoes = []
