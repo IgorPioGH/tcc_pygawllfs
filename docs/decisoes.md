@@ -23,6 +23,7 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 11 | Critérios da validação de domínio (Etapa 15) | top-10 por modelo; 1 p.p.; replicação ≥ 0,5; escala logit | talvez | ~1 min |
 | 12 | Cálculo do H de Friedman (Etapa 13) | logit; H_abs como principal; RF e XGBoost; 500 linhas × 5 sementes | não | ~7 min |
 | 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes, ganho pequeno |
+| 14 | Desenho da fidelidade (Etapa 12) | k = 5/10/15; 10 sorteios; treino completo; F1 e PR-AUC | não | ~50 min |
 
 ## 1. Bugs de mutação e elitismo — corrigidos
 
@@ -191,6 +192,23 @@ Resultados em `docs/interacoes-h.md`.
   (a fração de linkage learning na geração é fixa no `_generation_ll`); seria
   uma variante, não o método original.
 - **Recomendação:** manter e discutir; levar a pergunta ao orientador.
+
+## 14. Desenho da fidelidade (Etapa 12)
+
+Constantes no topo de `src/compare/fidelity.py`; rodar de novo leva ~50 min.
+Resultados em `docs/fidelidade.md`.
+
+- **k = 5, 10, 15** (`TOP_K`), como na proposta; mais o x* de cada execução do
+  PyGAwLLfs e todas as 29 features.
+- **Referência de acaso:** 10 sorteios de k features por modelo
+  (`N_SORTEIOS`, semente 42). Não estava no plano original; foi incluída
+  porque, sem ela, "retém 95%" não diz se isso é muito ou pouco.
+- **Treino completo** (1,54 milhão de linhas), como pede o §3.1, com os
+  hiperparâmetros da Etapa 6 sem retuning.
+- **F1 (limiar 0,5) e PR-AUC**; o PR-AUC é a leitura principal da retenção
+  porque não depende de limiar (o F1 passou de 100% em alguns casos).
+- **Validação e teste** avaliados; o teste é o resultado principal.
+- **Rankings usados:** os consolidados da Etapa 11 (média das sementes).
 
 ## Perguntas para a reunião com o Prof. Tinós
 

@@ -275,6 +275,7 @@ anterior produziu.
 | 9 | `src/importance/{intrinsic,permutation,shap_global}.py` | `importancia_{intrinseca,permutation,shap}.csv` |
 | 10 | `src/synthetic/{generate,aplicar_metodos,recovery}.py` | `sintetico_*.csv`, `recuperacao_sintetico*.csv` (~30 min) |
 | 11 | `src/compare/{rankings,stability,figuras}.py` | `concordancia*.csv`, `estabilidade*.csv`, figuras |
+| 12 | `src/compare/fidelity.py` | `fidelidade.csv`, `fidelidade_resumo.csv`, figura (~50 min; toca o teste) |
 | 13a | `src/interaction/friedman_h.py` | `interacao_h.csv` (~7 min) |
 | 13b | `src/compare/interacoes.py` (depois da 15) | `interacoes*.csv`, figura PyGAwLLfs × H |
 | 15 | `src/domain/validate_pairs.py` | `dominio_pares.csv`, `dominio_celulas.csv`, grafo e heatmaps (~1 min) |
@@ -282,7 +283,7 @@ anterior produziu.
 
 Testes (scripts com `assert`): `tests/test_gawll.py`, `tests/test_importancia.py`,
 `tests/test_sintetico.py`, `tests/test_comparacao.py`, `tests/test_dominio.py`,
-`tests/test_interacao.py`. (O `aplicar_metodos.py` do sintético calcula também o
+`tests/test_interacao.py`, `tests/test_fidelidade.py`. (O `aplicar_metodos.py` do sintético calcula também o
 H, então depende do `friedman_h.py`.)
 
 O projeto e o clone `PyGAwLLfs/` (não versionado) têm, cada um, uma pasta
