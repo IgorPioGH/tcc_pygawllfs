@@ -249,7 +249,8 @@ Mantido fora do repositório.
 - FRIEDMAN, J. H.; POPESCU, B. E. Predictive learning via rule ensembles.
   *Annals of Applied Statistics*, v. 2, n. 3, p. 916–954, 2008. DOI: 10.1214/07-AOAS148.
 - WEBBER, W.; MOFFAT, A.; ZOBEL, J. A similarity measure for indefinite
-  rankings. *ACM Transactions on Information Systems*, v. 28, n. 4, 2010. (RBO)
+  rankings. *ACM Transactions on Information Systems*, v. 28, n. 4, p. 1–38,
+  2010. DOI: 10.1145/1852102.1852106. (RBO)
 - INGLIS, A.; PARNELL, A.; HURLEY, C. B. Visualizing variable importance and
   variable interaction effects in machine learning models. *JCGS*, v. 31,
   n. 3, p. 766–778, 2022. DOI: 10.1080/10618600.2021.2007935.
@@ -260,7 +261,8 @@ Mantido fora do repositório.
 ## 11. Pipeline — ordem de execução
 
 Rodar da raiz do repositório, com o ambiente ativado. Cada script lê o que o
-anterior produziu.
+anterior produziu. O `main.py` da raiz roda tudo nesta ordem (`python main.py
+--listar` mostra as etapas e o tempo esperado; ver o `README.md`).
 
 | Ordem | Script | Produz |
 |---|---|---|
