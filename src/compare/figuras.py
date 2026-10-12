@@ -56,19 +56,32 @@ COR_METODO = {"permutation": "#2a78d6", "shap": "#eb6834", "gawll": "#1baf7a"}
 
 
 def decimal(valor: float) -> str:
-    """0.94 -> '0,94' (vírgula decimal, como no texto do TCC)."""
+    """0.94 -> "0,94" (vírgula decimal, como no texto do TCC).
+
+    Usada em: desenhar_triangulo e figura_estabilidade.
+    Importância: só apresentação.
+    """
     return f"{valor:.2f}".replace(".", ",")
 
 
 def cor_do_texto(cor_fundo) -> str:
-    """Texto branco em célula escura, tinta escura em célula clara."""
+    """Texto branco em célula escura e tinta escura em célula clara, pela luminância da
+    cor de fundo.
+
+    Usada em: desenhar_triangulo.
+    Importância: legibilidade dos números escritos nos heatmaps.
+    """
     r, g, b = to_rgb(cor_fundo)
     luminancia = 0.2126 * r + 0.7152 * g + 0.0722 * b
     return "white" if luminancia < 0.5 else COR_TEXTO
 
 
 def matriz_simetrica(concordancia: pd.DataFrame, chaves: list, metrica: str) -> np.ndarray:
-    """Tabela longa de pares -> matriz quadrada na ordem de 'chaves' (diagonal = 1)."""
+    """Tabela longa de pares -> matriz quadrada na ordem de "chaves" (diagonal = 1).
+
+    Usada em: figura_intra_modelo e figura_geral.
+    Importância: ponte entre o formato salvo (uma dupla por linha) e o heatmap.
+    """
     posicao = {chave: i for i, chave in enumerate(chaves)}
     matriz = np.eye(len(chaves))
     for linha in concordancia.itertuples():
@@ -80,7 +93,12 @@ def matriz_simetrica(concordancia: pd.DataFrame, chaves: list, metrica: str) -> 
 
 
 def desenhar_triangulo(ax, matriz, rotulos, escala, vmin, vmax, tamanho_fonte=9):
-    """Só o triângulo de baixo, sem a diagonal (o resto repete ou vale 1)."""
+    """Desenha só o triângulo de baixo da matriz, sem a diagonal (o resto repete ou vale
+    1), com o valor escrito em cada célula.
+
+    Usada em: figura_intra_modelo e figura_geral.
+    Importância: cada dupla aparece uma vez só, sem leitura duplicada.
+    """
     n = len(rotulos)
     mascara = np.triu(np.ones((n, n), dtype=bool))  # diagonal e acima
     valores = np.ma.masked_array(matriz, mascara)[1:, :-1]
@@ -102,7 +120,11 @@ def desenhar_triangulo(ax, matriz, rotulos, escala, vmin, vmax, tamanho_fonte=9)
 
 
 def formatar_barra(barra, rotulo: str) -> None:
-    """Barra de cor discreta, com vírgula decimal."""
+    """Barra de cor discreta, com vírgula decimal.
+
+    Usada em: figura_intra_modelo e figura_geral.
+    Importância: só apresentação.
+    """
     barra.set_label(rotulo, color=COR_TEXTO_SECUNDARIO, fontsize=9)
     barra.outline.set_visible(False)
     barra.ax.tick_params(labelsize=8, colors=COR_TEXTO_SECUNDARIO)
@@ -111,6 +133,13 @@ def formatar_barra(barra, rotulo: str) -> None:
 
 
 def figura_intra_modelo(concordancia: pd.DataFrame, caminho_base: Path) -> None:
+    """Heatmaps de concordância entre métodos dentro de cada modelo: uma coluna por
+    modelo, uma linha para Spearman e outra para RBO.
+
+    Usada em: main.
+    Importância: é a figura da comparação intra-modelo, feita antes da comparação
+    entre modelos (§4.11).
+    """
     fig, eixos = plt.subplots(2, 3, figsize=(12, 8), layout="constrained")
     for coluna, modelo in enumerate(MODELOS):
         metodos = [m for m in METODOS
@@ -138,6 +167,13 @@ def figura_intra_modelo(concordancia: pd.DataFrame, caminho_base: Path) -> None:
 
 
 def figura_geral(concordancia: pd.DataFrame, caminho_base: Path) -> None:
+    """Heatmap de Spearman entre todos os rankings (método · modelo), com linhas
+    separando os blocos de cada modelo.
+
+    Usada em: main.
+    Importância: mostra de uma vez se a concordância é maior dentro do mesmo modelo
+    do que entre modelos.
+    """
     chaves, rotulos = [], []
     for modelo in MODELOS:
         for metodo in METODOS:
@@ -169,7 +205,12 @@ def figura_geral(concordancia: pd.DataFrame, caminho_base: Path) -> None:
 
 
 def figura_estabilidade(estabilidade: pd.DataFrame, caminho_base: Path) -> None:
-    """Pontos = média nas 10 duplas de sementes; traço até o pior caso (mínimo)."""
+    """Estabilidade entre sementes por (método, modelo): ponto = média nas 10 duplas de
+    sementes; traço até o pior caso (mínimo).
+
+    Usada em: main.
+    Importância: é a figura do critério de estabilidade.
+    """
     linhas = [(metodo, modelo) for modelo in MODELOS for metodo in METODOS
               if ((estabilidade["method"] == metodo) & (estabilidade["model"] == modelo)).any()]
     y = np.arange(len(linhas))[::-1]
@@ -217,8 +258,13 @@ METADADOS_PDF = {"CreationDate": None}
 
 
 def salvar(fig, caminho_base: Path) -> None:
-    """Salva em .png e .pdf (caminho_base sem extensão) e fecha a figura.
-    Usado por todas as figuras de src/compare/ e src/domain/."""
+    """Salva em .png e .pdf (caminho_base sem extensão) e fecha a figura. O PDF sai sem
+    data de criação, então a mesma figura gera sempre o mesmo arquivo.
+
+    Usada em: todas as figuras de src/compare/ e src/domain/.
+    Importância: rodar o pipeline de novo não altera arquivos versionados se os
+    resultados não mudaram.
+    """
     caminho_base.parent.mkdir(parents=True, exist_ok=True)
     for extensao in ["png", "pdf"]:
         fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200,
@@ -229,6 +275,12 @@ def salvar(fig, caminho_base: Path) -> None:
 
 
 def main() -> None:
+    """Etapa 11c: lê concordancia.csv e estabilidade.csv e gera as três figuras.
+
+    Usada em: python src/compare/figuras.py; main.py, etapa "rankings";
+    tests/test_comparacao.py.
+    Importância: separa desenho de cálculo: as figuras só leem CSV.
+    """
     concordancia = pd.read_csv(comum.DIR_TABELAS / "concordancia.csv")
     estabilidade = pd.read_csv(comum.DIR_TABELAS / "estabilidade.csv")
     figura_intra_modelo(concordancia, DIR_FIGURAS / "concordancia_intra_modelo")

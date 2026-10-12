@@ -38,12 +38,23 @@ COR_GRADE = "#e4e3df"
 
 
 def porcentagem(fracao: float) -> str:
-    """0.1847 -> '18,5%' (vírgula decimal, como no texto do TCC)."""
+    """0.1847 -> "18,5%" (vírgula decimal, como no texto do TCC).
+
+    Usada em: histograma_atraso.
+    Importância: só apresentação.
+    """
     return f"{fracao:.1%}".replace(".", ",")
 
 
 def histograma_atraso(atraso_min: pd.Series, caminho_base: Path) -> None:
-    """Desenha e salva o histograma em .png e .pdf (caminho_base sem extensão)."""
+    """Desenha o histograma do atraso na partida (eixo de -40 a 180 min), com o limiar
+    de 15 min, a fração de atrasados e a cauda resumida numa anotação; salva .png e
+    .pdf (caminho_base sem extensão).
+
+    Usada em: main.
+    Importância: figura de descrição da base; mostra o desbalanceamento que justifica
+    o F1 no lugar da acurácia (§4.2).
+    """
     total = len(atraso_min)
     fracao_atrasados = (atraso_min >= LIMIAR_ATRASO).mean()
     fracao_cauda = (atraso_min > EIXO_MAX).mean()
@@ -96,6 +107,11 @@ def histograma_atraso(atraso_min: pd.Series, caminho_base: Path) -> None:
 
 
 def main() -> None:
+    """Lê atraso_min de vra_target.parquet e gera results/figures/histograma_atraso.
+
+    Usada em: python src/data/figuras.py; main.py, etapa "extras".
+    Importância: figura descritiva do texto (Caps. 3 e 4).
+    """
     atraso = pd.read_parquet(ARQUIVO_TARGET, columns=["atraso_min"])["atraso_min"]
     caminho = DIR_FIGURAS / "histograma_atraso"
     histograma_atraso(atraso, caminho)

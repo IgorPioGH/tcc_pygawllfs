@@ -39,7 +39,13 @@ METRICAS = ["spearman", "kendall_tau_b", "rbo"] + [f"top{k}" for k in TOP_K]
 
 
 def concordancia_entre_sementes(grupo: pd.DataFrame) -> dict:
-    """Um (método, modelo): métricas em todas as duplas de sementes -> média e mínimo."""
+    """Um (método, modelo): as métricas de rankings.comparar em todas as duplas de
+    sementes, resumidas em média e mínimo.
+
+    Usada em: main; interacoes.comparar_modelo; tests/test_comparacao.py.
+    Importância: é a medida do critério de estabilidade; o mínimo mostra o pior caso,
+    não só a média.
+    """
     por_semente = {
         semente: linhas.set_index("feature")["pontuacao"]
         for semente, linhas in grupo.groupby("seed")
@@ -56,10 +62,14 @@ def concordancia_entre_sementes(grupo: pd.DataFrame) -> dict:
 
 
 def estabilidade_por_feature(grupo: pd.DataFrame) -> pd.DataFrame:
-    """Um (método, modelo): como o rank de cada feature varia entre as sementes.
+    """Um (método, modelo): como o rank de cada feature varia entre as sementes. Usa a
+    coluna "rank" de cada semente (rank 1 = mais importante, já com o valor absoluto
+    no coeficiente da LogReg).
 
-    Usa a coluna 'rank' de cada semente (rank 1 = mais importante, já com o
-    valor absoluto no coeficiente da LogReg)."""
+    Usada em: main; tests/test_comparacao.py.
+    Importância: mostra quais features ficam firmes no topo mesmo quando o ranking
+    inteiro oscila.
+    """
     por_feature = grupo.groupby("feature")["rank"]
     return pd.DataFrame({
         "rank_medio": por_feature.mean(),
@@ -70,6 +80,14 @@ def estabilidade_por_feature(grupo: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Etapa 11b: mede a estabilidade de cada (método, modelo) com mais de uma semente e
+    salva estabilidade.csv e estabilidade_features.csv.
+
+    Usada em: python src/compare/stability.py; main.py, etapa "rankings";
+    tests/test_comparacao.py.
+    Importância: responde ao critério de estabilidade; a intrínseca é determinística
+    e fica de fora.
+    """
     importancias = carregar_importancias()
 
     resumo, por_feature = [], []

@@ -30,7 +30,13 @@ DIR_TABELAS = RAIZ / "results" / "tables"
 
 
 def teste_gerador():
-    """O dataset tem a estrutura que o gabarito afirma."""
+    """O dataset tem a estrutura que o gabarito afirma.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
+    python main.py --testes).
+    Importância: se o gerador errar, todo o Diferencial 1 mede contra uma verdade
+    falsa.
+    """
     a = generate.gerar(n=20_000)
     b = generate.gerar(n=20_000)
     assert a.equals(b), "mesma semente deveria gerar o mesmo dataset"
@@ -60,7 +66,12 @@ def teste_gerador():
 
 
 def teste_metricas_de_importancia():
-    """Ranking perfeito, ranking invertido e ranking que troca diretas por proxies."""
+    """Ranking perfeito, ranking invertido e ranking que troca diretas por proxies.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
+    python main.py --testes).
+    Importância: valida as métricas de recuperação em casos de resposta conhecida.
+    """
     ordem_perfeita = ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10"]
     valores = list(range(10, 0, -1))  # o primeiro da lista é o mais importante
 
@@ -91,7 +102,13 @@ def teste_metricas_de_importancia():
 
 
 def teste_metricas_de_interacao_e_selecao():
-    """(x1, x2) no topo -> rank 1; seleção igual às diretas -> F1 = 1."""
+    """(x1, x2) no topo -> rank 1; seleção igual às diretas -> F1 = 1.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
+    python main.py --testes).
+    Importância: valida as métricas de interação e seleção em casos de resposta
+    conhecida.
+    """
     features = generate.FEATURES
     matriz = np.zeros((10, 10))
     for (a, b), valor in [(("x1", "x2"), 0.9), (("x3", "x5"), 0.5), (("x4", "x6"), 0.4),
@@ -114,7 +131,12 @@ def teste_metricas_de_interacao_e_selecao():
 
 
 def teste_tabelas_geradas():
-    """As saídas de aplicar_metodos.py estão completas e no formato padrão."""
+    """As saídas de aplicar_metodos.py estão completas e no formato padrão.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
+    python main.py --testes).
+    Importância: recovery.py depende delas.
+    """
     importancia = pd.read_csv(DIR_TABELAS / "sintetico_importancia.csv")
     assert list(importancia.columns) == COLUNAS_PADRAO
     assert not importancia.isna().any().any()

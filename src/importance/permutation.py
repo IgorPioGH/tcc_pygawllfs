@@ -45,7 +45,13 @@ METRICA = "f1"
 
 def calcular_permutation(modelo, x: pd.DataFrame, y: pd.Series, semente: int,
                          n_repeats: int = N_REPEATS) -> list[float]:
-    """Queda média de F1 ao embaralhar cada coluna (na ordem de x.columns)."""
+    """Queda média de F1 ao embaralhar cada coluna, n_repeats vezes, na ordem de
+    x.columns.
+
+    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Importância: método agnóstico ao modelo; mede o quanto o modelo treinado depende
+    de cada feature.
+    """
     resultado = permutation_importance(
         modelo, x, y,
         scoring=METRICA,
@@ -57,6 +63,13 @@ def calcular_permutation(modelo, x: pd.DataFrame, y: pd.Series, semente: int,
 
 
 def main() -> None:
+    """Roda a Permutation nos três modelos e nas 5 sementes, sempre na validação (§4.9),
+    e salva importancia_permutation.csv e o custo.
+
+    Usada em: python src/importance/permutation.py; main.py, etapa "importancias";
+    tests/test_importancia.py.
+    Importância: um dos quatro métodos; as sementes permitem medir a estabilidade.
+    """
     x_val, y_val = carregar("val")
     logger.info(f"Validação: {x_val.shape}, {N_REPEATS} repetições, métrica {METRICA}")
 

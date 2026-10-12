@@ -10,14 +10,16 @@ logger = logging.getLogger(__name__)
 def separar_realizados_cancelados(
     df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Separa o DataFrame em voos realizados e cancelados
-       A separação usa a coluna 'Situação Voo': voos com valor "REALIZADO" vão para
-       o primeiro DataFrame retornado, todos os demais vão para o segundo
+    """Separa o DataFrame em voos realizados e cancelados pela coluna 'Situação Voo':
+    "REALIZADO" vai para o primeiro DataFrame, todo o resto para o segundo.
 
+    Usada em: bloco __main__ deste script (Etapa 3; main.py, etapa "dados").
+    Importância: só voo realizado tem atraso. Os cancelados saem aqui, e por isso o
+    congestionamento conta só realizados (limitação em docs/dicionario-features.md).
 
     Args:
         df (pd.DataFrame): DataFrame bruto do VRA, contendo a coluna
-        'Situação Voo'.
+            'Situação Voo'.
 
     Returns:
         tuple[pd.DataFrame, pd.DataFrame]: (realizados, cancelados)
@@ -29,7 +31,11 @@ def separar_realizados_cancelados(
 
 
 def remover_sem_horario(df: pd.DataFrame) -> pd.DataFrame:
-    """Remove as linhas em 'Partida Real' e 'Partida Prevista'
+    """Remove as linhas sem 'Partida Prevista' ou sem 'Partida Real'.
+
+    Usada em: bloco __main__ deste script (Etapa 3).
+    Importância: sem os dois horários não dá para calcular o atraso, então essas
+    linhas ficariam sem alvo.
 
     Args:
         df (pd.DataFrame): DataFrame já filtrado por voos que aconteceram (Não cancelados)
@@ -47,14 +53,17 @@ def remover_sem_horario(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def assert_sem_vazamento(df: pd.DataFrame) -> None:
-    """Verifica se alguma coluna pós-hoc (vazamento de dados) ainda estão no DataFrame
+    """Levanta erro se sobrar no DataFrame alguma coluna pós-hoc (Partida Real, Chegada
+    Real, Situação Voo, Código Justificativa) ou o próprio alvo (atraso_min,
+    atrasado).
 
-        Compara a lista de colunas que não devem estar no DataFrame, com as próprias colunas
-        do DataFrame, se encontrar alguma informa como erro.
+    Usada em: baselines.carregar e gawll.carregar_subamostra, antes de todo treino.
+    Importância: trava automática contra o vazamento do §4.3; se uma coluna proibida
+    voltar, o pipeline para.
 
     Args:
         df (pd.DataFrame): DataFrame para ser verificado antes de ser utilizado como conjunto
-        de atributos
+            de atributos
 
     Raises:
         ValueError: Se qualquer coluna proibida estiver presente no DataFrame

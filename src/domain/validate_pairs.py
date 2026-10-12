@@ -117,7 +117,14 @@ ESCALA_DESVIO = LinearSegmentedColormap.from_list("desvio", ["#256abf", "#f0efec
 # ---------------------------------------------------------------------------
 
 def carregar_base() -> pd.DataFrame:
-    """Treino + validação, com uma coluna por variável de domínio, o ano e o alvo."""
+    """Treino + validação, com uma coluna por variável de domínio legível (empresa e
+    aeroportos em texto, porte e tipo de linha recompostos das dummies, horários,
+    semana, quintis das numéricas), o ano e o alvo.
+
+    Usada em: main; interacoes.main.
+    Importância: é a base dos testes descritivos do Diferencial 4; usa só treino e
+    validação (§4.9).
+    """
     partes = [pd.read_parquet(DIR_DADOS / f"{nome}.parquet") for nome in ["train", "val"]]
     base = pd.concat(partes)
     texto = pd.read_parquet(ARQUIVO_TARGET, columns=[
@@ -150,6 +157,13 @@ def carregar_base() -> pd.DataFrame:
 
 
 def variavel(feature: str) -> str:
+    """Nome da variável de domínio por trás de uma feature (ex.: as dummies de porte
+    viram "porte_origem"; dia_ano vira "semana").
+
+    Usada em: selecionar_pares, tipo_do_par, main, interacoes e testes.
+    Importância: duas features da mesma variável geram a mesma tabela cruzada; isso
+    evita testar o mesmo par duas vezes.
+    """
     return VARIAVEL_DE_DOMINIO.get(feature, feature)
 
 
@@ -158,13 +172,25 @@ def variavel(feature: str) -> str:
 # ---------------------------------------------------------------------------
 
 def interacao_media() -> pd.DataFrame:
-    """vint médio das 5 sementes, com o rank de cada par em cada modelo."""
+    """vint médio das 5 sementes, com o rank de cada par em cada modelo (lê
+    interacao_gawll.csv e usa graph.interacao_media).
+
+    Usada em: main.
+    Importância: os pares candidatos saem desse ranking médio.
+    """
     interacao = pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv")
     return graph.interacao_media(interacao)
 
 
 def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
-    """Uma linha por par: rank em cada modelo, e se é candidato ou controle."""
+    """Uma linha por par, com o rank em cada modelo: candidatos são os pares no top-10
+    de algum modelo; controles vêm do fundo do ranking, sem repetir o par de domínio
+    de um candidato nem de outro controle.
+
+    Usada em: main; tests/test_dominio.py.
+    Importância: os controles dão a taxa de "corroboração por acaso", sem a qual o
+    número de corroborados não teria referência.
+    """
     largo = media.pivot_table(index=["feature_a", "feature_b"], columns="model",
                               values=["rank", "interaction"])
     largo.columns = [f"{metrica}_{modelo}" for metrica, modelo in largo.columns]
@@ -182,6 +208,11 @@ def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
     # mesma tabela cruzada (ex.: tipo_linha_C × origem e tipo_linha_I × origem
     # são ambas tipo_linha × origem) — um controle assim não é independente.
     def par_de_dominio(linha):
+        """Par de variáveis de domínio (frozenset) de uma linha da tabela de pares.
+
+        Usada em: selecionar_pares.
+        Importância: é a chave que impede controles repetidos ou não independentes.
+        """
         return frozenset((variavel(linha["feature_a"]), variavel(linha["feature_b"])))
 
     usados = {par_de_dominio(linha) for _, linha in candidatos.iterrows()}
@@ -198,8 +229,13 @@ def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
 
 
 def coeficiente_de_incerteza(x: pd.Series, y: pd.Series) -> float:
-    """U(y|x) = 1 − H(y|x)/H(y): quanto saber x elimina da incerteza sobre y
-    (1 = x determina y; 0 = independentes)."""
+    """U(y|x) = 1 − H(y|x)/H(y): quanto saber x elimina da incerteza sobre y (1 = x
+    determina y; 0 = independentes).
+
+    Usada em: tipo_do_par; tests/test_dominio.py.
+    Importância: mede redundância entre variáveis categóricas sem supor relação
+    linear.
+    """
     contagens = pd.crosstab(x, y).to_numpy(dtype=float)
     conjunta = contagens / contagens.sum()
     p_x, p_y = conjunta.sum(axis=1), conjunta.sum(axis=0)
@@ -211,10 +247,15 @@ def coeficiente_de_incerteza(x: pd.Series, y: pd.Series) -> float:
 
 
 def tipo_do_par(feature_a: str, feature_b: str, dominio: pd.DataFrame) -> tuple[str, float]:
-    """(tipo, coeficiente de incerteza máximo entre os dois sentidos).
+    """(tipo, coeficiente de incerteza máximo entre os dois sentidos). Tipo: estrutural
+    (mesma variável de domínio), redundante (coeficiente ≥ LIMIAR_REDUNDANCIA) ou
+    operacional. A redundância é medida nas features como o modelo as vê (dia_ano
+    diário, não a semana), porque é essa a redundância que o PyGAwLLfs enxerga.
 
-    A redundância é medida nas features como o modelo as vê (dia_ano diário,
-    não a semana), porque é essa a redundância que o PyGAwLLfs enxerga."""
+    Usada em: main; interacoes.tipos_dos_pares e validar_tops_no_dominio.
+    Importância: só pares operacionais são testáveis como interação; os redundantes
+    testam a hipótese central do TCC.
+    """
     var_a, var_b = variavel(feature_a), variavel(feature_b)
     if var_a == var_b:
         return "estrutural", 1.0
@@ -232,7 +273,12 @@ def tipo_do_par(feature_a: str, feature_b: str, dominio: pd.DataFrame) -> tuple[
 # ---------------------------------------------------------------------------
 
 def tabela_cruzada(dominio: pd.DataFrame, var_a: str, var_b: str) -> pd.DataFrame:
-    """Uma linha por célula (nível de A, nível de B): n voos, k atrasados."""
+    """Uma linha por célula (nível de A, nível de B): n voos, k atrasados.
+
+    Usada em: testar_par.
+    Importância: agrega mais de um milhão de voos em poucas células, o que deixa o
+    ajuste e o bootstrap baratos.
+    """
     linhas = dominio[[var_a, var_b, "atrasado"]].dropna()
     tabela = (linhas.groupby([var_a, var_b], observed=True)["atrasado"]
               .agg(n="size", k="sum").reset_index())
@@ -241,7 +287,13 @@ def tabela_cruzada(dominio: pd.DataFrame, var_a: str, var_b: str) -> pd.DataFram
 
 
 def matriz_sem_interacao(tabela: pd.DataFrame) -> np.ndarray:
-    """Uma coluna por nível de A e de B (menos um de cada): só efeitos isolados."""
+    """Matriz com uma coluna por nível de A e de B (menos um de cada): só efeitos
+    isolados.
+
+    Usada em: testar_tabela.
+    Importância: define o modelo nulo, "sem interação", contra o qual o desvio é
+    medido.
+    """
     a = pd.get_dummies(tabela["nivel_a"].astype(str), prefix="a", drop_first=True)
     b = pd.get_dummies(tabela["nivel_b"].astype(str), prefix="b", drop_first=True)
     return pd.concat([a, b], axis=1).to_numpy(dtype=float)
@@ -250,10 +302,12 @@ def matriz_sem_interacao(tabela: pd.DataFrame) -> np.ndarray:
 def ajustar_sem_interacao(matriz: np.ndarray, n: np.ndarray, k: np.ndarray,
                           modelo: LogisticRegression) -> np.ndarray:
     """Taxa prevista em cada célula por logit(p) = constante + efeito(A) + efeito(B).
+    Cada célula entra duas vezes, como "atrasou" com peso k e como "não atrasou" com
+    peso n − k, o que equivale a ajustar voo a voo. Pesos divididos pelo total: o
+    resultado não muda, e o otimizador converge melhor.
 
-    Cada célula entra duas vezes — como "atrasou" com peso k e como "não
-    atrasou" com peso n − k —, o que equivale a ajustar voo a voo.
-    Pesos divididos pelo total: o resultado não muda, e o otimizador converge melhor.
+    Usada em: testar_tabela.
+    Importância: é o "esperado pelos efeitos marginais" do Diferencial 4.
     """
     x = np.vstack([matriz, matriz])
     y = np.concatenate([np.ones(len(n)), np.zeros(len(n))])
@@ -263,16 +317,27 @@ def ajustar_sem_interacao(matriz: np.ndarray, n: np.ndarray, k: np.ndarray,
 
 
 def desvio_pp(n: np.ndarray, k: np.ndarray, previsto: np.ndarray) -> float:
-    """Média ponderada por n de |taxa observada − taxa prevista|, em pontos percentuais."""
+    """Média ponderada por n de |taxa observada − taxa prevista|, em pontos percentuais.
+
+    Usada em: testar_tabela.
+    Importância: mede a interação numa unidade que se lê no texto (p.p. de taxa de
+    atraso).
+    """
     return float(np.sum(n * np.abs(k / n - previsto)) / n.sum() * 100)
 
 
 def testar_tabela(tabela: pd.DataFrame, rng: np.random.Generator,
                   n_bootstrap: int | None = None) -> tuple[float, float, pd.DataFrame]:
-    """(desvio, p95 do ruído, tabela com a previsão sem interação) de uma tabela cruzada.
+    """(desvio, p95 do ruído, tabela com a previsão sem interação) de uma tabela
+    cruzada. O ruído vem de um bootstrap paramétrico: simula a tabela sob o modelo
+    sem interação, reajusta e mede o desvio que o acaso daria. n_bootstrap=None usa
+    N_BOOTSTRAP lido na hora da chamada (um valor padrão escrito na assinatura seria
+    fixado na importação e ignoraria mudanças).
 
-    n_bootstrap=None usa N_BOOTSTRAP lido na hora da chamada (um valor padrão
-    escrito na assinatura seria fixado na importação e ignoraria mudanças)."""
+    Usada em: testar_par; tests/test_dominio.py.
+    Importância: separa interação real de flutuação amostral, com um limiar calibrado
+    para cada tabela.
+    """
     if n_bootstrap is None:
         n_bootstrap = N_BOOTSTRAP
     n, k = tabela["n"].to_numpy(float), tabela["k"].to_numpy(float)
@@ -295,7 +360,13 @@ def testar_tabela(tabela: pd.DataFrame, rng: np.random.Generator,
 
 def testar_par(dominio: pd.DataFrame, var_a: str, var_b: str,
                rng: np.random.Generator) -> tuple[dict, pd.DataFrame]:
-    """Teste em cada ano, replicação entre anos e a tabela dos anos juntos (para figura)."""
+    """Teste em cada ano, replicação entre anos (correlação dos resíduos nas células
+    comuns) e a tabela dos anos juntos (para figura).
+
+    Usada em: main; interacoes.validar_tops_no_dominio.
+    Importância: exigir o mesmo padrão em 2024 e 2025 descarta choques pontuais que
+    passariam num teste só.
+    """
     resultado, residuos = {}, {}
     for ano in ANOS:
         tabela = tabela_cruzada(dominio[dominio["ano"] == ano], var_a, var_b)
@@ -322,6 +393,14 @@ def testar_par(dominio: pd.DataFrame, var_a: str, var_b: str,
 
 
 def classificar(tipo: str, resultado: dict) -> str:
+    """Rótulo final do par. Estrutural e redundante têm rótulos próprios; um par
+    operacional é "corroborado descritivamente" se, nos dois anos, o desvio passa o
+    p95 do ruído e LIMIAR_PP, e se a replicação entre anos é ≥ LIMIAR_REPLICACAO.
+
+    Usada em: main; interacoes.validar_tops_no_dominio; tests/test_dominio.py.
+    Importância: é a regra de decisão do Diferencial 4; nunca diz "confirmado",
+    porque é corroboração observacional.
+    """
     if tipo == "estrutural":
         return "não testável (mesma variável)"
     if tipo == "redundante":
@@ -339,9 +418,13 @@ def classificar(tipo: str, resultado: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def afastar_nos(posicao: dict, distancia_minima: float = 0.15, iteracoes: int = 100) -> dict:
-    """Empurra para longe os pares de nós mais próximos que distancia_minima
-    (em fração do tamanho do desenho), para os rótulos não se sobreporem.
-    O resto do layout continua como o kamada_kawai deixou."""
+    """Empurra para longe os pares de nós mais próximos que distancia_minima (em fração
+    do tamanho do desenho), para os rótulos não se sobreporem. O resto do layout
+    continua como o kamada_kawai deixou.
+
+    Usada em: figura_grafo.
+    Importância: só apresentação.
+    """
     nos = list(posicao)
     pontos = np.array([posicao[no] for no in nos], dtype=float)
     minimo = distancia_minima * np.ptp(pontos, axis=0).max()
@@ -364,7 +447,12 @@ def afastar_nos(posicao: dict, distancia_minima: float = 0.15, iteracoes: int = 
 
 def figura_grafo(media: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
                  caminho_base: Path) -> None:
-    """Grafo reduzido de cada modelo: 5% das arestas mais fortes."""
+    """Grafo reduzido de cada modelo (5% das arestas mais fortes): largura da aresta
+    pela interação, cor pelo tipo do par, tamanho do nó pela importância.
+
+    Usada em: main.
+    Importância: é a figura análoga ao grafo do Boson no artigo.
+    """
     fig, eixos = plt.subplots(1, 3, figsize=(18, 7), layout="constrained")
     for ax, modelo in zip(eixos, MODELOS):
         pares = media[media["model"] == modelo]
@@ -414,7 +502,11 @@ def figura_grafo(media: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
 
 def figura_heatmap(tabela: pd.DataFrame, var_a: str, var_b: str, titulo: str,
                    caminho_base: Path) -> None:
-    """Esquerda: taxa observada. Direita: observado − previsto sem interação."""
+    """Esquerda: taxa observada. Direita: observado − previsto sem interação.
+
+    Usada em: main.
+    Importância: mostra célula a célula onde está a interação (ou a falta dela).
+    """
     tabela = tabela[tabela["n"] >= CELULA_MINIMA].copy()
     tabela["desvio"] = (tabela["taxa"] - tabela["previsto_sem_interacao"]) * 100
     taxa = tabela.pivot(index="nivel_a", columns="nivel_b", values="taxa") * 100
@@ -456,6 +548,15 @@ def figura_heatmap(tabela: pd.DataFrame, var_a: str, var_b: str, titulo: str,
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    """Etapa 15: seleciona candidatos e controles, classifica o tipo de cada par, testa
+    e classifica cada um e salva dominio_pares.csv, dominio_celulas.csv e as figuras.
+    Não toca o teste.
+
+    Usada em: python src/domain/validate_pairs.py; main.py, etapa "dominio";
+    tests/test_dominio.py.
+    Importância: é o Diferencial 4, a verificação de que o grafo do PyGAwLLfs diz
+    algo plausível sobre a operação aérea.
+    """
     rng = np.random.default_rng(SEMENTE)
     dominio = carregar_base()
     media = interacao_media()

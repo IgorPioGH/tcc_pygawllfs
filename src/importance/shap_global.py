@@ -50,7 +50,13 @@ TAMANHO_AMOSTRA = 10_000
 
 
 def calcular_shap(modelo, amostra: pd.DataFrame) -> list[float]:
-    """mean(|SHAP|) de cada coluna da amostra, para a classe positiva."""
+    """mean(|SHAP|) de cada coluna da amostra, para a classe positiva, com o
+    TreeExplainer.
+
+    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Importância: importância global a partir de explicações locais; TreeSHAP é exato
+    em árvores, e KernelSHAP seria inviável nesta escala (§4.6).
+    """
     explicador = shap.TreeExplainer(modelo, feature_perturbation="tree_path_dependent")
     valores = explicador(amostra).values
 
@@ -62,6 +68,14 @@ def calcular_shap(modelo, amostra: pd.DataFrame) -> list[float]:
 
 
 def main() -> None:
+    """Roda o TreeSHAP no RF e no XGBoost, numa amostra de 10 mil linhas da validação
+    por semente, e salva importancia_shap.csv e o custo.
+
+    Usada em: python src/importance/shap_global.py; main.py, etapa "importancias";
+    tests/test_importancia.py.
+    Importância: um dos quatro métodos; a LogReg fica de fora porque os coeficientes
+    padronizados já cumprem esse papel (§4.6).
+    """
     x_val, _ = carregar("val")
     logger.info(f"Validação: {x_val.shape}, amostra de {TAMANHO_AMOSTRA} linhas por semente")
 

@@ -30,7 +30,12 @@ DIR_TABELAS = RAIZ / "results" / "tables"
 
 
 def teste_regra_de_rank():
-    """Rank 1 = mais importante; coeficiente pelo absoluto; negativo no fim."""
+    """Rank 1 = mais importante; coeficiente pelo absoluto; negativo no fim.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
+    python main.py --testes).
+    Importância: a regra de rank é a mesma para todos os métodos comparados.
+    """
     features = ["a", "b", "c"]
 
     tabela = comum.tabela_importancia(features, [0.1, -0.5, 0.3], "x", "m", 42)
@@ -45,10 +50,21 @@ def teste_regra_de_rank():
 
 
 def teste_nenhum_metodo_le_o_teste():
-    """§4.9: os quatro scripts rodam inteiros (em miniatura) sem abrir test.parquet."""
+    """§4.9: os quatro scripts rodam inteiros (em miniatura) sem abrir test.parquet.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
+    python main.py --testes).
+    Importância: garante que nenhuma importância é calculada no teste.
+    """
     ler_parquet_original = pd.read_parquet
 
     def ler_parquet_vigiado(caminho, *args, **kwargs):
+        """Substituto de pandas.read_parquet (via mock.patch) que falha se o arquivo for
+        o conjunto de teste e, senão, lê normalmente.
+
+        Usada em: teste_nenhum_metodo_le_o_teste.
+        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"Um método de importância tentou ler o teste: {caminho}")
         return ler_parquet_original(caminho, *args, **kwargs)
@@ -78,7 +94,12 @@ def teste_nenhum_metodo_le_o_teste():
 
 
 def teste_formato_das_saidas():
-    """Cada (método, modelo, semente) tem as 29 features, ranks válidos e nada vazio."""
+    """Cada (método, modelo, semente) tem as 29 features, ranks válidos e nada vazio.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
+    python main.py --testes).
+    Importância: a Etapa 11 depende desse formato.
+    """
     for nome in ["intrinseca", "permutation", "shap", "gawll"]:
         tabela = pd.read_csv(DIR_TABELAS / f"importancia_{nome}.csv")
         assert list(tabela.columns) == comum.COLUNAS_PADRAO, nome
@@ -89,7 +110,12 @@ def teste_formato_das_saidas():
 
 
 def teste_intrinseca_bate_com_baselines():
-    """O coeficiente da LogReg aqui é o mesmo salvo pela Etapa 6."""
+    """O coeficiente da LogReg aqui é o mesmo salvo pela Etapa 6.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
+    python main.py --testes).
+    Importância: confirma que os métodos explicam o mesmo modelo.
+    """
     intrinseca = pd.read_csv(DIR_TABELAS / "importancia_intrinseca.csv")
     intrinseca = intrinseca[intrinseca["model"] == "logreg"].set_index("feature")
     etapa6 = pd.read_csv(DIR_TABELAS / "coeficientes_logreg.csv").set_index("feature")
@@ -97,7 +123,12 @@ def teste_intrinseca_bate_com_baselines():
 
 
 def teste_consolidacao_gawll():
-    """As tabelas reproduzem exatamente o vimp e a vint dos checkpoints."""
+    """As tabelas reproduzem exatamente o vimp e a vint dos checkpoints.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
+    python main.py --testes).
+    Importância: nada se perde entre o GA e as tabelas comparadas.
+    """
     importancia = pd.read_csv(DIR_TABELAS / "importancia_gawll.csv")
     interacao = pd.read_csv(DIR_TABELAS / "interacao_gawll.csv")
 

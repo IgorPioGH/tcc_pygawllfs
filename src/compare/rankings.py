@@ -53,17 +53,27 @@ TOP_K = [5, 10, 15]
 # ---------------------------------------------------------------------------
 
 def pontuacao(tabela: pd.DataFrame) -> pd.Series:
-    """Valor que ordena o ranking: a importância, exceto no coeficiente da
-    LogReg, em que o que importa é o tamanho, não o sinal (mesma regra do
-    rank_por_absoluto em comum.tabela_importancia)."""
+    """Valor que ordena o ranking: a importância, exceto no coeficiente da LogReg, em
+    que conta o tamanho e não o sinal (mesma regra do rank_por_absoluto em
+    comum.tabela_importancia).
+
+    Usada em: carregar_importancias; tests/test_comparacao.py.
+    Importância: todos os métodos são ordenados pela mesma regra antes de serem
+    comparados.
+    """
     coeficiente = (tabela["method"] == "intrinseca") & (tabela["model"] == "logreg")
     return tabela["importance"].where(~coeficiente, tabela["importance"].abs())
 
 
 def normalizar_magnitude(valores: pd.Series) -> pd.Series:
     """Para figuras de magnitude (§4.8): negativos viram 0 ("sem evidência de
-    importância"; só a Permutation tem) e depois min-max para [0, 1].
-    Nunca soma-1, porque há valores com sinal."""
+    importância"; só a Permutation tem) e depois min-max para [0, 1]. Nunca soma-1,
+    porque há valores com sinal.
+
+    Usada em: consolidar_rankings; tests/test_comparacao.py.
+    Importância: deixa as escalas visualmente comparáveis sem afetar a comparação
+    principal, que é por rank.
+    """
     valores = valores.clip(lower=0)
     amplitude = valores.max() - valores.min()
     if amplitude == 0:
@@ -72,8 +82,13 @@ def normalizar_magnitude(valores: pd.Series) -> pd.Series:
 
 
 def ordenar(pontuacoes: pd.Series) -> list[str]:
-    """Features da mais para a menos importante. Empate: ordem alfabética,
-    para o resultado não depender da ordem das linhas."""
+    """Features da mais para a menos importante. Empate: ordem alfabética, para o
+    resultado não depender da ordem das linhas.
+
+    Usada em: comparar; fidelity.listas_de_features; testes.
+    Importância: o top-k da concordância e da fidelidade sai daqui; o desempate fixo
+    torna os números reprodutíveis.
+    """
     tabela = pontuacoes.rename("valor").reset_index()
     tabela.columns = ["feature", "valor"]
     return list(tabela.sort_values(["valor", "feature"], ascending=[False, True])["feature"])
@@ -84,13 +99,16 @@ def ordenar(pontuacoes: pd.Series) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def rbo(lista_a: list[str], lista_b: list[str], p: float = P_RBO) -> float:
-    """Rank-Biased Overlap estendido (RBO_ext; Webber, Moffat e Zobel, 2010, eq. 32).
-
-    Em cada profundidade d, mede a sobreposição dos d primeiros itens das duas
-    listas (X_d). A média é ponderada por p^d, então o topo pesa mais:
-    com p = 0,9, as 10 primeiras posições respondem por ~86% do valor.
+    """Rank-Biased Overlap estendido (RBO_ext; Webber, Moffat e Zobel, 2010, eq. 32). Em
+    cada profundidade d, mede a sobreposição dos d primeiros itens das duas listas
+    (X_d). A média é ponderada por p^d, então o topo pesa mais: com p = 0,9, as 10
+    primeiras posições respondem por ~86% do valor.
         RBO_ext = (X_k / k) * p^k + (1 - p) / p * soma_{d=1..k} (X_d / d) * p^d
     Vale 1 para listas iguais e fica perto de 0 quando os topos não se cruzam.
+
+    Usada em: comparar; tests/test_comparacao.py.
+    Importância: é a métrica que pondera o topo do ranking (§4.5), onde a escolha de
+    features acontece.
     """
     k = min(len(lista_a), len(lista_b))
     vistos_a, vistos_b = set(), set()
@@ -105,12 +123,24 @@ def rbo(lista_a: list[str], lista_b: list[str], p: float = P_RBO) -> float:
 
 
 def sobreposicao_top_k(lista_a: list[str], lista_b: list[str], k: int) -> float:
-    """Fração das k primeiras de uma lista que também estão nas k primeiras da outra."""
+    """Fração das k primeiras de uma lista que também estão nas k primeiras da outra.
+
+    Usada em: comparar.
+    Importância: a métrica mais direta de explicar ("quantas das 5 mais importantes
+    coincidem").
+    """
     return len(set(lista_a[:k]) & set(lista_b[:k])) / k
 
 
 def comparar(pontuacoes_a: pd.Series, pontuacoes_b: pd.Series) -> dict:
-    """Todas as métricas entre dois rankings (Series indexadas pela feature)."""
+    """Todas as métricas entre dois rankings (Series indexadas pela feature): Spearman,
+    Kendall tau-b, RBO e top-5/10/15.
+
+    Usada em: concordancia_entre_rankings; stability.concordancia_entre_sementes;
+    interacoes.comparar_modelo; testes.
+    Importância: fonte única das métricas; concordância, estabilidade e interações
+    usam exatamente o mesmo cálculo.
+    """
     pontuacoes_b = pontuacoes_b.loc[pontuacoes_a.index]  # mesma ordem de features
     lista_a, lista_b = ordenar(pontuacoes_a), ordenar(pontuacoes_b)
     resultado = {
@@ -125,7 +155,12 @@ def comparar(pontuacoes_a: pd.Series, pontuacoes_b: pd.Series) -> dict:
 
 
 def tipo_de_par(chave_a: tuple[str, str], chave_b: tuple[str, str]) -> str:
-    """Chaves (método, modelo) -> mesmo_modelo, mesmo_metodo ou diferentes."""
+    """Chaves (método, modelo) -> mesmo_modelo, mesmo_metodo ou diferentes.
+
+    Usada em: concordancia_entre_rankings; tests/test_comparacao.py.
+    Importância: implementa o §4.11, que separa divergência de método de divergência
+    de modelo.
+    """
     (metodo_a, modelo_a), (metodo_b, modelo_b) = chave_a, chave_b
     if modelo_a == modelo_b:
         return "mesmo_modelo"
@@ -139,7 +174,11 @@ def tipo_de_par(chave_a: tuple[str, str], chave_b: tuple[str, str]) -> str:
 # ---------------------------------------------------------------------------
 
 def carregar_importancias() -> pd.DataFrame:
-    """As quatro tabelas da Etapa 9 juntas, com a coluna 'pontuacao'."""
+    """As quatro tabelas da Etapa 9 juntas, com a coluna "pontuacao".
+
+    Usada em: main; stability.main.
+    Importância: ponto único de entrada das importâncias na Etapa 11.
+    """
     tabelas = [pd.read_csv(comum.DIR_TABELAS / f"importancia_{m}.csv") for m in METODOS]
     importancias = pd.concat(tabelas, ignore_index=True)
     importancias["pontuacao"] = pontuacao(importancias)
@@ -147,7 +186,13 @@ def carregar_importancias() -> pd.DataFrame:
 
 
 def consolidar_rankings(importancias: pd.DataFrame) -> pd.DataFrame:
-    """Um ranking por (método, modelo): média das sementes."""
+    """Um ranking por (método, modelo): média das sementes, com rank e magnitude
+    normalizada.
+
+    Usada em: main.
+    Importância: gera ranking_consolidado.csv, que alimenta a fidelidade (Etapa 12) e
+    a escolha de features do H (Etapa 13).
+    """
     consolidado = (importancias
                    .groupby(["method", "model", "feature"], as_index=False)
                    .agg(importance=("importance", "mean"),
@@ -161,7 +206,12 @@ def consolidar_rankings(importancias: pd.DataFrame) -> pd.DataFrame:
 
 
 def concordancia_entre_rankings(consolidado: pd.DataFrame) -> pd.DataFrame:
-    """Uma linha por par de rankings (método, modelo) × (método, modelo)."""
+    """Uma linha por dupla de rankings (método, modelo) × (método, modelo), com as
+    métricas e o tipo da dupla.
+
+    Usada em: main.
+    Importância: gera concordancia.csv, a tabela do critério de concordância.
+    """
     pontuacoes = {
         chave: grupo.set_index("feature")["pontuacao"]
         for chave, grupo in consolidado.groupby(["method", "model"])
@@ -182,7 +232,13 @@ def concordancia_entre_rankings(consolidado: pd.DataFrame) -> pd.DataFrame:
 
 
 def resumir(concordancia: pd.DataFrame) -> pd.DataFrame:
-    """Média (e extremos do Spearman) por tipo de par."""
+    """Média das métricas (e extremos do Spearman) por tipo de dupla. Não confundir com
+    fidelity.resumir.
+
+    Usada em: main.
+    Importância: dá o número-resumo da Etapa 11: concordância dentro do mesmo modelo
+    × entre modelos.
+    """
     metricas = ["spearman", "kendall_tau_b", "rbo"] + [f"top{k}" for k in TOP_K]
     resumo = concordancia.groupby("tipo_par")[metricas].mean()
     resumo["spearman_min"] = concordancia.groupby("tipo_par")["spearman"].min()
@@ -193,6 +249,14 @@ def resumir(concordancia: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Etapa 11a: carrega as importâncias, consolida os rankings, compara todas as
+    duplas e salva ranking_consolidado.csv, concordancia.csv e
+    concordancia_resumo.csv.
+
+    Usada em: python src/compare/rankings.py; main.py, etapa "rankings";
+    tests/test_comparacao.py.
+    Importância: responde ao critério de concordância da pergunta de pesquisa.
+    """
     importancias = carregar_importancias()
     consolidado = consolidar_rankings(importancias)
     concordancia = concordancia_entre_rankings(consolidado)

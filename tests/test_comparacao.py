@@ -33,7 +33,12 @@ FEATURES = [f"f{i:02d}" for i in range(29)]
 
 
 def teste_rbo():
-    """Valores conhecidos e as propriedades que justificam usar o RBO."""
+    """Valores conhecidos e as propriedades que justificam usar o RBO.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: o RBO foi implementado à mão; o teste confere a fórmula.
+    """
     # isclose: a soma da série dá 0,9999999999999998 em ponto flutuante
     assert np.isclose(rankings.rbo(FEATURES, FEATURES), 1.0)
 
@@ -52,7 +57,12 @@ def teste_rbo():
 
 
 def teste_metricas_e_ordenacao():
-    """Spearman/Kendall nos extremos, top-k e desempate determinístico."""
+    """Spearman/Kendall nos extremos, top-k e desempate determinístico.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: as métricas de concordância são a base da Etapa 11.
+    """
     crescente = pd.Series(np.arange(29, 0, -1, dtype=float), index=FEATURES)
     igual = rankings.comparar(crescente, crescente)
     assert np.isclose([igual["spearman"], igual["kendall_tau_b"], igual["rbo"]], 1.0).all()
@@ -72,6 +82,13 @@ def teste_metricas_e_ordenacao():
 
 
 def teste_pontuacao_normalizacao_e_tipo_de_par():
+    """Só o coeficiente usa o valor absoluto; a normalização zera negativos e faz min-
+    max; tipo_de_par classifica as duplas.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: regras do §4.8 e do §4.11.
+    """
     tabela = pd.DataFrame({
         "feature": ["a", "b", "a", "b"],
         "importance": [-0.5, 0.2, -0.5, 0.2],
@@ -91,7 +108,12 @@ def teste_pontuacao_normalizacao_e_tipo_de_par():
 
 
 def teste_estabilidade_de_sementes_iguais():
-    """Cinco sementes idênticas -> concordância 1 e frequência 0 ou 1."""
+    """Cinco sementes idênticas -> concordância 1 e frequência 0 ou 1.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: caso-limite que a estabilidade tem de acertar.
+    """
     linhas = []
     for semente in range(5):
         tabela = comum.tabela_importancia(FEATURES, np.arange(29, 0, -1), "m", "modelo", semente)
@@ -110,8 +132,18 @@ def teste_estabilidade_de_sementes_iguais():
 
 
 def teste_scripts_so_leem_csv():
-    """Os três scripts rodam inteiros numa pasta temporária, sem abrir nenhum parquet."""
+    """Os três scripts rodam inteiros numa pasta temporária, sem abrir nenhum parquet.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: prova que a Etapa 11 só usa as tabelas da Etapa 9, nunca os dados.
+    """
     def proibir_parquet(*args, **kwargs):
+        """Substituto de pandas.read_parquet (via mock.patch) que falha se for chamado.
+
+        Usada em: teste_scripts_so_leem_csv.
+        Importância: qualquer leitura de dados na Etapa 11 vira erro.
+        """
         raise AssertionError("A Etapa 11 não deveria ler parquet")
 
     with tempfile.TemporaryDirectory() as pasta:
@@ -134,7 +166,12 @@ def teste_scripts_so_leem_csv():
 
 
 def teste_tabelas_reais():
-    """Estrutura e faixas das saídas da Etapa 11."""
+    """Estrutura e faixas das saídas da Etapa 11.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
+    python main.py --testes).
+    Importância: pega erro nas tabelas reais que os casos artificiais não cobrem.
+    """
     consolidado = pd.read_csv(DIR_TABELAS / "ranking_consolidado.csv")
     assert consolidado.groupby(["method", "model"]).size().eq(29).all()
     assert len(consolidado.groupby(["method", "model"])) == 11

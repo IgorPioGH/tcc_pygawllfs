@@ -70,7 +70,14 @@ GRADE = {
 
 
 def carregar(nome: str) -> tuple[pd.DataFrame, pd.Series]:
-    """Lê um conjunto congelado e separa atributos (X) do alvo (y)."""
+    """Lê um conjunto congelado (train, val ou test), confere que não há coluna proibida
+    e separa os atributos (X) do alvo (y).
+
+    Usada em: main; fidelity, permutation, shap_global, friedman_h,
+    auditar_congestionamento e testes.
+    Importância: ponto único de leitura dos dados; todo script vê as mesmas 29
+    features, na mesma ordem.
+    """
     df = pd.read_parquet(DIR_DADOS / f"{nome}.parquet")
     x = df.drop(columns=NAO_ATRIBUTOS)
     y = df["atrasado"]
@@ -79,11 +86,15 @@ def carregar(nome: str) -> tuple[pd.DataFrame, pd.Series]:
 
 
 def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int = -1):
-    """Monta um estimador novo (não treinado) a partir do nome e dos parâmetros.
+    """Monta um estimador novo, não treinado: LogReg (com StandardScaler), RF ou
+    XGBoost, com semente fixa e balanceamento de classe. peso_positivo = negativos /
+    positivos no treino (o equivalente do class_weight="balanced" no XGBoost); n_jobs
+    = 1 no PyGAwLLfs, que já paraleliza entre os indivíduos.
 
-    peso_positivo = negativos / positivos no treino; é o equivalente do
-    class_weight="balanced" no XGBoost.
-    n_jobs: o PyGAwLLfs passa 1, porque já paraleliza entre os indivíduos.
+    Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity, aplicar_metodos
+    e auditar_congestionamento.
+    Importância: fonte única dos modelos; o GA, a fidelidade e o sintético treinam
+    exatamente o mesmo modelo da Etapa 6 (§4.11).
     """
     if nome == "dummy":
         return DummyClassifier(**parametros)
@@ -119,7 +130,11 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
 
 
 def montar_configuracoes(y_treino: pd.Series) -> list[tuple[str, dict, object]]:
-    """Uma tupla (nome do modelo, parâmetros, estimador) por item da GRADE."""
+    """Uma tupla (nome do modelo, parâmetros, estimador) por item da GRADE de tuning.
+
+    Usada em: main.
+    Importância: define o espaço de busca de hiperparâmetros da Etapa 6.
+    """
     peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
     configs = []
     for nome, lista_parametros in GRADE.items():
@@ -131,10 +146,14 @@ def montar_configuracoes(y_treino: pd.Series) -> list[tuple[str, dict, object]]:
 
 
 def ler_configuracoes_escolhidas() -> dict[str, dict]:
-    """Lê baselines.csv e devolve {modelo: parâmetros escolhidos na validação}.
+    """Lê baselines.csv e devolve {modelo: parâmetros escolhidos na validação}. A coluna
+    "parametros" foi salva como texto; ast.literal_eval a converte de volta em
+    dicionário sem executar código.
 
-    A coluna 'parametros' foi salva como texto ("{'C': 1.0}");
-    ast.literal_eval converte de volta para dicionário sem executar código.
+    Usada em: gawll.main, fidelity, aplicar_metodos, auditar_congestionamento e
+    testes.
+    Importância: todas as etapas usam os hiperparâmetros escolhidos uma única vez, na
+    validação.
     """
     tabela = pd.read_csv(DIR_TABELAS / "baselines.csv")
     return {
@@ -144,12 +163,22 @@ def ler_configuracoes_escolhidas() -> dict[str, dict]:
 
 
 def avaliar_modelo(modelo, x: pd.DataFrame, y: pd.Series) -> dict[str, float]:
-    """Gera previsões de classe e de probabilidade e passa para avaliar()."""
+    """Gera previsões de classe e de probabilidade e passa para evaluate.avaliar.
+
+    Usada em: main; fidelity.avaliar_configuracoes e auditar_congestionamento.
+    Importância: o desempenho é medido do mesmo jeito em todo o projeto.
+    """
     return avaliar(y, modelo.predict(x), modelo.predict_proba(x)[:, 1])
 
 
 def auditar_vazamento(nome: str, metricas: dict[str, float], taxa_base: float) -> None:
-    """Interrompe a execução se alguma métrica for boa demais (docs/metodologia.md §9)."""
+    """Interrompe a execução se alguma métrica de validação for boa demais: ROC-AUC, F1
+    ou PR-AUC (relativa à taxa base) acima dos limites do §9 de docs/metodologia.md.
+
+    Usada em: main, antes de tocar o teste.
+    Importância: alarme automático de vazamento silencioso; nada chega ao teste sem
+    passar por ele.
+    """
     gatilhos = []
     if metricas["roc_auc"] > LIMITE_ROC_AUC:
         gatilhos.append(f"roc_auc={metricas['roc_auc']:.3f}")
@@ -165,9 +194,12 @@ def auditar_vazamento(nome: str, metricas: dict[str, float], taxa_base: float) -
 
 
 def salvar_coeficientes_logreg(pipeline, colunas: pd.Index, caminho: Path) -> None:
-    """Salva os coeficientes padronizados no formato padrão de importância (§7).
+    """Salva os coeficientes padronizados da LogReg no formato padrão de importância
+    (§7), com o sinal mantido (§4.8) e o rank pelo valor absoluto.
 
-    O sinal é mantido (§4.8); o rank é feito pelo valor absoluto.
+    Usada em: main.
+    Importância: é a importância intrínseca da LogReg; tests/test_importancia.py
+    confere que intrinsic.py reproduz os mesmos valores.
     """
     coeficientes = pipeline.named_steps["logisticregression"].coef_[0]
     tabela = pd.DataFrame({"feature": colunas, "importance": coeficientes})
@@ -181,6 +213,14 @@ def salvar_coeficientes_logreg(pipeline, colunas: pd.Index, caminho: Path) -> No
 
 
 def main() -> None:
+    """Etapa 6: tuning no treino com escolha na validação, auditoria de vazamento e
+    avaliação única da melhor configuração de cada modelo no teste. Salva
+    baselines*.csv, os coeficientes da LogReg e os modelos .joblib.
+
+    Usada em: python src/models/baselines.py; main.py, etapa "baselines".
+    Importância: produz os modelos que todos os métodos de importância explicam e o
+    desempenho de referência; é um dos dois únicos usos do teste (§4.9).
+    """
     treino_x, treino_y = carregar("train")
     val_x, val_y = carregar("val")
     teste_x, teste_y = carregar("test")

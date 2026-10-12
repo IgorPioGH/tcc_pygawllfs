@@ -43,7 +43,13 @@ COLUNAS_INTERACAO = ["feature_a", "feature_b", "interaction", "method", "model",
 def tabela_interacao(
     features: list[str], matriz: np.ndarray, method: str, model: str, seed: int
 ) -> pd.DataFrame:
-    """Matriz simétrica N x N -> uma linha por par (i < j)."""
+    """Matriz simétrica N x N -> uma linha por par (i < j), com feature_a, feature_b,
+    interaction, method, model e seed.
+
+    Usada em: consolidar; tests/test_sintetico.py.
+    Importância: o formato longo é o que o H de Friedman, o grafo e a validação de
+    domínio leem.
+    """
     linhas_i, colunas_j = np.triu_indices(len(features), k=1)
     return pd.DataFrame({
         "feature_a": [features[i] for i in linhas_i],
@@ -56,7 +62,13 @@ def tabela_interacao(
 
 
 def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list[dict]]:
-    """Lê todos os .npz de dir_execucoes e devolve (importância, interação, seleção, custos)."""
+    """Lê todos os .npz de dir_execucoes e devolve (importância, interação, seleção,
+    custos).
+
+    Usada em: main; aplicar_metodos.main (sintético).
+    Importância: transforma os checkpoints do GA em tabelas comparáveis com as dos
+    outros métodos; o mesmo código serve aos dados reais e ao sintético.
+    """
     arquivos = sorted(dir_execucoes.glob("*_seed*.npz"))
     if not arquivos:
         raise FileNotFoundError(f"Nenhum checkpoint em {dir_execucoes}")
@@ -104,6 +116,14 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
 
 def main() -> None:
+    """Etapa 8: consolida experiments/runs/gawll/ em importancia_gawll.csv,
+    interacao_gawll.csv, selecao_gawll.csv e no custo.
+
+    Usada em: python src/importance/consolidar_gawll.py; main.py, etapa "pygawllfs";
+    tests/test_importancia.py.
+    Importância: a partir daqui o PyGAwLLfs entra nas comparações como qualquer outro
+    método.
+    """
     importancia, interacao, selecao, custos = consolidar(DIR_EXECUCOES)
     salvar_tabela(importancia, "importancia_gawll.csv")
     salvar_tabela(interacao, "interacao_gawll.csv")

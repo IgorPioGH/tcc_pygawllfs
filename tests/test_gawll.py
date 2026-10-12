@@ -33,7 +33,13 @@ DIR_DADOS = RAIZ / "data" / "processed"
 
 
 def teste_mutacao():
-    """Correção 4: a mutação precisa alterar o próprio cromossomo."""
+    """Correção 4: a mutação precisa alterar o próprio cromossomo (probabilidade 1
+    inverte tudo, 0 não muda nada).
+
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: prova o bug do original e a correção no wrapper.
+    """
     original = np.array([True, False, True, False, False])
 
     # O bug: a Mutation original não altera o array recebido
@@ -52,9 +58,19 @@ def teste_mutacao():
 
 
 def teste_elitismo():
-    """Correção 5: o elite precisa entrar na população NOVA."""
+    """Correção 5: o elite precisa entrar na população NOVA.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: prova o bug do original e a correção no wrapper.
+    """
 
     def criar_ga(classe):
+        """GA mínimo (4 bits, população 3) da classe dada, sem avaliador.
+
+        Usada em: teste_elitismo, com o GAwLL original e com o corrigido.
+        Importância: isola o elitismo do resto do motor.
+        """
         return classe(
             perf_batch=None, chrom_size=4, mutation_probability=0.25,
             max_generations=1, pop_size=3, crossover_rate=0.8, tau_reset=50,
@@ -62,6 +78,12 @@ def teste_elitismo():
         )
 
     def populacoes():
+        """Populações antiga e nova e um elite conhecidos.
+
+        Usada em: teste_elitismo.
+        Importância: com valores fixos, dá para ver em qual população o elite foi
+        parar.
+        """
         antiga = [Individual(np.zeros(4, bool), 0.1, 0.1) for _ in range(3)]
         nova = [
             Individual(np.array([True, False, False, False]), 0.5, 0.5),
@@ -88,7 +110,13 @@ def teste_elitismo():
 
 
 def teste_subamostra_sem_teste():
-    """A subamostra só pode ter linhas de treino e validação."""
+    """A subamostra só pode ter linhas de treino e validação (nenhum índice em comum com
+    test.parquet).
+
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: garante que o GA nunca vê o teste (§4.1).
+    """
     subamostra = pd.read_parquet(DIR_DADOS / "subamostra.parquet")
     indice_teste = pd.read_parquet(DIR_DADOS / "test.parquet", columns=[]).index
 
@@ -98,10 +126,21 @@ def teste_subamostra_sem_teste():
 
 
 def teste_busca_nao_le_o_teste():
-    """§4.1: um GA completo (mini) roda sem nunca abrir test.parquet."""
+    """§4.1: um GA completo (mini) roda sem nunca abrir test.parquet.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: prova a correção 1 em execução, não só por leitura do código.
+    """
     ler_parquet_original = pd.read_parquet
 
     def ler_parquet_vigiado(caminho, *args, **kwargs):
+        """Substituto de pandas.read_parquet (via mock.patch) que falha se o arquivo for
+        o conjunto de teste e, senão, lê normalmente.
+
+        Usada em: teste_busca_nao_le_o_teste.
+        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"A busca tentou ler o teste: {caminho}")
         return ler_parquet_original(caminho, *args, **kwargs)
@@ -126,7 +165,12 @@ def teste_busca_nao_le_o_teste():
 
 
 def teste_determinismo_e_cache():
-    """A mesma máscara dá o mesmo F1, e o cache não retreina."""
+    """A mesma máscara dá o mesmo F1 nos três modelos, e o cache não retreina.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: o cache só é correto se o treino for determinístico.
+    """
     x_treino, y_treino, x_val, y_val, features = gawll.carregar_subamostra()
     x_treino, y_treino = x_treino[:10_000], y_treino[:10_000]
     configuracoes = gawll.ler_configuracoes_escolhidas()
@@ -157,10 +201,14 @@ def teste_determinismo_e_cache():
 
 
 def teste_artificial():
-    """Validação no Artificial do artigo: as informativas precisam aparecer.
+    """Validação no Artificial do artigo: as informativas precisam aparecer. Com
+    shuffle=False, as colunas 0-3 são informativas, 4-5 redundantes (combinações
+    lineares das informativas) e 6-9 ruído.
 
-    Com shuffle=False, as colunas 0-3 são informativas, 4-5 redundantes
-    (combinações lineares das informativas) e 6-9 ruído.
+    Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
+    python main.py --testes).
+    Importância: confere que o GA corrigido recupera a importância num caso
+    conhecido.
     """
     x, y = make_classification(
         n_samples=5000, n_features=10, n_informative=4, n_redundant=2,

@@ -35,6 +35,12 @@ logger = logging.getLogger("pipeline")
 
 @dataclass
 class Etapa:
+    """Uma etapa do pipeline: nome, scripts em ordem, descrição e tempo esperado.
+
+    Usada em: lista ETAPAS, escolher_etapas e main deste arquivo.
+    Importância: a ordem de ETAPAS é a ordem de dependência dos dados; é o mapa do
+    pipeline num lugar só.
+    """
     nome: str
     scripts: list[str]
     descricao: str
@@ -90,6 +96,12 @@ TESTES = [
 
 
 def configurar_log() -> None:
+    """Manda o log para o console e para experiments/runs/pipeline.log.
+
+    Usada em: main.
+    Importância: execuções longas (o PyGAwLLfs leva ~5,4 h) precisam de registro em
+    arquivo, que sobrevive ao terminal.
+    """
     ARQUIVO_LOG.parent.mkdir(parents=True, exist_ok=True)
     formato = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     logger.setLevel(logging.INFO)
@@ -99,7 +111,11 @@ def configurar_log() -> None:
 
 
 def escolher_etapas(de: str | None, ate: str | None, so: list[str] | None) -> list[Etapa]:
-    """Recorta a lista de etapas sem mudar a ordem do pipeline."""
+    """Recorta a lista de etapas (--de, --ate, --so) sem mudar a ordem do pipeline.
+
+    Usada em: main.
+    Importância: permite retomar de onde parou sem refazer etapas caras.
+    """
     nomes = [etapa.nome for etapa in ETAPAS]
     for nome in [de, ate, *(so or [])]:
         if nome is not None and nome not in nomes:
@@ -112,7 +128,13 @@ def escolher_etapas(de: str | None, ate: str | None, so: list[str] | None) -> li
 
 
 def rodar_script(script: str) -> float:
-    """Roda um script com o mesmo Python deste processo; para tudo se ele falhar."""
+    """Roda um script como subprocesso, com o mesmo Python deste processo e a partir da
+    raiz; devolve a duração e levanta RuntimeError se ele falhar.
+
+    Usada em: main.
+    Importância: cada script continua rodável sozinho; o main só os encadeia, e para
+    no primeiro erro para não rodar etapas sobre saídas quebradas.
+    """
     inicio = time.perf_counter()
     resultado = subprocess.run([sys.executable, script], cwd=RAIZ)
     duracao = time.perf_counter() - inicio
@@ -122,6 +144,11 @@ def rodar_script(script: str) -> float:
 
 
 def formatar(segundos: float) -> str:
+    """Segundos -> texto legível ("42 s", "3.5 min", "5.4 h").
+
+    Usada em: main (log da duração de cada etapa).
+    Importância: só apresentação.
+    """
     if segundos < 60:
         return f"{segundos:.0f} s"
     if segundos < 3600:
@@ -130,6 +157,13 @@ def formatar(segundos: float) -> str:
 
 
 def main() -> None:
+    """Ponto de entrada do pipeline: lê os argumentos (--listar, --de, --ate, --so,
+    --testes, --simular), roda as etapas em ordem e, se pedido, as suítes de teste.
+
+    Usada em: python main.py.
+    Importância: reproduz o projeto inteiro com um comando, na ordem certa, e
+    registra quanto tempo cada etapa levou.
+    """
     parser = argparse.ArgumentParser(description="Pipeline do TCC (PyGAwLLfs e atrasos de voos)")
     parser.add_argument("--listar", action="store_true", help="lista as etapas e sai")
     parser.add_argument("--de", help="começa nesta etapa")

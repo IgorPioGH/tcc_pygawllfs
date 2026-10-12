@@ -26,7 +26,12 @@ ARQUIVO_CUSTO = "custo_importancia.csv"
 
 
 def carregar_modelo(nome: str):
-    """Modelo treinado na Etapa 6 (treino completo), o mesmo avaliado no teste."""
+    """Carrega o modelo treinado na Etapa 6 (treino completo), o mesmo avaliado no
+    teste.
+
+    Usada em: intrinsic, permutation, shap_global, friedman_h e testes.
+    Importância: todos os métodos explicam exatamente o mesmo modelo (§4.11).
+    """
     return joblib.load(DIR_MODELOS / f"{nome}.joblib")
 
 
@@ -38,11 +43,16 @@ def tabela_importancia(
     seed: int,
     rank_por_absoluto: bool = False,
 ) -> pd.DataFrame:
-    """Monta a tabela no formato padrão. Rank 1 = feature mais importante.
+    """Monta a tabela no formato padrão (feature, importance, rank, method, model,
+    seed). Rank 1 = feature mais importante. rank_por_absoluto=True é para valores
+    com sinal em que conta o tamanho (coeficientes da LogReg); o valor bruto, com
+    sinal, fica em "importance" (§4.8). Na Permutation o rank usa o valor bruto:
+    negativo fica no fim.
 
-    rank_por_absoluto=True para valores com sinal cujo tamanho é o que importa
-    (coeficientes da LogReg). O valor bruto, com sinal, fica em 'importance'
-    (§4.8). Na Permutation o rank usa o valor bruto: negativo fica no fim.
+    Usada em: intrinsic, permutation, shap_global, consolidar_gawll, aplicar_metodos
+    e testes.
+    Importância: impõe um formato e uma regra de rank únicos para todos os métodos,
+    pré-requisito para compará-los.
     """
     tabela = pd.DataFrame({"feature": features, "importance": valores})
     criterio = tabela["importance"].abs() if rank_por_absoluto else tabela["importance"]
@@ -54,7 +64,12 @@ def tabela_importancia(
 
 
 def salvar_tabela(tabela: pd.DataFrame, nome_arquivo: str) -> Path:
-    """Grava em results/tables/ e devolve o caminho."""
+    """Grava a tabela em DIR_TABELAS (results/tables/) e devolve o caminho.
+
+    Usada em: quase todos os scripts de resultados.
+    Importância: um único lugar decide onde os resultados ficam; os testes trocam
+    DIR_TABELAS por uma pasta temporária.
+    """
     DIR_TABELAS.mkdir(parents=True, exist_ok=True)
     caminho = DIR_TABELAS / nome_arquivo
     tabela.to_csv(caminho, index=False)
@@ -62,10 +77,13 @@ def salvar_tabela(tabela: pd.DataFrame, nome_arquivo: str) -> Path:
 
 
 def salvar_custo(linhas: list[dict]) -> None:
-    """Atualiza custo_importancia.csv com linhas {method, model, seed, tempo_s, n_treinos}.
+    """Atualiza custo_importancia.csv com linhas {method, model, seed, tempo_s,
+    n_treinos}. Cada script substitui só as linhas do próprio método, então a ordem
+    em que os scripts rodam não importa e rodar de novo não duplica nada.
 
-    Cada script substitui só as linhas do próprio método, então a ordem em que
-    os scripts rodam não importa e rodar de novo não duplica nada.
+    Usada em: intrinsic, permutation, shap_global, consolidar_gawll e friedman_h.
+    Importância: o custo (tempo e nº de treinos) é um dos quatro critérios da
+    pergunta de pesquisa.
     """
     novas = pd.DataFrame(linhas)
     caminho = DIR_TABELAS / ARQUIVO_CUSTO

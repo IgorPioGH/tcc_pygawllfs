@@ -40,6 +40,15 @@ COLUNAS_PARA_REMOVER = [
 
 
 def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
+    """Cria os atributos que não usam o alvo: derivados da Partida Prevista (hora, dia
+    da semana, mês, dia do mês, dia do ano, trimestre, minuto, fim de semana, período
+    do dia), duração prevista, feriado e véspera, congestionamento na origem e no
+    destino e one-hot do tipo de linha.
+
+    Usada em: bloco __main__ deste script (Etapa 5; main.py, etapa "dados").
+    Importância: só usa informação conhecida antes da partida (§4.3) e não usa o
+    alvo, por isso pode rodar antes do split sem vazamento.
+    """
     df["hora"] = df["Partida Prevista"].dt.hour
     df["dia_sem"] = df["Partida Prevista"].dt.dayofweek
     df["mes"] = df["Partida Prevista"].dt.month
@@ -81,6 +90,15 @@ def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
 def dividir_temporal(
     df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Divide por data absoluta da Partida Prevista: treino até ago/2025, validação
+    set–out/2025, teste nov–dez/2025. Confere que nenhum conjunto ficou vazio, que
+    nenhuma linha se perdeu e que max(treino) ≤ min(validação) e max(validação) ≤
+    min(teste).
+
+    Usada em: bloco __main__ deste script.
+    Importância: implementa o split temporal do §4.4 (prever o futuro a partir do
+    passado, nada de shuffle).
+    """
     data = df["Partida Prevista"]
 
     treino = df[data < CORTE_TREINO_FIM]
@@ -123,6 +141,13 @@ def dividir_temporal(
 
 
 def ajustar_porte_aeroporto(treino: pd.DataFrame) -> dict:
+    """Classifica cada aeroporto em pequeno, médio, grande ou hub pelos quartis do
+    volume de pousos e decolagens no treino.
+
+    Usada em: bloco __main__ deste script.
+    Importância: resume a alta cardinalidade dos aeroportos em 4 faixas (N ≤ 40, §3);
+    ajustado só no treino, para não vazar volume de validação e teste.
+    """
     vol_origem = treino["ICAO Aeródromo Origem"].value_counts()
     vol_destino = treino["ICAO Aeródromo Destino"].value_counts()
     volume = vol_origem.add(vol_destino, fill_value=0)
@@ -137,6 +162,13 @@ def ajustar_porte_aeroporto(treino: pd.DataFrame) -> dict:
 
 
 def aplicar_porte(df: pd.DataFrame, mapa: dict) -> pd.DataFrame:
+    """Aplica o mapa de porte à origem e ao destino (aeroporto fora do mapa vira
+    "pequeno") e cria as dummies com categorias fixas.
+
+    Usada em: bloco __main__ deste script, nos três conjuntos.
+    Importância: as categorias fixas garantem as mesmas 4 colunas em treino,
+    validação e teste, mesmo que uma faixa falte num deles.
+    """
     df["porte_origem"] = df["ICAO Aeródromo Origem"].map(mapa)
     df["porte_destino"] = df["ICAO Aeródromo Destino"].map(mapa)
 
@@ -162,6 +194,13 @@ def aplicar_porte(df: pd.DataFrame, mapa: dict) -> pd.DataFrame:
 
 
 def calcular_mapa_suavizado(df, coluna, alvo, m):
+    """Média do alvo por categoria, suavizada: (soma + m · média global) / (contagem +
+    m). Devolve o mapa e a média global.
+
+    Usada em: target_encoding_oof.
+    Importância: a suavização puxa categorias raras para a média global e reduz o
+    ruído do encoding.
+    """
     media_global = df[alvo].mean()
     agregado = df.groupby(coluna, observed=True)[alvo].agg(["sum", "count"])
     valores = (agregado["sum"] + m * media_global) / (agregado["count"] + m)
@@ -169,6 +208,14 @@ def calcular_mapa_suavizado(df, coluna, alvo, m):
 
 
 def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
+    """Target encoding out-of-fold (K = 5): cada fold do treino recebe o mapa ajustado
+    nos outros K − 1. No fim, ajusta o mapa final no treino inteiro, para aplicar sem
+    refit em validação e teste.
+
+    Usada em: bloco __main__ deste script, para empresa, origem e destino.
+    Importância: é a correção do §4.10; nenhuma linha de treino usa o próprio rótulo
+    no seu encoding.
+    """
     codificado = pd.Series(index=treino.index, dtype=float)
     kf = KFold(n_splits=k, shuffle=True, random_state=SEMENTE)
 
@@ -186,6 +233,14 @@ def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
 
 
 def verifica_vazamento(df, coluna, codificado, media_global):
+    """Teste do §4.10: nas categorias com uma única linha, o encoding OOF não pode
+    depender do rótulo dela, então a média do encoding com atrasado = 0 e com
+    atrasado = 1 tem de ser igual (dentro da TOLERANCIA). Levanta erro se não for.
+
+    Usada em: bloco __main__ deste script, uma vez por coluna codificada.
+    Importância: prova, a cada execução, que o encoding não vazou o alvo dentro do
+    treino.
+    """
     singletons = df[coluna].value_counts()[lambda x: x == 1].index
     mascara = df[coluna].isin(singletons)
     treino_filtrado = df.loc[mascara]
@@ -212,10 +267,24 @@ def verifica_vazamento(df, coluna, codificado, media_global):
 
 
 def remover_colunas_cruas(df):
+    """Remove as colunas já transformadas (códigos ICAO, porte, tipo de linha) e os
+    identificadores (número do voo, DI).
+
+    Usada em: bloco __main__ deste script, antes de salvar cada conjunto.
+    Importância: deixa só atributos que os modelos usam e impede que um identificador
+    entre como feature.
+    """
     return df.drop(columns=COLUNAS_PARA_REMOVER, errors="ignore")
 
 
 def conferir_tudo_numerico(df, permitidas):
+    """Levanta erro se sobrar coluna não numérica além das permitidas (Partida Prevista
+    e Chegada Prevista, mantidas para o split e para a validação de domínio).
+
+    Usada em: bloco __main__ deste script, antes de salvar cada conjunto.
+    Importância: garante que o dataset congelado entra direto nos modelos e que
+    nenhuma coluna crua passou.
+    """
     nao_numericas = df.select_dtypes(exclude="number").columns
     inesperadas = [c for c in nao_numericas if c not in permitidas]
     if inesperadas:

@@ -33,7 +33,11 @@ DIR_TABELAS = RAIZ / "results" / "tables"
 
 
 def tabela_artificial(com_interacao: bool, n_por_celula: int = 20_000, semente: int = 0):
-    """Tabela 4 x 6 com logit(p) = efeito(A) + efeito(B) [+ interação, se pedida]."""
+    """Tabela 4 x 6 com logit(p) = efeito(A) + efeito(B) [+ interação, se pedida].
+
+    Usada em: teste_ajuste_sem_interacao.
+    Importância: dado com resposta conhecida para validar o teste de interação.
+    """
     rng = np.random.default_rng(semente)
     efeito_a = np.array([-1.5, -1.0, -0.5, 0.0])
     efeito_b = np.linspace(-0.5, 0.5, 6)
@@ -48,7 +52,12 @@ def tabela_artificial(com_interacao: bool, n_por_celula: int = 20_000, semente: 
 
 
 def teste_coeficiente_de_incerteza():
-    """1 quando uma variável determina a outra; ~0 quando são independentes."""
+    """1 quando uma variável determina a outra; ~0 quando são independentes.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: a classificação de redundância depende dele.
+    """
     rng = np.random.default_rng(0)
     mes = pd.Series(rng.integers(1, 13, 50_000))
     trimestre = (mes - 1) // 3 + 1
@@ -58,7 +67,13 @@ def teste_coeficiente_de_incerteza():
 
 
 def teste_ajuste_sem_interacao():
-    """Sem interação, o modelo de efeitos isolados reproduz a tabela; com, não."""
+    """Sem interação, o modelo de efeitos isolados reproduz a tabela; com, não.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: valida o núcleo do Diferencial 4: detecta interação quando existe e
+    não inventa quando não existe.
+    """
     rng = np.random.default_rng(1)
     for com_interacao, esperado in [(False, "dentro do ruído"), (True, "acima do ruído")]:
         tabela = tabela_artificial(com_interacao)
@@ -71,6 +86,13 @@ def teste_ajuste_sem_interacao():
 
 
 def teste_classificacao():
+    """Corroborado só com os três critérios nos dois anos; redundante e estrutural têm
+    rótulos próprios.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: fixa a regra de decisão do Diferencial 4.
+    """
     passa = {"desvio_2024_pp": 2.0, "ruido_p95_2024_pp": 0.5,
              "desvio_2025_pp": 1.5, "ruido_p95_2025_pp": 0.5, "replicacao_anos": 0.7}
     assert v.classificar("operacional", passa) == "corroborado descritivamente"
@@ -82,7 +104,12 @@ def teste_classificacao():
 
 
 def teste_selecao_e_tipos():
-    """Controles não repetem o par de domínio de nenhum candidato."""
+    """Controles não repetem o par de domínio de nenhum candidato.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: controles repetidos não seriam independentes.
+    """
     media = v.interacao_media()
     pares = v.selecionar_pares(media)
     candidatos = pares[pares["grupo"] == "candidato"]
@@ -90,6 +117,11 @@ def teste_selecao_e_tipos():
     assert len(controles) == v.N_CONTROLES
 
     def dominio(linha):
+        """Par de variáveis de domínio (frozenset) de uma linha.
+
+        Usada em: teste_selecao_e_tipos.
+        Importância: mesma chave usada por selecionar_pares.
+        """
         return frozenset((v.variavel(linha.feature_a), v.variavel(linha.feature_b)))
 
     chaves_candidatos = {dominio(linha) for linha in candidatos.itertuples()}
@@ -104,10 +136,21 @@ def teste_selecao_e_tipos():
 
 
 def teste_script_nao_le_o_teste():
-    """§4.9: o script inteiro roda (bootstrap reduzido) sem abrir test.parquet."""
+    """§4.9: o script inteiro roda (bootstrap reduzido) sem abrir test.parquet.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: a validação de domínio usa só treino e validação.
+    """
     ler_parquet_original = pd.read_parquet
 
     def ler_parquet_vigiado(caminho, *args, **kwargs):
+        """Substituto de pandas.read_parquet (via mock.patch) que falha se o arquivo for
+        o conjunto de teste e, senão, lê normalmente.
+
+        Usada em: teste_script_nao_le_o_teste.
+        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"A validação de domínio tentou ler o teste: {caminho}")
         return ler_parquet_original(caminho, *args, **kwargs)
@@ -126,6 +169,13 @@ def teste_script_nao_le_o_teste():
 
 
 def teste_tabela_real():
+    """Saídas reais da Etapa 15: N_CONTROLES controles, classificações válidas e todo
+    corroborado cumpre os três critérios nos dois anos.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
+    python main.py --testes).
+    Importância: pega erro nas tabelas reais que os casos artificiais não cobrem.
+    """
     resultado = pd.read_csv(DIR_TABELAS / "dominio_pares.csv")
     assert resultado["grupo"].value_counts()["controle"] == v.N_CONTROLES
     validas = {"corroborado descritivamente", "não corroborado",

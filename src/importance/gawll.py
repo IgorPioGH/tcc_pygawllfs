@@ -74,9 +74,13 @@ N_PROCESSOS = max(1, int((os.cpu_count() or 1) * 0.8))
 
 
 def carregar_subamostra() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]]:
-    """Lê a subamostra e devolve (x_treino, y_treino, x_val, y_val, features).
+    """Lê a subamostra de 50 mil linhas, confere que não há coluna proibida e devolve
+    (x_treino, y_treino, x_val, y_val, features), separados pela coluna "origem".
+    Nunca lê test.parquet.
 
-    Nunca lê test.parquet: a subamostra só tem linhas de treino e validação.
+    Usada em: main; tests/test_gawll.py.
+    Importância: aplica a subamostra só ao GA (§3) e mantém o teste fora da busca
+    (§4.1).
     """
     df = pd.read_parquet(ARQUIVO_SUBAMOSTRA)
 
@@ -109,9 +113,12 @@ def treinar_e_medir(
     x_val: np.ndarray,
     y_val: np.ndarray,
 ) -> float:
-    """Treina o modelo só com as colunas da máscara e devolve o F1 na validação.
+    """Treina o modelo só com as colunas da máscara e devolve o F1 na validação. Fica
+    fora da classe para o joblib conseguir mandá-la aos outros processos.
 
-    Fica fora da classe para o joblib conseguir mandá-la aos outros processos.
+    Usada em: AvaliadorFitness._treinar_lote; tests/test_gawll.py.
+    Importância: é o f1(x) da fitness corrigida: validação em vez de teste (§4.1) e
+    F1 em vez de acurácia (§4.2).
     """
     modelo = criar_modelo(nome_modelo, parametros, peso_positivo, n_jobs=1)
     modelo.fit(x_treino[:, mascara], y_treino)
@@ -120,15 +127,24 @@ def treinar_e_medir(
 
 
 class AvaliadorFitness:
-    """O perf_batch que o GAwLL recebe: lista de máscaras -> lista de F1.
+    """O perf_batch que o GAwLL recebe: lista de máscaras -> lista de F1. Guarda um
+    cache por máscara; os modelos têm random_state fixo, então a mesma máscara sempre
+    dá o mesmo F1 e o cache é exato. Ele importa porque o linkage learning chama o
+    perf_batch por fora do cache do GAwLL, que depois reavalia os mesmos cromossomos.
 
-    Guarda um cache por máscara. Os modelos têm random_state fixo, então a
-    mesma máscara sempre dá o mesmo F1, e o cache é exato. Ele importa porque
-    o linkage learning chama o perf_batch direto, por fora do cache do GAwLL,
-    e o GAwLL reavalia depois os mesmos cromossomos.
+    Usada em: executar; tests/test_gawll.py.
+    Importância: é onde o custo do GA acontece; n_treinos é a medida honesta de custo
+    (§7).
     """
 
     def __init__(self, nome_modelo, parametros, x_treino, y_treino, x_val, y_val):
+        """Guarda os dados, os hiperparâmetros e o peso da classe positiva; zera o cache
+        e os contadores.
+
+        Usada em: executar, ao criar o avaliador de uma execução.
+        Importância: n_treinos e n_avaliacoes vão para o checkpoint como medida de
+        custo.
+        """
         self.nome_modelo = nome_modelo
         self.parametros = parametros
         self.x_treino = x_treino
@@ -142,6 +158,14 @@ class AvaliadorFitness:
         self.n_avaliacoes = 0  # pedidos recebidos do GA, contando acertos de cache
 
     def __call__(self, mascaras: list[np.ndarray]) -> list[float]:
+        """Recebe um lote de máscaras e devolve o F1 de cada uma: máscara vazia vale 0,
+        máscaras ainda não vistas (sem repetir dentro do lote) são treinadas, o resto
+        sai do cache.
+
+        Usada em: pelo motor GAwLL (clone), como perf_batch, na avaliação da
+        população e no linkage learning.
+        Importância: é a interface entre o motor do GA e os modelos do projeto.
+        """
         self.n_avaliacoes += len(mascaras)
         mascaras = [np.asarray(m, dtype=bool) for m in mascaras]
 
@@ -166,6 +190,14 @@ class AvaliadorFitness:
         return [self.cache[m.tobytes()] for m in mascaras]
 
     def _treinar_lote(self, mascaras: list[np.ndarray]) -> list[float]:
+        """Treina as máscaras novas: XGBoost uma por vez na GPU (vários processos não
+        cabem nos 6 GB); LogReg e RF em paralelo com joblib, um modelo por processo
+        com n_jobs=1.
+
+        Usada em: AvaliadorFitness.__call__.
+        Importância: o paralelismo entre indivíduos é o que deixou o protocolo
+        completo em ~5,4 h.
+        """
         argumentos = (self.x_treino, self.y_treino, self.x_val, self.y_val)
 
         # XGBoost: um por vez na GPU (vários processos não cabem nos 6 GB)
@@ -187,25 +219,42 @@ class AvaliadorFitness:
 
 
 class MutacaoInPlace(Mutation):
-    """Correção 4: a mutação original devolve um array NOVO, mas o GAwLL ignora
-    o retorno, então nenhum bit era invertido (nem no reset por estagnação).
-    Aqui o XOR é feito no próprio array, e o gerador aleatório é consumido do
-    mesmo jeito que no original.
+    """Correção 4 (§4.12): a mutação original devolve um array NOVO, mas o GAwLL ignora
+    o retorno, então nenhum bit era invertido (nem no reset por estagnação). Aqui o
+    XOR é feito no próprio array, e o gerador aleatório é consumido do mesmo jeito
+    que no original.
+
+    Usada em: GAwLLCorrigido.run; tests/test_gawll.py.
+    Importância: sem mutação o GA quase não explora o espaço de subconjuntos.
     """
 
     @staticmethod
     def bit_flip_mutation(chromosome: np.ndarray, mutation_probability: float) -> np.ndarray:
+        """Inverte cada bit com probabilidade mutation_probability no próprio cromossomo
+        (XOR in place) e o devolve.
+
+        Usada em: GAwLLCorrigido.run (pelo motor do GAwLL); tests/test_gawll.py.
+        Importância: é a correção 4 em si.
+        """
         mascara = np.random.random(len(chromosome)) < mutation_probability
         chromosome ^= mascara
         return chromosome
 
 
 class GAwLLCorrigido(GAwLL):
-    """GAwLL com as correções 4 e 5. O resto do motor é o original."""
+    """GAwLL com as correções 4 e 5 (§4.12); o resto do motor é o original do clone.
+
+    Usada em: executar; tests/test_gawll.py.
+    Importância: corrige os dois bugs por subclasse, sem editar o clone.
+    """
 
     def _apply_elitism(self, new_population, fittest_individual):
-        """Correção 5: o original gravava o elite em self.population (a
-        população antiga, descartada logo depois), e o melhor se perdia.
+        """Correção 5 (§4.12): o original gravava o elite em self.population (a
+        população antiga, descartada logo depois), e o melhor indivíduo podia se
+        perder. Aqui o elite vai para new_population.
+
+        Usada em: laço de gerações do run; tests/test_gawll.py.
+        Importância: garante que o melhor indivíduo nunca se perde entre gerações.
         """
         pior = min(
             range(len(new_population)),
@@ -222,8 +271,11 @@ class GAwLLCorrigido(GAwLL):
         )
 
     def run(self, seed: int) -> None:
-        """Cópia do GAwLL.run original, trocando Mutation por MutacaoInPlace
-        e print por logger (com uma linha de progresso por geração).
+        """Cópia do GAwLL.run original, trocando Mutation por MutacaoInPlace e print por
+        logger (uma linha de progresso por geração).
+
+        Usada em: executar.
+        Importância: único trecho do laço do GA reescrito; todo o resto é do clone.
         """
         random.seed(seed)
         np.random.seed(seed)
@@ -283,7 +335,14 @@ def executar(
     geracoes: int = GERACOES,
     populacao: int = POPULACAO,
 ) -> None:
-    """Roda uma execução (modelo, semente) e salva o checkpoint em caminho."""
+    """Roda uma execução (modelo, semente) e salva o checkpoint .npz: cromossomo x*,
+    fitness, F1 de validação, vimp, vint, features, tempo, nº de treinos e cobertura
+    de pares.
+
+    Usada em: main; aplicar_metodos.rodar_gawll; tests/test_gawll.py.
+    Importância: o checkpoint por execução permite retomar após uma queda. O
+    f1_validacao salvo é otimista e nunca é reportado como desempenho (§4.1).
+    """
     x_treino, y_treino, x_val, y_val, features = dados
     n = len(features)
 
@@ -345,6 +404,13 @@ def executar(
 
 
 def main() -> None:
+    """Etapas 7 e 8: roda as execuções pedidas (--modelos, --sementes, --geracoes,
+    --pop, --saida), com log em arquivo, e pula as que já têm checkpoint.
+
+    Usada em: python src/importance/gawll.py; main.py, etapa "pygawllfs".
+    Importância: é a execução mais cara do projeto (~5,4 h); a retomada torna segura
+    uma queda no meio.
+    """
     parser = argparse.ArgumentParser(description="PyGAwLLfs corrigido (Etapa 7)")
     parser.add_argument("--modelos", nargs="+", default=MODELOS, choices=MODELOS)
     parser.add_argument("--sementes", nargs="+", type=int, default=SEMENTES)

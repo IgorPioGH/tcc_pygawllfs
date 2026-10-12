@@ -12,7 +12,13 @@ from sklearn.metrics import (
 
 
 def avaliar(y_verdade, y_previsto, y_score) -> dict[str, float]:
-    """Calcula as métricas de um classificador binário.
+    """Calcula as sete métricas de um classificador binário: acurácia, acurácia
+    balanceada, precisão, recall, F1, ROC-AUC e PR-AUC.
+
+    Usada em: baselines.avaliar_modelo (e, por ela, na Etapa 6, na fidelidade e na
+    auditoria do congestionamento).
+    Importância: fonte única das métricas do projeto; F1 e PR-AUC são as principais
+    por causa do desbalanceamento (§4.2).
 
     Args:
         y_verdade: rótulos reais (0/1).

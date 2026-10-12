@@ -44,9 +44,14 @@ DATA_INICIO, DATA_FIM = "2024-01-01", "2026-01-01"  # mesmo recorte do target.py
 
 
 def contagens_programadas() -> pd.DataFrame:
-    """Para cada voo do bruto (realizado OU cancelado): voos programados no slot
-    de partida da origem, no slot de chegada do destino, e cancelados no slot de partida.
-    O índice é o mesmo dos parquets processados (o pipeline preserva o índice)."""
+    """Recalcula sobre o bruto (realizados E cancelados) os voos programados no slot de
+    partida da origem e no de chegada do destino, e os cancelados no slot de partida.
+    O índice é o mesmo dos parquets processados (o pipeline preserva o índice).
+
+    Usada em: main.
+    Importância: é a contagem "correta" do congestionamento programado, contra a qual
+    se mede a limitação do features.py (que conta sem os cancelados).
+    """
     bruto = pd.read_parquet(ARQUIVO_BRUTO, columns=[
         "ICAO Aeródromo Origem", "ICAO Aeródromo Destino",
         "Partida Prevista", "Chegada Prevista", "Situação Voo",
@@ -66,7 +71,13 @@ def contagens_programadas() -> pd.DataFrame:
 
 
 def descrever(nome: str, x: pd.DataFrame, y: pd.Series, programadas: pd.DataFrame) -> dict:
-    """Quanto a contagem realizada difere da programada, e o atraso por slot."""
+    """Num conjunto: quanto a contagem realizada difere da programada, e o atraso por
+    slot.
+
+    Usada em: main.
+    Importância: descreve o tamanho da limitação antes de medir o efeito dela no
+    modelo.
+    """
     p = programadas.loc[x.index]
     com_cancelamento = p["cancelados_no_slot"] > 0
     return {
@@ -80,11 +91,24 @@ def descrever(nome: str, x: pd.DataFrame, y: pd.Series, programadas: pd.DataFram
 
 
 def comparar_modelos(x_treino, y_treino, x_val, y_val, programadas) -> list[dict]:
-    """Treina RF e XGBoost com a versão atual e com a programada; mede na validação."""
+    """Treina RF e XGBoost com o congestionamento atual e com o programado e mede os
+    dois na validação.
+
+    Usada em: main.
+    Importância: o efeito no F1 de validação foi pequeno, o que justificou manter o
+    dataset congelado e só documentar a limitação.
+    """
     configuracoes = ler_configuracoes_escolhidas()
     peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
 
     def versao_programada(x):
+        """Cópia de x com as duas colunas de congestionamento trocadas pelas contagens
+        programadas.
+
+        Usada em: comparar_modelos.
+        Importância: o resto das features fica idêntico, então a diferença medida vem
+        só do congestionamento.
+        """
         x = x.copy()
         x["congestion_origem"] = programadas.loc[x.index, "programado_origem"].to_numpy()
         x["congestion_destino"] = programadas.loc[x.index, "programado_destino"].to_numpy()
@@ -104,6 +128,13 @@ def comparar_modelos(x_treino, y_treino, x_val, y_val, programadas) -> list[dict
 
 
 def main() -> None:
+    """Roda a auditoria (descrição e comparação de modelos) e salva
+    auditoria_congestionamento.csv. Não toca o teste.
+
+    Usada em: python src/data/auditar_congestionamento.py; main.py, etapa "extras".
+    Importância: dá o número que sustenta a limitação do congestionamento no Cap. 3 e
+    em docs/dicionario-features.md.
+    """
     programadas = contagens_programadas()
     x_treino, y_treino = carregar("train")
     x_val, y_val = carregar("val")

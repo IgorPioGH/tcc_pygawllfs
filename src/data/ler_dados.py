@@ -12,6 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def carregar_mes(caminho: Path) -> pd.DataFrame:
+    """Lê um CSV mensal do VRA (separador ";", uma linha extra antes do cabeçalho, UTF-8
+    com BOM), já convertendo as quatro colunas de horário em data.
+
+    Usada em: carregar_todos_os_meses.
+    Importância: concentra num lugar só o formato peculiar do arquivo da ANAC.
+    """
     return pd.read_csv(
         caminho,
         sep=";",
@@ -27,8 +33,13 @@ def carregar_mes(caminho: Path) -> pd.DataFrame:
 
 
 def carregar_todos_os_meses(pasta: Path) -> pd.DataFrame:
-    """Função que recebe o caminho de um diretório que possui os arquivos
-    csv que serão lidos
+    """Lê e concatena todos os CSVs VRA_*.csv da pasta, força as quatro colunas de
+    horário para data (valor inválido vira NaT) e o Código Autorização (DI) para
+    texto.
+
+    Usada em: bloco __main__ deste script (Etapa 2; main.py, etapa "dados").
+    Importância: produz vra_bruto.parquet, a base única de onde todo o pipeline
+    parte.
 
     Args:
         pasta (Path): Diretório que possui os arquivos csv
@@ -57,12 +68,13 @@ def carregar_todos_os_meses(pasta: Path) -> pd.DataFrame:
 
 
 def verificar_meses_completos(pasta: Path) -> None:
-    """Verifica todos os meses esperados (2024-2025) estão presentes na pasta,
-    sem meses faltando ou duplicados
+    """Confere se os 24 meses de 2024–2025 estão na pasta, comparando os pares (ano,
+    mês) esperados com os nomes VRA_{ano}_{mes:02d}.csv encontrados, e registra no
+    log os meses ausentes, os arquivos inesperados e os duplicados.
 
-    Compara os pares (ano,mes) esperados com os efetivamente encontrados a
-    partir dos nomes dos arquivos no padrão VRA_{ano}_{mes:02d}.csv, e registra
-    um relatório indicando meses ausentes, arquivos inesperados e duplicos
+    Usada em: bloco __main__ deste script (Etapa 2).
+    Importância: um mês faltando distorceria o split temporal e as taxas de atraso
+    sem dar erro nenhum.
 
     Args:
         pasta (Path): Diretório contendo os arquivos CSV do VRA.

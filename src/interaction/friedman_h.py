@@ -63,18 +63,33 @@ LIMITE_PROBABILIDADE = 1e-6
 
 
 def prever_logit(modelo):
-    """Função x -> log-odds da classe 1, a partir do predict_proba do modelo."""
+    """Devolve uma função x -> log-odds da classe 1, a partir do predict_proba do modelo
+    (probabilidade cortada em LIMITE_PROBABILIDADE para não dar log de 0).
+
+    Usada em: main; aplicar_metodos.interacoes_h; tests/test_interacao.py.
+    Importância: no logit a LogReg é exatamente aditiva (H = 0); medir nessa escala
+    evita interações criadas só pela sigmoide.
+    """
     def prever(x: pd.DataFrame) -> np.ndarray:
+        """x -> logit da probabilidade prevista pelo modelo.
+
+        Usada em: dependencia_parcial e calcular_h (é a função que prever_logit
+        devolve).
+        Importância: é a função que o H decompõe.
+        """
         p = np.clip(modelo.predict_proba(x)[:, 1], LIMITE_PROBABILIDADE, 1 - LIMITE_PROBABILIDADE)
         return np.log(p / (1 - p))
     return prever
 
 
 def dependencia_parcial(prever, amostra: pd.DataFrame, colunas: list[str]) -> np.ndarray:
-    """PD centrada das 'colunas', avaliada em cada linha da amostra.
+    """PD centrada das "colunas", avaliada em cada linha da amostra. Monta n blocos de n
+    linhas: o bloco i é a amostra inteira com as "colunas" trocadas pelos valores da
+    linha i; a média de cada bloco é PD(x_i).
 
-    Monta n blocos de n linhas: o bloco i é a amostra inteira com as 'colunas'
-    trocadas pelos valores da linha i. A média de cada bloco é PD(x_i).
+    Usada em: calcular_h; tests/test_interacao.py.
+    Importância: é o bloco básico do H; custa n² previsões por conjunto de colunas,
+    daí a amostra de 500 linhas.
     """
     n = len(amostra)
     grade = pd.DataFrame(np.tile(amostra.to_numpy(), (n, 1)), columns=amostra.columns)
@@ -85,7 +100,14 @@ def dependencia_parcial(prever, amostra: pd.DataFrame, colunas: list[str]) -> np
 
 
 def calcular_h(prever, amostra: pd.DataFrame, features: list[str]) -> pd.DataFrame:
-    """H (normalizado e absoluto) de todos os pares de 'features'."""
+    """H de Friedman e Popescu (2008) em todos os pares de "features": resíduo = PD_ab −
+    PD_a − PD_b; h_abs = raiz da média do resíduo²; h_normalizado = soma do resíduo²
+    / soma de PD_ab².
+
+    Usada em: main; aplicar_metodos.interacoes_h; tests/test_interacao.py.
+    Importância: método de referência para interação, comparado ao PyGAwLLfs. O
+    normalizado passa de 1 quando PD_ab é quase nulo, por isso o h_abs é o principal.
+    """
     individuais = {f: dependencia_parcial(prever, amostra, [f]) for f in features}
     linhas = []
     for a, b in combinations(features, 2):
@@ -102,8 +124,13 @@ def calcular_h(prever, amostra: pd.DataFrame, features: list[str]) -> pd.DataFra
 
 
 def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) -> pd.DataFrame:
-    """Duas linhas por par (uma por versão do H), no formato de interacao_gawll.csv.
-    O par é escrito na ordem das colunas do dataset, como no PyGAwLLfs."""
+    """Duas linhas por par (uma por versão do H), no formato de interacao_gawll.csv. O
+    par é escrito na ordem das colunas do dataset, como no PyGAwLLfs.
+
+    Usada em: main; aplicar_metodos.interacoes_h.
+    Importância: deixa o H no mesmo formato da interação do PyGAwLLfs, para a Etapa
+    13b comparar direto.
+    """
     posicao = {f: i for i, f in enumerate(ordem)}
     trocar = h["feature_a"].map(posicao) > h["feature_b"].map(posicao)
     h = h.copy()
@@ -118,7 +145,13 @@ def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) 
 
 
 def conjunto_de_features(modelo: str) -> list[str]:
-    """União do §4.7: top-15 por consenso + features do grafo reduzido do PyGAwLLfs."""
+    """União do §4.7: top-15 por consenso entre os métodos + todas as features do grafo
+    reduzido do PyGAwLLfs daquele modelo.
+
+    Usada em: main; tests/test_interacao.py.
+    Importância: limita o custo O(N²) sem excluir por construção as features que o
+    PyGAwLLfs aponta como interativas.
+    """
     ranking = pd.read_csv(comum.DIR_TABELAS / "ranking_consolidado.csv")
     consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"].mean()
                 .nsmallest(TOP_CONSENSO).index)
@@ -128,6 +161,14 @@ def conjunto_de_features(modelo: str) -> list[str]:
 
 
 def main() -> None:
+    """Etapa 13a: para RF e XGBoost, calcula o H na união do §4.7 em 5 amostras de 500
+    linhas da validação e salva interacao_h.csv e o custo.
+
+    Usada em: python src/interaction/friedman_h.py; main.py, etapa "interacoes";
+    tests/test_interacao.py.
+    Importância: gera a referência de interação contra a qual o PyGAwLLfs é
+    comparado.
+    """
     x_val, _ = carregar("val")
     ordem = list(x_val.columns)
     tabelas, custos = [], []

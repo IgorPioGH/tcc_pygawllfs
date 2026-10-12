@@ -58,7 +58,12 @@ MODELOS_ARVORE = ["random_forest", "xgboost"]
 
 
 def carregar_sintetico() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
-    """Devolve (x_treino, y_treino, x_val, y_val) do dataset sintético."""
+    """Devolve (x_treino, y_treino, x_val, y_val) do dataset sintético.
+
+    Usada em: main.
+    Importância: mesma interface dos dados reais, para os métodos rodarem sem
+    adaptação.
+    """
     df = pd.read_parquet(ARQUIVO_SINTETICO)
     treino = df[df["conjunto"] == "treino"]
     validacao = df[df["conjunto"] == "validacao"]
@@ -66,10 +71,22 @@ def carregar_sintetico() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Seri
 
 
 def importancias_modelo_fixo(modelos, x_val, y_val) -> tuple[list[pd.DataFrame], list[dict]]:
-    """Intrínseca, Permutation e SHAP sobre os modelos já treinados, na validação."""
+    """Intrínseca, Permutation e SHAP sobre os modelos já treinados, na validação, com
+    as mesmas funções da Etapa 9.
+
+    Usada em: main.
+    Importância: o gabarito julga os métodos exatamente como foram usados nos dados
+    reais.
+    """
     tabelas, custos = [], []
 
     def registrar(features, valores, metodo, nome, semente, inicio, por_absoluto=False):
+        """Acrescenta a tabela no formato padrão e a linha de custo de um (método,
+        modelo, semente).
+
+        Usada em: importancias_modelo_fixo.
+        Importância: evita repetir o mesmo bloco para cada método.
+        """
         tabelas.append(tabela_importancia(
             features, valores, metodo, nome, semente, rank_por_absoluto=por_absoluto
         ))
@@ -97,8 +114,13 @@ def importancias_modelo_fixo(modelos, x_val, y_val) -> tuple[list[pd.DataFrame],
 
 
 def interacoes_h(modelos, x_val) -> tuple[list[pd.DataFrame], list[dict]]:
-    """H de Friedman de todos os pares, no RF e no XGBoost (a LogReg é aditiva no
-    logit: H = 0 por construção). Uma amostra de AMOSTRA linhas por semente."""
+    """H de Friedman de todos os pares, no RF e no XGBoost (a LogReg é aditiva no logit:
+    H = 0 por construção). Uma amostra de AMOSTRA linhas por semente.
+
+    Usada em: main.
+    Importância: permite julgar PyGAwLLfs e H contra o par de interação verdadeiro
+    (x1, x2).
+    """
     tabelas, custos = [], []
     for nome in MODELOS_H:
         prever = prever_logit(modelos[nome])
@@ -113,7 +135,12 @@ def interacoes_h(modelos, x_val) -> tuple[list[pd.DataFrame], list[dict]]:
 
 
 def rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes) -> None:
-    """15 execuções do PyGAwLLfs corrigido; pula as que já têm checkpoint."""
+    """15 execuções do PyGAwLLfs corrigido (3 modelos × 5 sementes) com gawll.executar;
+    pula as que já têm checkpoint.
+
+    Usada em: main.
+    Importância: é a parte cara do Diferencial 1 (~30 min).
+    """
     dados = (
         x_treino.to_numpy(dtype=float), y_treino.to_numpy(dtype=int),
         x_val.to_numpy(dtype=float), y_val.to_numpy(dtype=int),
@@ -130,6 +157,12 @@ def rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes) -> None:
 
 
 def main() -> None:
+    """Etapa 10b: treina os três modelos no sintético, roda os quatro métodos e o H e
+    salva sintetico_{importancia,interacao,selecao,custo}.csv.
+
+    Usada em: python src/synthetic/aplicar_metodos.py; main.py, etapa "sintetico".
+    Importância: produz o material do Diferencial 1 (qual método recupera a verdade).
+    """
     x_treino, y_treino, x_val, y_val = carregar_sintetico()
     configuracoes = ler_configuracoes_escolhidas()
     peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()

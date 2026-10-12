@@ -64,7 +64,13 @@ def gerar(
     sigma: float = SIGMA_RUIDO,
     rho: float = RHO_REDUNDANCIA,
 ) -> pd.DataFrame:
-    """Gera n linhas com as colunas x1..x10 e y."""
+    """Gera n linhas com as colunas x1..x10 e y = 1 se z > 0, com z = beta · x1 · x2 +
+    x3 + x4 + sigma · ruído. x5 e x6 são cópias de x3 e x4 com correlação rho;
+    x7..x10 são ruído puro.
+
+    Usada em: main; tests/test_sintetico.py.
+    Importância: a estrutura conhecida por construção é o gabarito do Diferencial 1.
+    """
     rng = np.random.default_rng(semente)
     x = {nome: rng.standard_normal(n) for nome in ["x1", "x2", "x3", "x4"]}
 
@@ -84,10 +90,13 @@ def gerar(
 
 def dividir(df: pd.DataFrame, fracao_validacao: float = FRACAO_VALIDACAO,
             semente: int = SEMENTE_DADOS) -> pd.DataFrame:
-    """Acrescenta a coluna 'conjunto' (treino/validacao), estratificada por y.
+    """Acrescenta a coluna "conjunto" (treino/validacao), estratificada por y. Dado
+    sintético não tem tempo, então aqui o split aleatório é legítimo. Não há conjunto
+    de teste: quem julga é o gabarito, não uma métrica.
 
-    Dado sintético não tem tempo, então aqui o split aleatório é legítimo.
-    Não há conjunto de teste: quem julga é o gabarito, não uma métrica.
+    Usada em: main; tests/test_sintetico.py.
+    Importância: dá ao sintético a mesma forma (treino + validação) que os métodos
+    esperam.
     """
     _, indice_validacao = train_test_split(
         df.index, test_size=fracao_validacao, stratify=df["y"], random_state=semente
@@ -99,6 +108,12 @@ def dividir(df: pd.DataFrame, fracao_validacao: float = FRACAO_VALIDACAO,
 
 
 def main() -> None:
+    """Etapa 10a: gera e divide o sintético, registra as checagens (corr(x1, y) ≈ 0,
+    corr(x3, x5) ≈ rho) e salva sintetico.parquet.
+
+    Usada em: python src/synthetic/generate.py; main.py, etapa "sintetico".
+    Importância: ponto de partida do Diferencial 1.
+    """
     df = dividir(gerar())
     logger.info(f"Linhas por conjunto:\n{df['conjunto'].value_counts().to_string()}")
     logger.info(f"Taxa de y=1: {df['y'].mean():.3f}")

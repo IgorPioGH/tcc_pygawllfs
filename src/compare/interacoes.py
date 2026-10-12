@@ -70,7 +70,12 @@ TOP_K_DOMINIO = 10
 
 
 def carregar_interacoes() -> pd.DataFrame:
-    """As duas tabelas juntas, com a chave do par ('a|b', mesma ordem nos dois)."""
+    """Junta interacao_gawll.csv e interacao_h.csv, com a chave do par ("a|b", na mesma
+    ordem nas duas).
+
+    Usada em: main.
+    Importância: a chave comum é o que permite comparar par a par o PyGAwLLfs e o H.
+    """
     interacao = pd.concat([pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv"),
                            pd.read_csv(comum.DIR_TABELAS / "interacao_h.csv")],
                           ignore_index=True)
@@ -79,7 +84,14 @@ def carregar_interacoes() -> pd.DataFrame:
 
 
 def tipos_dos_pares(pares: pd.DataFrame, dominio: pd.DataFrame) -> dict[str, str]:
-    """Tipo de cada par, com cache: várias dummies caem na mesma variável."""
+    """Tipo de cada par (estrutural, redundante ou operacional), via
+    validate_pairs.tipo_do_par, com cache porque várias dummies caem na mesma
+    variável.
+
+    Usada em: main.
+    Importância: separa redundância de interação operacional, a hipótese central
+    sobre o que o PyGAwLLfs detecta.
+    """
     cache, tipos = {}, {}
     for a, b, par in zip(pares["feature_a"], pares["feature_b"], pares["par"]):
         if (a, b) not in cache:
@@ -89,7 +101,13 @@ def tipos_dos_pares(pares: pd.DataFrame, dominio: pd.DataFrame) -> dict[str, str
 
 
 def comparar_modelo(interacao: pd.DataFrame, modelo: str) -> tuple[list[dict], pd.DataFrame]:
-    """Concordância entre métodos e estabilidade, nos pares em que o H existe."""
+    """Para um modelo: concordância PyGAwLLfs × H nos pares em que o H existe, e
+    estabilidade de cada método entre sementes.
+
+    Usada em: main.
+    Importância: produz o resultado principal da Etapa 13 (os dois métodos apontam as
+    mesmas interações?).
+    """
     do_modelo = interacao[interacao["model"] == modelo]
     pares_h = set(do_modelo.loc[do_modelo["method"] == "friedman_h_abs", "par"])
     do_modelo = do_modelo[do_modelo["par"].isin(pares_h)]
@@ -119,7 +137,13 @@ def comparar_modelo(interacao: pd.DataFrame, modelo: str) -> tuple[list[dict], p
 
 
 def resumo_redundancia(pares: pd.DataFrame) -> pd.DataFrame:
-    """Para cada (modelo, método, tipo): rank médio em percentil e quantos no top-10."""
+    """Para cada (modelo, método, tipo de par): rank médio em percentil e quantos pares
+    do tipo estão no top-10.
+
+    Usada em: main.
+    Importância: testa nos dados reais se o PyGAwLLfs põe pares redundantes no topo,
+    como no sintético.
+    """
     linhas = []
     for modelo, grupo in pares.groupby("model"):
         n = len(grupo)
@@ -135,7 +159,12 @@ def resumo_redundancia(pares: pd.DataFrame) -> pd.DataFrame:
 
 
 def validar_tops_no_dominio(pares: pd.DataFrame, dominio: pd.DataFrame) -> pd.DataFrame:
-    """Top-10 do PyGAwLLfs e do H_abs, por modelo, no teste descritivo da Etapa 15."""
+    """Top-10 de pares do PyGAwLLfs e do H_abs, por modelo, passados pelo teste
+    descritivo da Etapa 15 (validate_pairs.testar_par e classificar).
+
+    Usada em: main.
+    Importância: julga os dois métodos contra os dados, não só um contra o outro.
+    """
     ja_testados = pd.read_csv(comum.DIR_TABELAS / "dominio_pares.csv")
     ja_testados = ja_testados.set_index(["feature_a", "feature_b"])
     rng = np.random.default_rng(SEMENTE)
@@ -168,7 +197,11 @@ def validar_tops_no_dominio(pares: pd.DataFrame, dominio: pd.DataFrame) -> pd.Da
 
 
 def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
-    """Rank no PyGAwLLfs (x) × rank no H não normalizado (y), cor = tipo do par."""
+    """Rank no PyGAwLLfs (x) × rank no H não normalizado (y), cor = tipo do par.
+
+    Usada em: main.
+    Importância: mostra a falta de concordância e onde ficam os pares redundantes.
+    """
     fig, eixos = plt.subplots(1, len(MODELOS_H), figsize=(12, 5.6), layout="constrained")
     for ax, modelo in zip(eixos, MODELOS_H):
         grupo = pares[pares["model"] == modelo]
@@ -214,6 +247,15 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
 
 
 def main() -> None:
+    """Etapa 13b: carrega as interações, compara por modelo, resume a redundância,
+    valida os tops no domínio e salva interacoes*.csv e a figura. Roda depois da
+    Etapa 15.
+
+    Usada em: python src/compare/interacoes.py; main.py, etapa "interacoes";
+    tests/test_interacao.py.
+    Importância: responde se o PyGAwLLfs e o H de Friedman apontam as mesmas
+    interações.
+    """
     interacao = carregar_interacoes()
     dominio = carregar_base()
 

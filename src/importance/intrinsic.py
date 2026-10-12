@@ -41,7 +41,12 @@ METODO = "intrinseca"
 
 
 def importancia_intrinseca(nome: str, modelo) -> tuple[list[str], list[float]]:
-    """Devolve (features, valores) da importância embutida no modelo."""
+    """Devolve (features, valores) da importância embutida no modelo: coeficientes
+    padronizados da LogReg (com sinal), MDI do RF ou gain do XGBoost.
+
+    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Importância: o método mais barato (não treina nada); referência para os outros.
+    """
     if nome == "logreg":
         regressao = modelo.named_steps["logisticregression"]
         return list(modelo.feature_names_in_), list(regressao.coef_[0])
@@ -50,6 +55,13 @@ def importancia_intrinseca(nome: str, modelo) -> tuple[list[str], list[float]]:
 
 
 def main() -> None:
+    """Calcula a importância intrínseca dos três modelos (determinística, uma semente
+    só) e salva importancia_intrinseca.csv e o custo.
+
+    Usada em: python src/importance/intrinsic.py; main.py, etapa "importancias";
+    tests/test_importancia.py.
+    Importância: um dos quatro métodos comparados na Etapa 11.
+    """
     tabelas, custos = [], []
     for nome in MODELOS:
         inicio = time.perf_counter()

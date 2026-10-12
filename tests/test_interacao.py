@@ -36,7 +36,12 @@ DIR_TABELAS = RAIZ / "results" / "tables"
 
 
 def teste_h_em_funcoes_conhecidas():
-    """x1·x2 + x3: só o par (x1, x2) interage. Função aditiva: nenhum par."""
+    """x1·x2 + x3: só o par (x1, x2) interage. Função aditiva: nenhum par.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: valida o H em casos de resposta conhecida.
+    """
     rng = np.random.default_rng(0)
     amostra = pd.DataFrame(rng.standard_normal((200, 4)), columns=["x1", "x2", "x3", "x4"])
 
@@ -54,7 +59,12 @@ def teste_h_em_funcoes_conhecidas():
 
 
 def teste_dependencia_parcial():
-    """PD centrada; numa função linear, PD_j(x) = coeficiente × (x − média)."""
+    """PD centrada; numa função linear, PD_j(x) = coeficiente × (x − média).
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: a PD é o bloco básico do H.
+    """
     rng = np.random.default_rng(1)
     amostra = pd.DataFrame(rng.standard_normal((100, 2)), columns=["x1", "x2"])
     pd_x1 = friedman_h.dependencia_parcial(lambda x: (3 * x["x1"] + x["x2"]).to_numpy(),
@@ -64,7 +74,12 @@ def teste_dependencia_parcial():
 
 
 def teste_logreg_tem_h_zero():
-    """Justifica deixar a LogReg de fora: no logit ela é aditiva, então H = 0."""
+    """Justifica deixar a LogReg de fora: no logit ela é aditiva, então H = 0.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: sustenta a decisão de calcular o H só em RF e XGBoost.
+    """
     x_val, _ = carregar("val")
     amostra = x_val.sample(n=60, random_state=0)
     prever = friedman_h.prever_logit(comum.carregar_modelo("logreg"))
@@ -73,6 +88,13 @@ def teste_logreg_tem_h_zero():
 
 
 def teste_grafo_e_conjunto_do_h():
+    """O grafo reduzido tem 5% dos 406 pares por modelo, e o conjunto do H contém o
+    grafo inteiro e o top-15 por consenso (§4.7).
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: garante que a restrição do H não exclui as features do PyGAwLLfs.
+    """
     media = graph.interacao_media(pd.read_csv(DIR_TABELAS / "interacao_gawll.csv"))
     assert media.groupby(["method", "model"])["rank"].min().eq(1).all()
     arestas = graph.arestas_reduzidas(media)
@@ -89,10 +111,21 @@ def teste_grafo_e_conjunto_do_h():
 
 
 def teste_scripts_nao_leem_o_teste():
-    """§4.9: H e comparação rodam inteiros (em miniatura) sem abrir test.parquet."""
+    """§4.9: H e comparação rodam inteiros (em miniatura) sem abrir test.parquet.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: nenhuma interação é calculada no teste.
+    """
     ler_parquet_original = pd.read_parquet
 
     def ler_parquet_vigiado(caminho, *args, **kwargs):
+        """Substituto de pandas.read_parquet (via mock.patch) que falha se o arquivo for
+        o conjunto de teste e, senão, lê normalmente.
+
+        Usada em: teste_scripts_nao_leem_o_teste.
+        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"A Etapa 13 tentou ler o teste: {caminho}")
         return ler_parquet_original(caminho, *args, **kwargs)
@@ -116,6 +149,13 @@ def teste_scripts_nao_leem_o_teste():
 
 
 def teste_tabelas_reais():
+    """Saídas reais da Etapa 13: todos os pares por (método, modelo, semente), H ≥ 0, H
+    normalizado acima de 1 em menos de 1% dos pares e Spearman em [-1, 1].
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: pega erro nas tabelas reais que os casos artificiais não cobrem.
+    """
     h = pd.read_csv(DIR_TABELAS / "interacao_h.csv")
     assert set(h["method"]) == {"friedman_h_abs", "friedman_h"}
     assert set(h["model"]) == set(friedman_h.MODELOS_H)

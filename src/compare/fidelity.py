@@ -78,7 +78,14 @@ ESTILO = {
 
 def listas_de_features(modelo: str, features: list[str], ranking: pd.DataFrame,
                        selecao: pd.DataFrame) -> list[dict]:
-    """Todas as configurações de um modelo: {method, k, seed, features}."""
+    """Todas as configurações de um modelo, {method, k, seed, features}: as 29 features,
+    o top-5/10/15 de cada método (ranking consolidado), o x* de cada execução do
+    PyGAwLLfs e N_SORTEIOS sorteios aleatórios por k.
+
+    Usada em: main; tests/test_fidelidade.py.
+    Importância: define o experimento de fidelidade; os sorteios são a linha de base
+    que diz se um ranking é melhor que o acaso.
+    """
     configuracoes = [{"method": "todas", "k": len(features), "seed": 0, "features": features}]
 
     do_modelo = ranking[ranking["model"] == modelo]
@@ -101,9 +108,14 @@ def listas_de_features(modelo: str, features: list[str], ranking: pd.DataFrame,
 
 
 def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: dict) -> list[dict]:
-    """Treina cada configuração no treino e avalia na validação e no teste.
-    Conjuntos de features repetidos (ex.: dois métodos com o mesmo top-15)
-    reaproveitam o resultado: mesmo treino, mesmos números."""
+    """Treina cada configuração no treino completo e avalia na validação e, por último,
+    no teste. Conjuntos de features repetidos (ex.: dois métodos com o mesmo top-15)
+    reaproveitam o resultado: mesmo treino, mesmos números.
+
+    Usada em: main.
+    Importância: é um dos dois únicos usos do teste (§4.9); usa os hiperparâmetros da
+    Etapa 6, então a diferença vem só das features.
+    """
     x_treino, y_treino = dados["train"]
     parametros = ler_configuracoes_escolhidas()[modelo_nome]
     peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
@@ -135,7 +147,12 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: di
 
 
 def resumir(fidelidade: pd.DataFrame) -> pd.DataFrame:
-    """Média por (modelo, método, k, conjunto) e fração do desempenho de 'todas'."""
+    """Média por (modelo, método, k, conjunto), extremos dos sorteios e a fração do
+    desempenho de "todas" (colunas *_frac_todas). Não confundir com rankings.resumir.
+
+    Usada em: main; tests/test_fidelidade.py.
+    Importância: a fração de "todas" é o número da fidelidade que entra no texto.
+    """
     resumo = (fidelidade.groupby(["model", "method", "k", "conjunto"], as_index=False)
               .agg(**{m: (m, "mean") for m in METRICAS},
                    f1_min=("f1", "min"), f1_max=("f1", "max"),
@@ -150,8 +167,13 @@ def resumir(fidelidade: pd.DataFrame) -> pd.DataFrame:
 
 
 def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_base: Path) -> None:
-    """Curvas no teste: desempenho × nº de features retidas, uma linha por método.
-    As estrelas (x* do PyGAwLLfs) vêm da tabela completa: uma por execução."""
+    """Curvas no teste: desempenho × nº de features retidas, uma linha por método, com a
+    faixa dos sorteios aleatórios. As estrelas (x* do PyGAwLLfs) vêm da tabela
+    completa: uma por execução.
+
+    Usada em: main.
+    Importância: é a figura do critério de fidelidade.
+    """
     teste = resumo[resumo["conjunto"] == "test"]
     selecoes = fidelidade[(fidelidade["conjunto"] == "test") & (fidelidade["method"] == "gawll_x*")]
     # squeeze=False: eixos é sempre 2D, mesmo com um modelo só
@@ -221,6 +243,15 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
 
 
 def main() -> None:
+    """Etapa 12: lê os três conjuntos, o ranking consolidado e o x* do GA, avalia as
+    configurações dos três modelos e salva fidelidade.csv, fidelidade_resumo.csv e a
+    figura.
+
+    Usada em: python src/compare/fidelity.py; main.py, etapa "fidelidade";
+    tests/test_fidelidade.py.
+    Importância: mede se o top-k de cada método preserva o desempenho, o critério de
+    fidelidade da pergunta de pesquisa.
+    """
     dados = {nome: carregar(nome) for nome in ["train", "val", "test"]}
     features = list(dados["train"][0].columns)
     ranking = pd.read_csv(comum.DIR_TABELAS / "ranking_consolidado.csv")

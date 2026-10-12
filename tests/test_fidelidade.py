@@ -33,6 +33,11 @@ DIR_TABELAS = RAIZ / "results" / "tables"
 
 
 def configuracoes_reais(modelo: str) -> list[dict]:
+    """Configurações de fidelidade de um modelo, montadas com as tabelas reais.
+
+    Usada em: teste_listas_de_features.
+    Importância: testa listas_de_features com os dados de verdade.
+    """
     features = list(carregar("val")[0].columns)
     ranking = pd.read_csv(DIR_TABELAS / "ranking_consolidado.csv")
     selecao = pd.read_csv(DIR_TABELAS / "selecao_gawll.csv")
@@ -40,6 +45,13 @@ def configuracoes_reais(modelo: str) -> list[dict]:
 
 
 def teste_listas_de_features():
+    """As configurações batem com o ranking consolidado: "todas" tem as 29 features e o
+    top-k de cada método são as k primeiras do ranking.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_fidelidade.py; também em
+    python main.py --testes).
+    Importância: um top-k errado invalidaria a fidelidade inteira.
+    """
     ranking = pd.read_csv(DIR_TABELAS / "ranking_consolidado.csv")
     selecao = pd.read_csv(DIR_TABELAS / "selecao_gawll.csv")
     for modelo in fidelity.MODELOS:
@@ -72,6 +84,13 @@ def teste_listas_de_features():
 
 
 def teste_resumo():
+    """resumir calcula médias, extremos e a fração de "todas" corretamente, num caso
+    pequeno feito à mão.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_fidelidade.py; também em
+    python main.py --testes).
+    Importância: a fração de "todas" é o número que vai para o texto.
+    """
     linhas = []
     for metodo, k, f1 in [("todas", 29, 0.40), ("shap", 5, 0.30), ("aleatorio", 5, 0.10),
                           ("aleatorio", 5, 0.20)]:
@@ -86,7 +105,12 @@ def teste_resumo():
 
 
 def teste_execucao_em_miniatura():
-    """O script roda inteiro (LogReg, 3 mil linhas por conjunto, 2 sorteios)."""
+    """O script roda inteiro (LogReg, 3 mil linhas por conjunto, 2 sorteios).
+
+    Usada em: bloco __main__ desta suíte (python tests/test_fidelidade.py; também em
+    python main.py --testes).
+    Importância: pega erro de integração sem esperar os ~50 min da execução real.
+    """
     fatias = {nome: tuple(parte.iloc[:3000] for parte in carregar(nome))
               for nome in ["train", "val", "test"]}
     with tempfile.TemporaryDirectory() as pasta:
@@ -105,6 +129,13 @@ def teste_execucao_em_miniatura():
 
 
 def teste_tabela_real():
+    """fidelidade.csv real: métricas em [0, 1], contagem certa de configurações por
+    modelo e "todas" no teste igual a baselines.csv.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_fidelidade.py; também em
+    python main.py --testes).
+    Importância: confere a coerência entre a Etapa 12 e a Etapa 6.
+    """
     tabela = pd.read_csv(DIR_TABELAS / "fidelidade.csv")
     for coluna in fidelity.METRICAS:
         assert tabela[coluna].between(0, 1).all(), coluna

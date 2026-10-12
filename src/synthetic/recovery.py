@@ -61,7 +61,14 @@ PARES_HIPOTESE = [frozenset(p) for p in PARES_REDUNDANCIA]
 
 
 def metricas_importancia(tabela: pd.DataFrame) -> dict:
-    """Uma execução (método, modelo, semente) no formato padrão -> métricas."""
+    """Uma execução (método, modelo, semente) no formato padrão -> métricas contra o
+    gabarito: AUC relevante × ruído, precisão no top-6 (relevantes) e no top-4
+    (diretas) e o rank médio de cada grupo.
+
+    Usada em: main; tests/test_sintetico.py.
+    Importância: mede a recuperação com as três categorias do gabarito: redundante
+    não é erro, é proxy.
+    """
     # Ordena pelo rank já calculado (que trata sinal e empates) e desempata
     # pelo nome, para o resultado não depender da ordem das linhas
     ordem = tabela.sort_values(["rank", "feature"])
@@ -84,7 +91,11 @@ def metricas_importancia(tabela: pd.DataFrame) -> dict:
 
 
 def ranks_dos_pares(pares: pd.DataFrame) -> dict[frozenset, int]:
-    """Tabela longa (feature_a, feature_b, interaction) -> {par: rank}, 1 = mais forte."""
+    """Tabela longa (feature_a, feature_b, interaction) -> {par: rank}, 1 = mais forte.
+
+    Usada em: metricas_interacao.
+    Importância: trata (a, b) e (b, a) como o mesmo par.
+    """
     rank = pares["interaction"].rank(ascending=False, method="min").astype(int)
     return {
         frozenset((a, b)): r
@@ -93,7 +104,14 @@ def ranks_dos_pares(pares: pd.DataFrame) -> dict[frozenset, int]:
 
 
 def metricas_interacao(interacao: pd.DataFrame) -> dict:
-    """Todas as sementes de um (método, modelo) -> métricas sobre a matriz média."""
+    """Todas as sementes de um (método, modelo) -> métricas sobre a matriz média: rank
+    do par verdadeiro (x1, x2), rank dos pares de redundância, precisão no top-3 e
+    acerto por semente.
+
+    Usada em: main; tests/test_sintetico.py.
+    Importância: testa contra o gabarito se o método encontra a interação verdadeira
+    ou confunde redundância com interação.
+    """
     media = (interacao.groupby(["feature_a", "feature_b"], as_index=False)["interaction"]
              .mean())
     rank = ranks_dos_pares(media)
@@ -113,7 +131,13 @@ def metricas_interacao(interacao: pd.DataFrame) -> dict:
 
 
 def metricas_selecao(features_selecionadas: str) -> dict:
-    """x* de uma execução ("x1;x3;...") contra as 4 diretas."""
+    """x* de uma execução ("x1;x3;...") contra as 4 diretas: precisão, recall, F1 e
+    quantas redundantes e de ruído entraram.
+
+    Usada em: main; tests/test_sintetico.py.
+    Importância: avalia o subconjunto escolhido pelo GA, o produto de um método de
+    seleção.
+    """
     x_estrela = set(features_selecionadas.split(";")) if features_selecionadas else set()
     acertos = len(x_estrela & set(DIRETAS))
     precisao = acertos / len(x_estrela) if x_estrela else 0.0
@@ -129,6 +153,12 @@ def metricas_selecao(features_selecionadas: str) -> dict:
 
 
 def main() -> None:
+    """Etapa 10c: lê as tabelas do sintético, calcula as métricas de importância,
+    interação e seleção e salva recuperacao_sintetico*.csv.
+
+    Usada em: python src/synthetic/recovery.py; main.py, etapa "sintetico".
+    Importância: gera a tabela método × recuperação da verdade do Diferencial 1.
+    """
     importancia = pd.read_csv(DIR_TABELAS / "sintetico_importancia.csv")
     interacao = pd.read_csv(DIR_TABELAS / "sintetico_interacao.csv")
     selecao = pd.read_csv(DIR_TABELAS / "sintetico_selecao.csv", keep_default_na=False)

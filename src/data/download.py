@@ -29,9 +29,12 @@ logger = logging.getLogger(__name__)
 
 
 def montar_url_vra(ano: int, mes: int) -> str:
-    """
-    Função que recebe dois inteiros, um ano e um mes e monta a url correta para fazer
-    o acesso aos dados de VRA da ANAC
+    """Monta a URL do CSV mensal do VRA no portal da ANAC para um ano e um mês (pasta do
+    mês com zero à esquerda, nome do arquivo sem).
+
+    Usada em: laço principal deste script (Etapa 1; main.py, etapa "download").
+    Importância: o portal tem um padrão de caminho irregular; centralizar aqui evita
+    erro nos 24 downloads.
     """
     pasta_mes = f"{mes:02d} - {MESES_PT[mes]}"  # Zero a esquerda
     nome_arquivo = f"VRA_{ano}{mes}.csv"  # Sem zero a esquerda
@@ -40,12 +43,15 @@ def montar_url_vra(ano: int, mes: int) -> str:
 
 
 def baixar_arquivo(url: str, destino: Path) -> None:
-    """Função que faz downloads dos csv das url geradas por montar_url_vra(...)
-    Faz validação se o arquivo já existe
+    """Baixa um CSV do VRA em blocos e pula o download se o arquivo já existe.
+
+    Usada em: laço principal deste script, uma vez por mês.
+    Importância: a retomada permite rodar o download de novo sem baixar tudo outra
+    vez.
 
     Args:
         url (str): URL retornada pela função montar_url_vra(...)
-        destino (Path): Caminho do csv onde serão escritas os dados
+        destino (Path): Caminho do csv onde serão escritos os dados
     """
     if destino.exists():
         logger.info(f"Já existe, pulando: {destino.name}")
