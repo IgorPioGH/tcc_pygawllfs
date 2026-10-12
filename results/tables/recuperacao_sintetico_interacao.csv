@@ -1,4 +1,8 @@
 method,model,rank_par_interacao,rank_pares_redundancia,precisao_top3,acerto_por_semente,n_pares
+friedman_h,random_forest,1,28.5,0.333,1.0,45
+friedman_h,xgboost,1,44.5,0.333,1.0,45
+friedman_h_abs,random_forest,1,7.0,0.333,1.0,45
+friedman_h_abs,xgboost,1,20.0,0.333,1.0,45
 gawll,logreg,21,2.5,0.667,0.0,45
 gawll,random_forest,1,2.5,1.0,1.0,45
 gawll,xgboost,1,2.5,1.0,1.0,45

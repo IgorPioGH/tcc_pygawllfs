@@ -21,6 +21,8 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 9 | Parâmetros do sintético (β = 2, σ = 0,5, ρ = 0,9) | **mantido** | não | ~30 min |
 | 10 | Significado das letras do `Código Tipo Linha` | **a conferir** (muda a leitura de um par corroborado na Etapa 15) | não | — (só texto) |
 | 11 | Critérios da validação de domínio (Etapa 15) | top-10 por modelo; 1 p.p.; replicação ≥ 0,5; escala logit | talvez | ~1 min |
+| 12 | Cálculo do H de Friedman (Etapa 13) | logit; H_abs como principal; RF e XGBoost; 500 linhas × 5 sementes | não | ~7 min |
+| 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes, ganho pequeno |
 
 ## 1. Bugs de mutação e elitismo — corrigidos
 
@@ -159,6 +161,37 @@ Resultados em `docs/validacao-dominio.md`.
   (2 corroborados); com 0,5, entra também `tipo_linha` × origem (0,75 e
   1,18 p.p.; r = 0,60) — e, mesmo assim, nenhum controle passa.
 
+## 12. Cálculo do H de Friedman (Etapa 13)
+
+Constantes no topo de `src/interaction/friedman_h.py`; rodar de novo leva ~7 min.
+Resultados em `docs/interacoes-h.md`.
+
+- **Escala logit** (log-odds), a mesma da Etapa 15. Alternativa: probabilidade
+  (`predict_proba` direto) — os valores mudam, e a LogReg passaria a ter H > 0
+  só por causa da curva sigmoide.
+- **H_abs (não normalizado) como principal**, H² normalizado salvo junto. O
+  normalizado se mostrou menos estável (Spearman entre sementes 0,87 × 0,93 no
+  XGBoost) e passou de 1 num par de dummies da mesma variável (denominador
+  quase zero). Para trocar: usar `friedman_h` no lugar de `friedman_h_abs` em
+  `compare/interacoes.py`.
+- **LogReg fora:** aditiva no logit, H = 0 por construção (testado).
+- **500 linhas × 5 sementes** (`AMOSTRA`, `comum.SEMENTES`), da validação.
+- **Conjunto de pares** do §4.7, sem corte (o custo ficou muito abaixo do limite).
+
+## 13. Orçamento do PyGAwLLfs para a matriz de interação
+
+- **Estado:** parâmetros do artigo (população 50, 100 gerações, 3 sondagens de
+  linkage learning por geração). Com N = 29, cada par é sondado em média 0,7
+  vez por execução, e o ranking de pares quase não se repete entre execuções
+  (split-half ≈ 0–0,11). Documentado como resultado e limitação
+  (`docs/interacoes-h.md` §3).
+- **Alternativa A — mais sementes:** +5 sementes custam ~5,4 h e levariam a
+  confiabilidade da média de ~0,2 a ~0,3 (Spearman-Brown). Pouco ganho.
+- **Alternativa B — mais sondagens por geração:** mudaria o algoritmo do artigo
+  (a fração de linkage learning na geração é fixa no `_generation_ll`); seria
+  uma variante, não o método original.
+- **Recomendação:** manter e discutir; levar a pergunta ao orientador.
+
 ## Perguntas para a reunião com o Prof. Tinós
 
 1. Os dois comportamentos do código (mutação e elitismo) são bugs? O TCC deve
@@ -171,3 +204,7 @@ Resultados em `docs/validacao-dominio.md`.
    modelos são pares redundantes (`docs/validacao-dominio.md` §2).
 4. Os critérios da validação de domínio (1 p.p. e replicação entre anos) são
    adequados, ou ele prefere um critério mais brando? (item 11)
+5. Com N = 29, o linkage learning sonda cada par ~0,7 vez por execução, e o
+   ranking de interações não se repete entre execuções. Isso é esperado com o
+   orçamento do artigo? Vale testar mais gerações ou mais sondagens, ou fica
+   como limitação discutida? (item 13)

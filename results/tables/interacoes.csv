@@ -1,0 +1,13 @@
+model,comparacao,n_pares,spearman,kendall_tau_b,rbo,top5,top10,top15
+random_forest,gawll x friedman_h_abs,276,0.1151,0.0779,0.0715,0.0,0.1,0.2
+random_forest,gawll x friedman_h,276,-0.0436,-0.03,0.0356,0.0,0.1,0.0667
+random_forest,friedman_h_abs x friedman_h,276,0.7206,0.5465,0.2303,0.2,0.3,0.4667
+random_forest,estabilidade gawll,276,-0.0102,-0.0078,0.0555,0.04,0.05,0.0667
+random_forest,estabilidade friedman_h_abs,276,0.9837,0.9045,0.9094,0.78,0.89,0.9733
+random_forest,estabilidade friedman_h,276,0.9463,0.8376,0.8452,0.86,0.79,0.8067
+xgboost,gawll x friedman_h_abs,300,0.0829,0.0535,0.015,0.0,0.0,0.0
+xgboost,gawll x friedman_h,300,0.0635,0.0409,0.0366,0.0,0.0,0.0667
+xgboost,friedman_h_abs x friedman_h,300,0.8052,0.6707,0.1067,0.0,0.1,0.2
+xgboost,estabilidade gawll,300,-0.0033,-0.0025,0.0763,0.08,0.06,0.0667
+xgboost,estabilidade friedman_h_abs,300,0.9273,0.8278,0.8362,0.8,0.89,0.9267
+xgboost,estabilidade friedman_h,300,0.8702,0.7627,0.5133,0.44,0.56,0.6867

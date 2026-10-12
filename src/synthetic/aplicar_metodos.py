@@ -11,14 +11,16 @@ Etapas 7 e 9 (docs/metodologia.md §5: "usa exatamente o mesmo código de compar
                  (1.500 linhas < 10k) entra toda, então é determinístico: seed 42
     gawll        gawll.executar, 3 modelos x 5 sementes, 100 gerações,
                  checkpoints em experiments/runs/sintetico/ (retomada igual à Etapa 8)
+    H Friedman   interaction/friedman_h.calcular_h (Etapa 13), RF e XGBoost, todos os
+                 45 pares, 5 amostras de 500 linhas da validação
 
 Produz, em results/tables/:
     sintetico_importancia.csv  formato padrão (§7), os quatro métodos
-    sintetico_interacao.csv    vint do PyGAwLLfs em formato longo
+    sintetico_interacao.csv    vint do PyGAwLLfs e H de Friedman, em formato longo
     sintetico_selecao.csv      o x* de cada execução
     sintetico_custo.csv        tempo e nº de treinos
-Quem consome: recovery.py (compara tudo com o gabarito) e, na Etapa 13, o
-H de Friedman entra em sintetico_interacao.csv com method="friedman_h".
+Quem consome: recovery.py (compara tudo com o gabarito, inclusive o H:
+method = "friedman_h_abs" e "friedman_h").
 """
 
 import logging
@@ -38,6 +40,13 @@ from src.importance.consolidar_gawll import consolidar  # noqa: E402
 from src.importance.intrinsic import importancia_intrinseca  # noqa: E402
 from src.importance.permutation import calcular_permutation  # noqa: E402
 from src.importance.shap_global import calcular_shap  # noqa: E402
+from src.interaction.friedman_h import (  # noqa: E402
+    AMOSTRA,
+    MODELOS_H,
+    calcular_h,
+    formato_longo,
+    prever_logit,
+)
 from src.models.baselines import SEMENTE, criar_modelo, ler_configuracoes_escolhidas  # noqa: E402
 from src.synthetic.generate import ARQUIVO_SINTETICO, FEATURES  # noqa: E402
 
@@ -87,6 +96,22 @@ def importancias_modelo_fixo(modelos, x_val, y_val) -> tuple[list[pd.DataFrame],
     return tabelas, custos
 
 
+def interacoes_h(modelos, x_val) -> tuple[list[pd.DataFrame], list[dict]]:
+    """H de Friedman de todos os pares, no RF e no XGBoost (a LogReg é aditiva no
+    logit: H = 0 por construção). Uma amostra de AMOSTRA linhas por semente."""
+    tabelas, custos = [], []
+    for nome in MODELOS_H:
+        prever = prever_logit(modelos[nome])
+        for semente in SEMENTES:
+            inicio = time.perf_counter()
+            h = calcular_h(prever, x_val.sample(n=AMOSTRA, random_state=semente), FEATURES)
+            tabelas.append(formato_longo(h, nome, semente, FEATURES))
+            custos.append({"method": "friedman_h", "model": nome, "seed": semente,
+                           "tempo_s": time.perf_counter() - inicio, "n_treinos": 0})
+        logger.info(f"{nome}: H de Friedman pronto")
+    return tabelas, custos
+
+
 def rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes) -> None:
     """15 execuções do PyGAwLLfs corrigido; pula as que já têm checkpoint."""
     dados = (
@@ -116,15 +141,17 @@ def main() -> None:
         modelos[nome] = criar_modelo(nome, configuracoes[nome], peso_positivo)
         modelos[nome].fit(x_treino, y_treino)
     tabelas, custos = importancias_modelo_fixo(modelos, x_val, y_val)
+    tabelas_h, custos_h = interacoes_h(modelos, x_val)
 
     # 2. PyGAwLLfs: retreina o modelo para cada subconjunto
     rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes)
     importancia_ga, interacao_ga, selecao_ga, custos_ga = consolidar(DIR_EXECUCOES)
 
     salvar_tabela(pd.concat(tabelas + [importancia_ga]), "sintetico_importancia.csv")
-    salvar_tabela(interacao_ga, "sintetico_interacao.csv")
+    salvar_tabela(pd.concat([interacao_ga] + tabelas_h, ignore_index=True),
+                  "sintetico_interacao.csv")
     salvar_tabela(selecao_ga, "sintetico_selecao.csv")
-    salvar_tabela(pd.DataFrame(custos + custos_ga), "sintetico_custo.csv")
+    salvar_tabela(pd.DataFrame(custos + custos_h + custos_ga), "sintetico_custo.csv")
     logger.info("Tabelas do sintético salvas em results/tables/sintetico_*.csv")
 
 

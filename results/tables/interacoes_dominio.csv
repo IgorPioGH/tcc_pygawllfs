@@ -1,0 +1,41 @@
+model,method,rank,feature_a,feature_b,tipo,desvio_2024_pp,desvio_2025_pp,replicacao_anos,classificacao
+random_forest,gawll,1.0,hora,origem_te,operacional,2.8364,2.479,0.5312,corroborado descritivamente
+random_forest,gawll,2.0,dia_ano,trimestre,redundante,0.1412,0.0978,-0.2651,redundância (não é interação operacional)
+random_forest,gawll,3.0,mes,minuto,operacional,0.3798,0.2173,0.2686,não corroborado
+random_forest,gawll,4.0,dia_mes,dia_ano,redundante,2.9759,2.7891,-0.0076,redundância (não é interação operacional)
+random_forest,gawll,5.0,mes,trimestre,redundante,0.0342,0.0072,0.3893,redundância (não é interação operacional)
+random_forest,gawll,6.0,trimestre,vespera_feriado,operacional,0.0788,0.0367,0.7668,não corroborado
+random_forest,gawll,7.0,tipo_linha_G,porte_destino_grande,operacional,0.0979,0.0783,0.5536,não corroborado
+random_forest,gawll,8.0,tipo_linha_I,origem_te,operacional,0.7461,1.1777,0.6011,não corroborado
+random_forest,gawll,9.0,porte_origem_grande,destino_te,operacional,0.478,0.4719,0.4551,não corroborado
+random_forest,gawll,10.0,hora,dia_ano,operacional,1.9588,1.5655,0.1785,não corroborado
+random_forest,friedman_h_abs,1.0,hora,empresa_te,operacional,2.0604,1.7318,0.6756,corroborado descritivamente
+random_forest,friedman_h_abs,2.0,hora,tipo_linha_N,operacional,1.8391,1.5764,0.6979,corroborado descritivamente
+random_forest,friedman_h_abs,3.0,hora,dia_ano,operacional,1.9588,1.5655,0.1785,não corroborado
+random_forest,friedman_h_abs,4.0,duracao_prevista_min,empresa_te,operacional,1.0334,0.5784,0.7254,não corroborado
+random_forest,friedman_h_abs,5.0,periodo_dia,empresa_te,operacional,1.464,1.0694,0.6612,corroborado descritivamente
+random_forest,friedman_h_abs,6.0,hora,duracao_prevista_min,operacional,1.6135,1.5216,0.7661,corroborado descritivamente
+random_forest,friedman_h_abs,7.0,dia_ano,empresa_te,operacional,2.632,2.292,0.0639,não corroborado
+random_forest,friedman_h_abs,8.0,hora,periodo_dia,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
+random_forest,friedman_h_abs,9.0,tipo_linha_N,empresa_te,operacional,0.5856,0.3138,0.5079,não corroborado
+random_forest,friedman_h_abs,10.0,empresa_te,origem_te,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
+xgboost,gawll,1.0,mes,dia_ano,redundante,0.1189,0.2479,-0.07,redundância (não é interação operacional)
+xgboost,gawll,2.0,porte_destino_medio,origem_te,operacional,0.2959,0.2842,0.5688,não corroborado
+xgboost,gawll,3.0,mes,porte_destino_hub,operacional,0.1,0.1135,-0.2948,não corroborado
+xgboost,gawll,4.0,dia_mes,dia_ano,redundante,2.9759,2.7891,-0.0076,redundância (não é interação operacional)
+xgboost,gawll,5.0,trimestre,tipo_linha_G,operacional,1.0052,0.3591,0.4032,não corroborado
+xgboost,gawll,6.0,tipo_linha_I,tipo_linha_N,estrutural,,,,não testável (mesma variável)
+xgboost,gawll,7.0,feriado,origem_te,operacional,0.0812,0.0728,-0.3634,não corroborado
+xgboost,gawll,8.0,vespera_feriado,porte_origem_grande,operacional,0.0238,0.0097,-0.2287,não corroborado
+xgboost,gawll,9.0,trimestre,congestion_origem,operacional,0.9745,0.5652,0.1783,não corroborado
+xgboost,gawll,10.0,dia_mes,vespera_feriado,operacional,0.3538,0.112,0.7496,não corroborado
+xgboost,friedman_h_abs,1.0,empresa_te,origem_te,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
+xgboost,friedman_h_abs,2.0,duracao_prevista_min,empresa_te,operacional,1.0334,0.5784,0.7254,não corroborado
+xgboost,friedman_h_abs,3.0,hora,empresa_te,operacional,2.0604,1.7318,0.6756,corroborado descritivamente
+xgboost,friedman_h_abs,4.0,hora,dia_ano,operacional,1.9588,1.5655,0.1785,não corroborado
+xgboost,friedman_h_abs,5.0,hora,origem_te,operacional,2.8364,2.479,0.5312,corroborado descritivamente
+xgboost,friedman_h_abs,6.0,hora,dia_sem,operacional,0.9519,1.0133,0.6715,não corroborado
+xgboost,friedman_h_abs,7.0,dia_ano,empresa_te,operacional,2.632,2.292,0.0639,não corroborado
+xgboost,friedman_h_abs,8.0,empresa_te,destino_te,operacional,1.7142,0.9314,0.6395,não corroborado
+xgboost,friedman_h_abs,9.0,hora,duracao_prevista_min,operacional,1.6135,1.5216,0.7661,corroborado descritivamente
+xgboost,friedman_h_abs,10.0,tipo_linha_I,empresa_te,operacional,0.5856,0.3138,0.5079,não corroborado

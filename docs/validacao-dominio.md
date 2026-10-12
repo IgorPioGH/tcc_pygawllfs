@@ -141,5 +141,9 @@ antes de usar essa leitura no texto (pendente em `docs/dicionario-features.md`).
   as do terceiro tipo são candidatas a conhecimento de domínio — e, dessas, 2
   de 19 passaram no critério rigoroso.
 - Isso reforça a hipótese de `docs/sintetico.md` §3 nos dados reais.
-  A outra metade (o H de Friedman não acusa os pares redundantes) é verificada
-  na Etapa 13, que pode usar `dominio_pares.csv` para comparar os mesmos pares.
+  A outra metade (o H de Friedman não acusa os pares redundantes) foi
+  verificada na Etapa 13 (`docs/interacoes-h.md`).
+- **Etapa 13:** o mesmo teste aplicado ao top-10 do H corroborou 9 de 20 pares
+  (contra 1 de 20 do top-10 do PyGAwLLfs). E o ranking de pares do PyGAwLLfs
+  se mostrou pouco confiável entre execuções (cada par é sondado ~0,7 vez por
+  execução): parte dos pares do top acima está lá por acaso de sondagem.

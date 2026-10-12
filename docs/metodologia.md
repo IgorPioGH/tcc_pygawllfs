@@ -121,6 +121,10 @@ PyGAwLLfs (5% das arestas mais fortes). Usar só (a) excluiria, por
 construção, os atributos que o PyGAwLLfs aponta como mais interativos.
 Background de ~500 linhas. Se o custo ficar inviável, corta-se por (a),
 preservando sempre os atributos das 5 arestas mais fortes do PyGAwLLfs.
+*Implementado em `src/interaction/friedman_h.py`:* a união ficou com 24 (RF)
+e 25 (XGBoost) atributos, sem corte (~7 min no total); escala logit, 5
+amostras de 500 linhas da validação; H não normalizado como versão principal.
+A LogReg fica de fora: é aditiva no logit, então H = 0 por construção.
 
 ### 4.8 Comparação por rank, não por valor
 
@@ -271,11 +275,15 @@ anterior produziu.
 | 9 | `src/importance/{intrinsic,permutation,shap_global}.py` | `importancia_{intrinseca,permutation,shap}.csv` |
 | 10 | `src/synthetic/{generate,aplicar_metodos,recovery}.py` | `sintetico_*.csv`, `recuperacao_sintetico*.csv` (~30 min) |
 | 11 | `src/compare/{rankings,stability,figuras}.py` | `concordancia*.csv`, `estabilidade*.csv`, figuras |
+| 13a | `src/interaction/friedman_h.py` | `interacao_h.csv` (~7 min) |
+| 13b | `src/compare/interacoes.py` (depois da 15) | `interacoes*.csv`, figura PyGAwLLfs × H |
 | 15 | `src/domain/validate_pairs.py` | `dominio_pares.csv`, `dominio_celulas.csv`, grafo e heatmaps (~1 min) |
 | — | `src/data/{figuras,auditar_congestionamento}.py` | histograma do atraso; auditoria do congestionamento |
 
 Testes (scripts com `assert`): `tests/test_gawll.py`, `tests/test_importancia.py`,
-`tests/test_sintetico.py`, `tests/test_comparacao.py`, `tests/test_dominio.py`.
+`tests/test_sintetico.py`, `tests/test_comparacao.py`, `tests/test_dominio.py`,
+`tests/test_interacao.py`. (O `aplicar_metodos.py` do sintético calcula também o
+H, então depende do `friedman_h.py`.)
 
 O projeto e o clone `PyGAwLLfs/` (não versionado) têm, cada um, uma pasta
 `src/` sem `__init__.py`; elas se fundem no `sys.path`. Nunca criar

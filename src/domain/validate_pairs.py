@@ -69,6 +69,7 @@ sys.path.append(str(RAIZ))
 from src.compare.figuras import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO  # noqa: E402
 from src.compare.rankings import MODELOS  # noqa: E402
 from src.importance import comum  # noqa: E402
+from src.interaction import graph  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ DIR_FIGURAS = RAIZ / "results" / "figures"
 
 TOP_PARES_POR_MODELO = 10
 N_CONTROLES = 10
-FRACAO_GRAFO = 0.05          # grafo reduzido: 5% das arestas mais fortes, como no artigo
+FRACAO_GRAFO = graph.FRACAO_ARESTAS  # grafo reduzido: 5% das arestas mais fortes, como no artigo
 ANOS = [2024, 2025]          # 2025 vai só até outubro (o teste fica de fora)
 N_BOOTSTRAP = 200
 LIMIAR_PP = 1.0              # relevância prática mínima do desvio, em pontos percentuais
@@ -159,11 +160,7 @@ def variavel(feature: str) -> str:
 def interacao_media() -> pd.DataFrame:
     """vint médio das 5 sementes, com o rank de cada par em cada modelo."""
     interacao = pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv")
-    media = (interacao.groupby(["model", "feature_a", "feature_b"], as_index=False)
-             ["interaction"].mean())
-    media["rank"] = (media.groupby("model")["interaction"]
-                     .rank(ascending=False, method="min").astype(int))
-    return media
+    return graph.interacao_media(interacao)
 
 
 def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
@@ -271,8 +268,13 @@ def desvio_pp(n: np.ndarray, k: np.ndarray, previsto: np.ndarray) -> float:
 
 
 def testar_tabela(tabela: pd.DataFrame, rng: np.random.Generator,
-                  n_bootstrap: int = N_BOOTSTRAP) -> tuple[float, float, pd.DataFrame]:
-    """(desvio, p95 do ruído, tabela com a previsão sem interação) de uma tabela cruzada."""
+                  n_bootstrap: int | None = None) -> tuple[float, float, pd.DataFrame]:
+    """(desvio, p95 do ruído, tabela com a previsão sem interação) de uma tabela cruzada.
+
+    n_bootstrap=None usa N_BOOTSTRAP lido na hora da chamada (um valor padrão
+    escrito na assinatura seria fixado na importação e ignoraria mudanças)."""
+    if n_bootstrap is None:
+        n_bootstrap = N_BOOTSTRAP
     n, k = tabela["n"].to_numpy(float), tabela["k"].to_numpy(float)
     matriz = matriz_sem_interacao(tabela)
     # warm_start: cada reajuste do bootstrap parte da solução anterior (mais rápido)
