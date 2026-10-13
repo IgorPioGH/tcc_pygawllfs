@@ -83,6 +83,9 @@ ETAPAS = [
     Etapa("fidelidade", ["src/compare/fidelity.py"],
           "retenção top-k, subconjuntos do GA e sorteios; avalia no teste",
           "~50 min"),
+    Etapa("sintese", ["src/compare/sintese.py"],
+          "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
+          "< 1 min"),
     Etapa("extras", ["src/data/figuras.py", "src/data/auditar_congestionamento.py"],
           "histograma do atraso e auditoria do congestionamento (limitação documentada)",
           "~4 min"),
@@ -91,7 +94,7 @@ ETAPAS = [
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
     "tests/test_comparacao.py", "tests/test_dominio.py", "tests/test_interacao.py",
-    "tests/test_fidelidade.py",
+    "tests/test_fidelidade.py", "tests/test_sintese.py",
 ]
 
 

@@ -30,7 +30,7 @@ bem acima de um modelo com o mesmo número de features **sorteadas**.
 | Modelo | k | Intrínseca | Permutation | SHAP | PyGAwLLfs | Sorteio (média) |
 |---|---:|---:|---:|---:|---:|---:|
 | LogReg | 5 | 89% | 87% | — | **98%** | 81% |
-| LogReg | 10 | 97% | 97% | — | 98% | 91% |
+| LogReg | 10 | 96% | 97% | — | 99% | 91% |
 | RF | 5 | 94% | **97%** | **97%** | 94% | 72% |
 | RF | 10 | 99% | 100% | 99% | 98% | 86% |
 | XGBoost | 5 | 96% | **98%** | 96% | 94% | 72% |
@@ -44,8 +44,8 @@ mesmo (top-5: 95%–100% no RF e no XGBoost, contra 81%–83% dos sorteios).
 | Modelo | Nº médio de features | Fração do F1 | Fração do PR-AUC |
 |---|---:|---:|---:|
 | LogReg | 9,0 | 103% | 99% |
-| RF | 10,5 | 96% | 95% |
-| XGBoost | 9,8 | 96% | 98% |
+| RF | 10,8 | 96% | 95% |
+| XGBoost | 10,2 | 96% | 98% |
 
 ## 3. Leituras
 

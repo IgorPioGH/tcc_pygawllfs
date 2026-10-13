@@ -80,7 +80,9 @@ Os dois bugs são reproduzidos e testados em `tests/test_gawll.py`.
 ## Principais resultados
 
 Tabelas em `results/tables/`, figuras em `results/figures/` (PNG e PDF). Índice
-completo, por critério, em [`docs/resultados.md`](docs/resultados.md).
+completo, por critério, em [`docs/resultados.md`](docs/resultados.md); relatório
+final, com o método, os resultados e as respostas às perguntas de pesquisa, em
+[`results/relatorio-final.md`](results/relatorio-final.md).
 
 ### 1. Concordância entre os métodos
 
@@ -203,7 +205,7 @@ src/
 ├── models/                LogReg, RF e XGBoost (baselines.py) e métricas (evaluate.py)
 ├── importance/            PyGAwLLfs corrigido (gawll.py) e os métodos de importância
 ├── interaction/           H de Friedman e grafo de interação reduzido
-├── compare/               concordância, estabilidade, interações e fidelidade
+├── compare/               concordância, estabilidade, interações, fidelidade e síntese
 ├── synthetic/             dataset sintético com gabarito (Diferencial 1)
 └── domain/                validação de domínio das interações (Diferencial 4)
 tests/                     testes (scripts com assert), um por etapa
@@ -288,8 +290,9 @@ Medido na máquina acima (os tempos marcados com ~ são aproximados):
 | `dominio` | Diferencial 4 | 1 min |
 | `interacoes` | H de Friedman e comparação | 9 min |
 | `fidelidade` | 138 treinos no treino completo, avaliados no teste | 50 min |
+| `sintese` | quadro-síntese dos quatro critérios (só lê CSV) | < 1 s |
 | `extras` | histograma e auditoria do congestionamento | ~4 min |
-| `--testes` | 7 suítes, 37 testes | ~6 min |
+| `--testes` | 8 suítes, 40 testes | ~6 min |
 
 ### Testes
 
@@ -310,6 +313,7 @@ reproduz exatamente os baselines.
 
 | Documento | Conteúdo |
 |---|---|
+| [`results/relatorio-final.md`](results/relatorio-final.md) | relatório final: o que foi feito, como, resultados e respostas às perguntas de pesquisa |
 | [`docs/resultados.md`](docs/resultados.md) | índice de todos os resultados, pelos quatro critérios |
 | [`docs/metodologia.md`](docs/metodologia.md) | regras metodológicas (as referências "§x.y" do código apontam para cá) |
 | [`docs/preparacao-dados.md`](docs/preparacao-dados.md) | descartes, alvo, split temporal e subamostra |

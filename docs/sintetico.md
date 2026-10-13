@@ -40,7 +40,9 @@ Na LogReg, todos os métodos põem x1 e x2 lá embaixo (rank ~6), porque o
 modelo linear não usa a interação pura — é limitação do modelo, não do
 método (§4.11).
 
-- **O PyGAwLLfs é o único que põe o par de interação à frente das aditivas.**
+- **PyGAwLLfs e Permutation põem o par de interação à frente das aditivas**
+  (no RF e no XGBoost); só o PyGAwLLfs faz isso **e** separa perfeitamente
+  relevantes de ruído (AUC 1,0).
 - **A Permutation é a mais fraca:** num modelo fixo, embaralhar uma
   redundante quase não muda nada (a original segura), e ela cai ao nível do
   ruído.

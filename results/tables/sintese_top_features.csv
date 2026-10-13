@@ -1,0 +1,12 @@
+model,method,top1,top2,top3,top4,top5
+logreg,intrinseca,dia_ano,mes,dia_mes,origem_te,empresa_te
+logreg,permutation,dia_ano,dia_mes,mes,origem_te,fim_semana
+logreg,gawll,origem_te,empresa_te,periodo_dia,hora,dia_ano
+random_forest,intrinseca,empresa_te,origem_te,hora,duracao_prevista_min,periodo_dia
+random_forest,permutation,origem_te,hora,empresa_te,dia_ano,periodo_dia
+random_forest,shap,hora,origem_te,empresa_te,periodo_dia,dia_ano
+random_forest,gawll,origem_te,hora,trimestre,mes,empresa_te
+xgboost,intrinseca,empresa_te,hora,tipo_linha_C,origem_te,tipo_linha_I
+xgboost,permutation,hora,empresa_te,origem_te,congestion_origem,duracao_prevista_min
+xgboost,shap,hora,empresa_te,dia_ano,origem_te,dia_sem
+xgboost,gawll,dia_ano,hora,origem_te,mes,empresa_te

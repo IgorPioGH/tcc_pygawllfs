@@ -1,0 +1,12 @@
+method,model,concordancia_spearman,concordancia_rbo,concordancia_top5,estabilidade_spearman,estabilidade_top5,fidelidade_top5,fidelidade_top10,acaso_top5,fidelidade_x_estrela,n_features_x_estrela,n_execucoes,tempo_por_execucao_s,treinos_por_execucao,fidelidade_top5_acima_acaso
+intrinseca,logreg,0.8756,0.7228,0.7,,,0.8886,0.9647,0.8097,,,1,0.0006,0.0,0.0789
+permutation,logreg,0.8357,0.7087,0.6,0.9898,1.0,0.871,0.9728,0.8097,,,5,16.6122,0.0,0.0613
+gawll,logreg,0.7714,0.5281,0.5,0.7983,0.68,0.9825,0.985,0.8097,0.9904,9.0,5,326.0557,3216.0,0.1728
+intrinseca,random_forest,0.7975,0.7075,0.7333,,,0.9386,0.9881,0.7212,,,1,0.0344,0.0,0.2174
+permutation,random_forest,0.6034,0.7522,0.8,0.987,1.0,0.9711,1.001,0.7212,,,5,28.3656,0.0,0.2499
+shap,random_forest,0.8105,0.7523,0.8,0.9991,1.0,0.9711,0.9858,0.7212,,,5,138.4691,0.0,0.2499
+gawll,random_forest,0.6713,0.7108,0.6,0.557,0.82,0.9377,0.9814,0.7212,0.9452,10.8,5,1584.9908,4041.4,0.2165
+intrinseca,xgboost,0.6018,0.6271,0.6,,,0.9607,0.9578,0.7243,,,1,1.9236,0.0,0.2364
+permutation,xgboost,0.6224,0.7004,0.6,0.9921,1.0,0.9839,0.9864,0.7243,,,5,19.1982,0.0,0.2596
+shap,xgboost,0.7502,0.7272,0.6667,0.9995,1.0,0.9554,0.9965,0.7243,,,5,1.6744,0.0,0.2311
+gawll,xgboost,0.4666,0.6011,0.6667,0.569,0.84,0.9372,0.9621,0.7243,0.9831,10.2,5,1976.7017,4399.8,0.2129

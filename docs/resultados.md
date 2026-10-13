@@ -93,7 +93,16 @@ detalhes do GA em `docs/piloto-custo.md`.
   `grafo_interacao`, `dominio_hora_x_origem`, `dominio_hora_x_tipo_linha`.
   Interpretação: `docs/validacao-dominio.md`.
 
-## 8. Correções e auditorias
+## 8. Quadro-síntese
+
+`src/compare/sintese.py` junta os quatro critérios lado a lado, sem recalcular
+nada: `sintese_metodos.csv` (por método e modelo), `sintese_modelos.csv` (por
+modelo: desempenho no teste, concordância média entre os métodos e fidelidade
+média do top-5) e `sintese_top_features.csv` (top-5 de cada ranking). O
+relatório final, com as respostas às perguntas de pesquisa, está em
+`results/relatorio-final.md`.
+
+## 9. Correções e auditorias
 
 - Correções metodológicas e de implementação (1–5): `docs/metodologia.md` §4.
 - Auditoria do congestionamento (limitação): `auditoria_congestionamento.csv`.
