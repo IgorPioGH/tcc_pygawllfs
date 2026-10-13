@@ -103,7 +103,7 @@ nítido: `mes` × `dia_ano` é o 1º do PyGAwLLfs e o 187º do H.
 | H_abs, XGBoost | 1º em todas as amostras | 20º |
 | H normalizado, RF / XGBoost | 1º | 28º / 44º |
 
-**A hipótese (`docs/sintetico.md` §3) está confirmada no sintético:**
+**A hipótese da redundância (`docs/sintetico.md` §3) está confirmada no sintético:**
 os dois métodos acham a interação verdadeira, mas só o PyGAwLLfs põe a
 redundância no topo. Nos dados reais ela se confirma em parte: vale com
 clareza no XGBoost; no RF, a extrapolação da dependência parcial também faz o

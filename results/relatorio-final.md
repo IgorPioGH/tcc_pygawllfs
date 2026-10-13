@@ -8,7 +8,7 @@ Este trabalho compara cinco formas de medir **quais atributos importam** e
 **quais interagem** num modelo de aprendizado de máquina, usando como problema
 a previsão de atrasos de voos no Brasil (base VRA da ANAC, 2024–2025, 1,86
 milhão de voos). O método central é o **PyGAwLLfs**, um algoritmo genético que
-seleciona atributos e, de carona, estima a importância de cada um e a interação
+seleciona atributos e, estima a importância de cada um e a interação
 entre pares. Ele foi comparado com **Permutation Importance**, **TreeSHAP**, as
 **importâncias intrínsecas** dos modelos e, para interações, a **estatística H
 de Friedman**, em três modelos (regressão logística, Random Forest e XGBoost) e
@@ -87,8 +87,11 @@ corrigido, porque o futuro tem sazonalidade.
   feriado e véspera de feriado;
 - **duração prevista** do voo e **congestionamento programado** (voos previstos
   na mesma hora no aeroporto de origem e no de destino);
-- **tipo de linha** (4 categorias, one-hot) e **porte** dos aeroportos de origem
-  e destino (quartis de volume no treino, one-hot);
+- **tipo de linha**, em one-hot: doméstica mista (N, passageiros), internacional
+  mista (I), doméstica cargueira (C) e internacional cargueira (G), na
+  codificação da ANAC (CRUZ, 2013);
+- **porte** dos aeroportos de origem e destino (quartis de volume no treino,
+  one-hot);
 - **empresa, origem e destino** por *target encoding*: a taxa de atraso
   suavizada de cada categoria. Codificar centenas de aeroportos em one-hot
   tornaria o algoritmo genético e o H inviáveis.
@@ -272,7 +275,7 @@ Top-5 de cada ranking:
 | RF | Permutation | origem | hora | empresa | dia do ano | período do dia |
 | RF | SHAP | hora | origem | empresa | período do dia | dia do ano |
 | RF | PyGAwLLfs | origem | hora | trimestre | mês | empresa |
-| XGBoost | Intrínseca | empresa | hora | tipo de linha C | origem | tipo de linha I |
+| XGBoost | Intrínseca | empresa | hora | linha C (dom. cargueira) | origem | linha I (intern. mista) |
 | XGBoost | Permutation | hora | empresa | origem | congest. origem | duração prevista |
 | XGBoost | SHAP | hora | empresa | dia do ano | origem | dia da semana |
 | XGBoost | PyGAwLLfs | dia do ano | hora | origem | mês | empresa |
@@ -480,8 +483,21 @@ Partidas de madrugada em Guarulhos (2h: 41% de atraso, contra 25% previstos
 sem interação) e no Galeão atrasam muito mais do que "ser esse aeroporto" e
 "ser essa hora" explicariam somados. O padrão é compatível com bancos noturnos
 de voos internacionais longos. Em Congonhas às 22h ocorre o contrário (−8,6
-p.p.), compatível com a restrição de horário de operação do aeroporto. São
-hipóteses de domínio, não verificadas aqui.
+p.p.), compatível com a restrição de horário de operação do aeroporto.
+
+No segundo par corroborado, hora × tipo de linha, o efeito da hora **muda de
+sinal** conforme o tipo de voo:
+
+- os **cargueiros domésticos** (C) das 2h–3h atrasam 45%–51%, contra 17%–22%
+  previstos sem interação, e os das 22h quase não atrasam (7% contra 28%);
+- os **internacionais de passageiros** (I) das 5h–6h atrasam o dobro do
+  previsto (32% contra ~16%), o mesmo padrão de madrugada do par anterior;
+- os **domésticos de passageiros** (N), que são a maioria dos voos, seguem o
+  padrão aditivo.
+
+O padrão é plausível, porque a programação e as prioridades de um voo de carga
+diferem das de um voo de passageiros. Todas essas leituras são hipóteses de
+domínio, não verificadas aqui.
 
 ## 7. Limitações
 
@@ -497,8 +513,7 @@ hipóteses de domínio, não verificadas aqui.
   ficou restrita aos 15 maiores aeroportos e às 10 maiores empresas.
 - **Atributos:** o congestionamento conta só voos realizados, não os
   programados. O impacto medido é de ±0,002 no F1, então ficou como limitação
-  documentada. O significado das letras do tipo de linha ainda precisa ser
-  confirmado no dicionário do VRA.
+  documentada.
 - **Fora do escopo por decisão:** clima, propagação de atrasos entre voos e
   fidelidade por remoção (ROAR).
 
@@ -613,8 +628,18 @@ complementar, e não substituto, ao H de Friedman.
 | PyGAwLLfs e as correções | `docs/metodologia.md` §4, `src/importance/gawll.py` |
 | Decisões em aberto | `docs/decisoes.md` |
 
-**Referência principal.** GUIMARÃES, D. G.; CARVALHO, S. S.; NASCIMENTO, R. H.;
-TINÓS, R. Estimating variable importance and interaction in machine learning
-via genetic algorithms. In: *BRACIS 2025*. Springer, 2026. p. 478–492. (LNAI
-16179). DOI: 10.1007/978-3-032-15987-8_32. As demais referências estão no
-`README.md`.
+## Referências
+
+CRUZ, C. S. BAV – Boletim de Alteração de Voos. In: SEMANA DE QUALIDADE DA
+INFORMAÇÃO DO TRANSPORTE AÉREO, 1., 2013, São Paulo. *Apresentação*. Brasília,
+DF: ANAC, 2013. Disponível em:
+https://www.gov.br/anac/pt-br/assuntos/regulados/empresas-aereas/semana-de-qualidade-da-informacao-do-transporte-aereo/arquivos/i-semana/apresentacao/painel_boletim_de_alteracao_de_voos_empresas_brasileiras.pdf.
+Acesso em: 13 out. 2026.
+
+GUIMARÃES, D. G.; CARVALHO, S. S.; NASCIMENTO, R. H.; TINÓS, R. Estimating
+variable importance and interaction in machine learning via genetic
+algorithms. In: *BRACIS 2025*. Springer, 2026. p. 478–492. (LNAI 16179). DOI:
+10.1007/978-3-032-15987-8_32.
+
+As demais referências (algoritmo genético com *linkage learning*, estatística H,
+RBO e a base VRA) estão no `README.md`.

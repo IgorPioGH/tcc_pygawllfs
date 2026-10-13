@@ -19,7 +19,7 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 7 | Teste no pico sazonal (nov–dez) | **mantido** (documentado) | não | — (não trocar) |
 | 8 | Agregação das sementes, RBO e top-k na Etapa 11 | média das sementes; RBO estendido, p = 0,9 | não | segundos |
 | 9 | Parâmetros do sintético (β = 2, σ = 0,5, ρ = 0,9) | **mantido** | não | ~30 min |
-| 10 | Significado das letras do `Código Tipo Linha` | **a conferir** (muda a leitura de um par corroborado na Etapa 15) | não | — (só texto) |
+| 10 | Significado das letras do `Código Tipo Linha` | **confirmado** (C/G: cargueira doméstica/internacional; N/I: mista doméstica/internacional) | não | — (só texto) |
 | 11 | Critérios da validação de domínio (Etapa 15) | top-10 por modelo; 1 p.p.; replicação ≥ 0,5; escala logit | talvez | ~1 min |
 | 12 | Cálculo do H de Friedman (Etapa 13) | logit; H_abs como principal; RF e XGBoost; 500 linhas × 5 sementes | não | ~7 min |
 | 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes, ganho pequeno |
@@ -131,8 +131,11 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 
 ## 10. `Código Tipo Linha`
 
-- Conferir no dicionário de dados do VRA (ANAC) o significado de C, G, I e N e
-  preencher em `docs/dicionario-features.md`. Não muda nenhum resultado.
+- **Confirmado** pela ANAC (CRUZ, 2013, slide 17): C = doméstica
+  cargueira, G = internacional cargueira, I = internacional mista, N =
+  doméstica mista. Registrado em `docs/dicionario-features.md`; a leitura do par
+  `hora` × tipo de linha está em `docs/validacao-dominio.md` §3. Não muda
+  nenhum resultado.
 
 ## 11. Critérios da validação de domínio (Etapa 15)
 

@@ -91,10 +91,15 @@ Desvio médio de 1,84 p.p. em 2024 e 1,58 em 2025 (ruído: 0,21); replicação r
 
 As linhas do tipo N (a maioria dos voos) ficam perto do previsto: o padrão
 vem dos outros tipos. O efeito da hora **muda de sinal conforme o tipo de
-linha** — interação no sentido mais claro. ⚠️ A interpretação depende do
-significado das letras: pelo volume, I e N devem ser linhas internacionais e
-nacionais, e C e G possivelmente cargueiras; **confirmar no dicionário do VRA**
-antes de usar essa leitura no texto (pendente em `docs/dicionario-features.md`).
+linha** — interação no sentido mais claro. Pela definição da ANAC (CRUZ,
+2013, slide 17), C é doméstica cargueira, G internacional cargueira, I
+internacional mista e N doméstica mista (`docs/dicionario-features.md`). Leitura para a discussão
+(hipóteses, não verificadas aqui): os cargueiros domésticos de madrugada (2h–3h)
+atrasam mais que o dobro do esperado, e os das 22h quase não atrasam — a
+programação e as prioridades de um voo de carga diferem das de um voo de
+passageiros. Os internacionais de passageiros das 5h–6h atrasam o dobro do
+previsto, o mesmo padrão de madrugada do par `hora` × origem (Guarulhos e
+Galeão concentram os voos internacionais).
 
 ## 4. Pares não corroborados (também são resultado)
 
@@ -140,7 +145,8 @@ antes de usar essa leitura no texto (pendente em `docs/dicionario-features.md`).
   grafo), estrutura do encoding (cinza) e interações operacionais (azul). Só
   as do terceiro tipo são candidatas a conhecimento de domínio — e, dessas, 2
   de 19 passaram no critério rigoroso.
-- Isso reforça a hipótese de `docs/sintetico.md` §3 nos dados reais.
+- Isso reforça, nos dados reais, a hipótese da redundância testada no
+  sintético (`docs/sintetico.md` §3).
   A outra metade (o H de Friedman não acusa os pares redundantes) foi
   verificada na Etapa 13 (`docs/interacoes-h.md`).
 - **Etapa 13:** o mesmo teste aplicado ao top-10 do H corroborou 9 de 20 pares

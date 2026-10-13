@@ -104,6 +104,7 @@ relatório final, com as respostas às perguntas de pesquisa, está em
 
 ## 9. Correções e auditorias
 
-- Correções metodológicas e de implementação (1–5): `docs/metodologia.md` §4.
+- Correções metodológicas e de implementação (1–5): `docs/metodologia.md` §4
+  (§4.1, §4.2, §4.4 e §4.12) e `results/relatorio-final.md` §4.1.
 - Auditoria do congestionamento (limitação): `auditoria_congestionamento.csv`.
 - Decisões provisórias e como revertê-las: `docs/decisoes.md`.

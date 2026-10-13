@@ -357,3 +357,7 @@ reproduz exatamente os baselines.
   *ACM Transactions on Information Systems*, v. 28, n. 4, p. 1–38, 2010.
   DOI: 10.1145/1852102.1852106.
 - ANAC. Histórico de voos: Voo Regular Ativo (VRA).
+- CRUZ, C. S. BAV – Boletim de Alteração de Voos. In: *I Semana de Qualidade da
+  Informação do Transporte Aéreo*, São Paulo, 2013. Apresentação. ANAC, 2013.
+  [PDF](https://www.gov.br/anac/pt-br/assuntos/regulados/empresas-aereas/semana-de-qualidade-da-informacao-do-transporte-aereo/arquivos/i-semana/apresentacao/painel_boletim_de_alteracao_de_voos_empresas_brasileiras.pdf)
+  — codificação do tipo de linha (slide 17).

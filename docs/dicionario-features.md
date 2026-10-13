@@ -39,8 +39,26 @@ estatísticas calculadas no treino. Números da preparação em
 |---|---|---|
 | `tipo_linha_C`, `tipo_linha_G`, `tipo_linha_I`, `tipo_linha_N` | 0/1 | uma coluna por código; o one-hot roda na base inteira antes do split, então os três conjuntos têm as mesmas 4 colunas. Volumes na base limpa: N 1.529.990 · I 274.046 · C 29.460 · G 22.484 |
 
-> ⚠️ **A conferir pelo autor:** o significado de cada letra (C, G, I, N) segundo
-> o dicionário de dados do VRA da ANAC — não está registrado em `docs/aquisicao-vra.md`.
+Significado de cada código (natureza da linha, segundo a ANAC):
+
+| Código | Significado | Descrição |
+|---|---|---|
+| C | Doméstica cargueira | voos nacionais destinados ao transporte de cargas |
+| G | Internacional cargueira | voos internacionais destinados ao transporte de cargas |
+| I | Internacional mista | voos internacionais de passageiros, que podem transportar carga |
+| N | Doméstica mista | voos nacionais de passageiros, que podem transportar carga |
+
+Fonte dos significados: CRUZ (2013), slide 17 ("Natureza da Linha (tipo de
+linha)"), que lista também os códigos R (regional mista), E (especial mista),
+L (rede postal) e H (sub-regional), ausentes na base de 2024–2025. A coluna
+"Descrição" explica os nomes.
+
+> CRUZ, Cleujanio Silva. BAV – Boletim de Alteração de Voos. In: SEMANA DE
+> QUALIDADE DA INFORMAÇÃO DO TRANSPORTE AÉREO, 1., 2013, São Paulo.
+> *Apresentação*. Brasília, DF: Agência Nacional de Aviação Civil
+> (ANAC/SRE/GEAC), 2013. Disponível em:
+> https://www.gov.br/anac/pt-br/assuntos/regulados/empresas-aereas/semana-de-qualidade-da-informacao-do-transporte-aereo/arquivos/i-semana/apresentacao/painel_boletim_de_alteracao_de_voos_empresas_brasileiras.pdf.
+> Acesso em: 13 out. 2026.
 
 Cardinalidade baixa (4 valores), por isso one-hot é seguro aqui (§3.2).
 
