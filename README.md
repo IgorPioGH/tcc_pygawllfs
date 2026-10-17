@@ -24,7 +24,7 @@ modelos e, para as interações, com a **estatística H de Friedman**.
   features mais importantes de cada método, o modelo retém 87%–98% do PR-AUC do
   modelo completo, contra 72%–81% de 5 features sorteadas.
 - **Os métodos discordam sobre o que interage**: PyGAwLLfs e H de Friedman quase
-  não concordam (Spearman ≈ 0,1). Num dataset sintético com gabarito, os dois
+  não concordam (Spearman ≈ 0,15). Num dataset sintético com gabarito, os dois
   acham a interação verdadeira, mas **só o PyGAwLLfs trata pares redundantes
   como interação** — ele mede a não aditividade do *desempenho*, e redundância
   produz exatamente esse sinal.
@@ -103,7 +103,11 @@ Permutation e SHAP são praticamente idênticos de uma semente para outra
 No PyGAwLLfs a semente muda a busca inteira: a importância varia mais
 (0,56–0,80), mas o topo do ranking é razoavelmente estável. Já a **matriz de
 interação** do PyGAwLLfs não se repete entre execuções: com os parâmetros do
-artigo e 29 atributos, cada par é sondado em média 0,7 vez por execução.
+artigo e 29 atributos, cada par é sondado em média 0,7 vez por execução, e
+metade dos pares fica sem sondagem em cada uma. Por isso a média das sementes
+usa só as execuções em que o par foi sondado: contar o par não sondado como
+"interação 0" fazia o ranking acompanhar a cobertura das sondagens
+([`docs/decisoes.md`](docs/decisoes.md) §15).
 
 ### 3. Fidelidade por retenção
 
@@ -126,7 +130,7 @@ retém 95%–99% do PR-AUC.
 | Intrínseca | ~2 s | 0 (lê o modelo treinado) |
 | Permutation | 5,4 min | 0 |
 | TreeSHAP | 11,7 min | 0 |
-| H de Friedman | 6,8 min | 0 |
+| H de Friedman | 7,2 min | 0 |
 | **PyGAwLLfs** | **5,4 h** | **3.200–4.400 por execução** |
 
 Os demais métodos explicam um modelo já treinado; o PyGAwLLfs retreina o modelo
@@ -139,7 +143,7 @@ matriz de interação.
 
 Cada ponto é um par de atributos: a posição no ranking de interação do
 PyGAwLLfs (eixo x) contra a do H (eixo y). A nuvem não segue a diagonal: os
-dois métodos praticamente não concordam (Spearman 0,08–0,12). Duas causas:
+dois métodos praticamente não concordam (Spearman 0,15–0,16). Duas causas:
 a matriz do PyGAwLLfs é pouco confiável com este orçamento (seção 2), e os
 métodos medem coisas diferentes. O dataset sintético com gabarito mostra a
 diferença com clareza:
@@ -150,9 +154,9 @@ diferença com clareza:
 | H de Friedman (RF, XGBoost) | 1º de 45 | 7º–44º |
 
 Os dois acham a interação verdadeira; só o PyGAwLLfs põe a redundância no topo.
-Nos dados reais, 8 das 15 arestas mais fortes do PyGAwLLfs (top-5 de cada
-modelo) são pares redundantes derivados da data ou da hora (ex.: `mes` ×
-`dia_ano`, `hora` × `periodo_dia`).
+Nos dados reais, 6 das 15 arestas mais fortes do PyGAwLLfs (top-5 de cada
+modelo) são pares redundantes, quase todos derivados da data ou da hora (ex.:
+`mes` × `dia_ano`, `hora` × `periodo_dia`).
 
 ### 6. Validação de domínio das interações
 
@@ -161,19 +165,32 @@ modelo) são pares redundantes derivados da data ou da hora (ex.: `mes` ×
 Grafo reduzido do PyGAwLLfs (5% das arestas mais fortes), com cada aresta
 classificada: **operacional** (azul), **redundante** (laranja) ou
 **estrutural** (cinza, duas codificações da mesma variável). Os pares
-operacionais foram testados nos dados: a taxa de atraso no cruzamento das duas
-variáveis difere do que os efeitos isolados preveem, **nos dois anos**? Dos 19
-operacionais, 2 foram corroborados descritivamente (e nenhum dos 10 pares de
-controle):
+operacionais do topo de cada modelo foram testados nos dados: a taxa de atraso
+no cruzamento das duas variáveis difere do que os efeitos isolados preveem,
+**nos dois anos**? Dos 20 operacionais, 4 foram corroborados descritivamente
+(e nenhum dos 10 pares de controle):
 
 <p align="center"><img src="results/figures/dominio_hora_x_origem.png" width="860"></p>
 
 Partidas de madrugada em Guarulhos (SBGR) e no Galeão (SBGL) atrasam muito mais
 do que "ser esse aeroporto" e "ser essa hora" explicariam somados (à direita,
-vermelho = mais atraso que o esperado sem interação). O segundo par corroborado
-é hora × tipo de linha. A corroboração é observacional: um fator não observado
-poderia produzir o mesmo padrão. Aplicado ao top-10 do H de Friedman, o mesmo
-teste corroborou 9 de 20 pares, contra 1 de 20 do PyGAwLLfs.
+vermelho = mais atraso que o esperado sem interação). Os outros pares
+corroborados são hora × congestionamento na origem, empresa × origem e hora ×
+tipo de linha. A corroboração é observacional: um fator não observado poderia
+produzir o mesmo padrão. Aplicado ao top-10 do H de Friedman, o mesmo teste
+corroborou 9 de 20 pares, contra 2 de 20 do PyGAwLLfs.
+
+### Sensibilidade: o zero da matriz de interação
+
+<p align="center"><img src="results/figures/sensibilidade_agregacao.png" width="900"></p>
+
+Com o par não sondado contando como "interação 0" na média das sementes
+(laranja), a posição do par no ranking acompanha quantas vezes ele foi sondado
+(Spearman 0,43–0,68); com a média só das execuções em que ele foi sondado
+(azul, a versão usada), não (≈ 0). A troca muda o topo do ranking e leva a
+Etapa 15 de 2 para 4 pares corroborados, mas não muda as conclusões: os
+métodos seguem discordando, e o PyGAwLLfs segue promovendo a redundância
+([`docs/decisoes.md`](docs/decisoes.md) §15).
 
 ### Síntese
 
@@ -288,11 +305,11 @@ Medido na máquina acima (os tempos marcados com ~ são aproximados):
 | `rankings` | concordância, estabilidade, figuras | < 1 min |
 | `sintetico` | Diferencial 1 (o GA no sintético leva ~30 min na primeira vez) | 30 min |
 | `dominio` | Diferencial 4 | 1 min |
-| `interacoes` | H de Friedman e comparação | 9 min |
+| `interacoes` | H de Friedman, comparação e sensibilidade à agregação das sementes | 10 min |
 | `fidelidade` | 138 treinos no treino completo, avaliados no teste | 50 min |
 | `sintese` | quadro-síntese dos quatro critérios (só lê CSV) | < 1 s |
 | `extras` | histograma e auditoria do congestionamento | ~4 min |
-| `--testes` | 8 suítes, 40 testes | ~6 min |
+| `--testes` | 8 suítes, 41 testes | ~6 min |
 
 ### Testes
 

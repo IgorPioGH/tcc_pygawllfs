@@ -134,19 +134,23 @@ def sobreposicao_top_k(lista_a: list[str], lista_b: list[str], k: int) -> float:
 
 def comparar(pontuacoes_a: pd.Series, pontuacoes_b: pd.Series) -> dict:
     """Todas as métricas entre dois rankings (Series indexadas pela feature): Spearman,
-    Kendall tau-b, RBO e top-5/10/15.
+    Kendall tau-b, RBO e top-5/10/15. NaN = item sem medida (par de interação não
+    sondado, decisão 15): as correlações usam os itens com valor nos dois rankings, e
+    as listas do RBO e do top-k, os itens com valor em cada um. Sem NaN, nada muda.
 
     Usada em: concordancia_entre_rankings; stability.concordancia_entre_sementes;
-    interacoes.comparar_modelo; testes.
+    interacoes.comparar_modelo; sensibilidade_agregacao; testes.
     Importância: fonte única das métricas; concordância, estabilidade e interações
     usam exatamente o mesmo cálculo.
     """
     pontuacoes_b = pontuacoes_b.loc[pontuacoes_a.index]  # mesma ordem de features
-    lista_a, lista_b = ordenar(pontuacoes_a), ordenar(pontuacoes_b)
+    comuns = pontuacoes_a.notna() & pontuacoes_b.notna()
+    lista_a, lista_b = ordenar(pontuacoes_a.dropna()), ordenar(pontuacoes_b.dropna())
     resultado = {
-        "spearman": spearmanr(pontuacoes_a, pontuacoes_b).statistic,
+        "spearman": spearmanr(pontuacoes_a[comuns], pontuacoes_b[comuns]).statistic,
         # scipy usa tau-b por padrão; explícito porque empates importam (§4.5)
-        "kendall_tau_b": kendalltau(pontuacoes_a, pontuacoes_b, variant="b").statistic,
+        "kendall_tau_b": kendalltau(pontuacoes_a[comuns], pontuacoes_b[comuns],
+                                    variant="b").statistic,
         "rbo": rbo(lista_a, lista_b),
     }
     for k in TOP_K:

@@ -1,4 +1,118 @@
 nivel_a,nivel_b,n,k,taxa,previsto_sem_interacao,feature_a,feature_b
+0,"(0.999, 2.0]",13666,2799,0.20481,0.18752,hora,congestion_origem
+0,"(2.0, 4.0]",2375,520,0.21895,0.1692,hora,congestion_origem
+0,"(4.0, 8.0]",655,172,0.2626,0.16682,hora,congestion_origem
+1,"(0.999, 2.0]",10523,2057,0.19548,0.2312,hora,congestion_origem
+1,"(2.0, 4.0]",2683,714,0.26612,0.20972,hora,congestion_origem
+1,"(4.0, 8.0]",3284,825,0.25122,0.20692,hora,congestion_origem
+1,"(8.0, 17.0]",2300,620,0.26957,0.22156,hora,congestion_origem
+2,"(0.999, 2.0]",16360,2749,0.16803,0.18087,hora,congestion_origem
+2,"(17.0, 36.0]",19,1,0.05263,0.20915,hora,congestion_origem
+2,"(2.0, 4.0]",8577,1580,0.18421,0.16308,hora,congestion_origem
+2,"(4.0, 8.0]",5266,872,0.16559,0.16077,hora,congestion_origem
+2,"(8.0, 17.0]",190,17,0.08947,0.17285,hora,congestion_origem
+3,"(0.999, 2.0]",17377,2252,0.1296,0.13582,hora,congestion_origem
+3,"(2.0, 4.0]",8884,841,0.09466,0.1218,hora,congestion_origem
+3,"(4.0, 8.0]",6874,1017,0.14795,0.11999,hora,congestion_origem
+3,"(8.0, 17.0]",2272,457,0.20114,0.12949,hora,congestion_origem
+4,"(0.999, 2.0]",18973,2241,0.11812,0.12353,hora,congestion_origem
+4,"(2.0, 4.0]",7089,598,0.08436,0.11062,hora,congestion_origem
+4,"(4.0, 8.0]",5673,793,0.13978,0.10895,hora,congestion_origem
+4,"(8.0, 17.0]",1392,260,0.18678,0.11769,hora,congestion_origem
+5,"(0.999, 2.0]",20712,2269,0.10955,0.10145,hora,congestion_origem
+5,"(2.0, 4.0]",13083,1218,0.0931,0.0906,hora,congestion_origem
+5,"(4.0, 8.0]",16535,1375,0.08316,0.08921,hora,congestion_origem
+5,"(8.0, 17.0]",2456,195,0.0794,0.09654,hora,congestion_origem
+6,"(0.999, 2.0]",18852,2948,0.15638,0.09849,hora,congestion_origem
+6,"(17.0, 36.0]",11356,537,0.04729,0.1157,hora,congestion_origem
+6,"(2.0, 4.0]",14083,1409,0.10005,0.08793,hora,congestion_origem
+6,"(4.0, 8.0]",18577,1385,0.07455,0.08657,hora,congestion_origem
+6,"(8.0, 17.0]",18887,1520,0.08048,0.0937,hora,congestion_origem
+7,"(0.999, 2.0]",10563,2185,0.20685,0.13762,hora,congestion_origem
+7,"(17.0, 36.0]",20776,3345,0.161,0.16047,hora,congestion_origem
+7,"(2.0, 4.0]",6432,644,0.10012,0.12344,hora,congestion_origem
+7,"(4.0, 8.0]",12928,1381,0.10682,0.12161,hora,congestion_origem
+7,"(8.0, 17.0]",15485,1629,0.1052,0.13122,hora,congestion_origem
+8,"(0.999, 2.0]",15396,3205,0.20817,0.12904,hora,congestion_origem
+8,"(17.0, 36.0]",71476,9792,0.137,0.15071,hora,congestion_origem
+8,"(2.0, 4.0]",6752,765,0.1133,0.11563,hora,congestion_origem
+8,"(4.0, 8.0]",5885,506,0.08598,0.1139,hora,congestion_origem
+8,"(8.0, 17.0]",18245,2163,0.11855,0.12298,hora,congestion_origem
+9,"(0.999, 2.0]",20635,3863,0.18721,0.14292,hora,congestion_origem
+9,"(17.0, 36.0]",35977,5143,0.14295,0.16648,hora,congestion_origem
+9,"(2.0, 4.0]",8695,1229,0.14135,0.12828,hora,congestion_origem
+9,"(4.0, 8.0]",12732,1621,0.12732,0.12639,hora,congestion_origem
+9,"(8.0, 17.0]",16389,1998,0.12191,0.13631,hora,congestion_origem
+10,"(0.999, 2.0]",26726,4469,0.16722,0.16583,hora,congestion_origem
+10,"(17.0, 36.0]",4212,682,0.16192,0.19231,hora,congestion_origem
+10,"(2.0, 4.0]",13964,2050,0.14681,0.14924,hora,congestion_origem
+10,"(4.0, 8.0]",24311,3768,0.15499,0.14709,hora,congestion_origem
+10,"(8.0, 17.0]",15732,2409,0.15313,0.15835,hora,congestion_origem
+11,"(0.999, 2.0]",27998,4864,0.17373,0.17754,hora,congestion_origem
+11,"(17.0, 36.0]",2765,686,0.2481,0.20543,hora,congestion_origem
+11,"(2.0, 4.0]",19514,3039,0.15573,0.16001,hora,congestion_origem
+11,"(4.0, 8.0]",24357,3950,0.16217,0.15774,hora,congestion_origem
+11,"(8.0, 17.0]",12995,2173,0.16722,0.16964,hora,congestion_origem
+12,"(0.999, 2.0]",24532,3606,0.14699,0.17728,hora,congestion_origem
+12,"(17.0, 36.0]",13795,3362,0.24371,0.20514,hora,congestion_origem
+12,"(2.0, 4.0]",15823,2370,0.14978,0.15977,hora,congestion_origem
+12,"(4.0, 8.0]",15567,2375,0.15257,0.1575,hora,congestion_origem
+12,"(8.0, 17.0]",26800,4984,0.18597,0.16939,hora,congestion_origem
+13,"(0.999, 2.0]",22920,3696,0.16126,0.19193,hora,congestion_origem
+13,"(17.0, 36.0]",13743,3133,0.22797,0.22148,hora,congestion_origem
+13,"(2.0, 4.0]",11989,2059,0.17174,0.17328,hora,congestion_origem
+13,"(4.0, 8.0]",12724,2394,0.18815,0.17086,hora,congestion_origem
+13,"(8.0, 17.0]",22149,4467,0.20168,0.18354,hora,congestion_origem
+14,"(0.999, 2.0]",25207,4867,0.19308,0.19456,hora,congestion_origem
+14,"(17.0, 36.0]",9680,1977,0.20424,0.2244,hora,congestion_origem
+14,"(2.0, 4.0]",9781,2133,0.21808,0.17571,hora,congestion_origem
+14,"(4.0, 8.0]",17138,2913,0.16997,0.17326,hora,congestion_origem
+14,"(8.0, 17.0]",30515,5549,0.18184,0.18608,hora,congestion_origem
+15,"(0.999, 2.0]",30946,5620,0.18161,0.19685,hora,congestion_origem
+15,"(17.0, 36.0]",14107,3567,0.25285,0.22694,hora,congestion_origem
+15,"(2.0, 4.0]",11211,2089,0.18633,0.17782,hora,congestion_origem
+15,"(4.0, 8.0]",20782,3482,0.16755,0.17535,hora,congestion_origem
+15,"(8.0, 17.0]",10485,2142,0.20429,0.18829,hora,congestion_origem
+16,"(0.999, 2.0]",25369,4870,0.19197,0.21084,hora,congestion_origem
+16,"(17.0, 36.0]",5588,1273,0.22781,0.24242,hora,congestion_origem
+16,"(2.0, 4.0]",14339,2635,0.18376,0.19078,hora,congestion_origem
+16,"(4.0, 8.0]",8815,1721,0.19524,0.18817,hora,congestion_origem
+16,"(8.0, 17.0]",16327,3892,0.23838,0.20182,hora,congestion_origem
+17,"(0.999, 2.0]",22570,4781,0.21183,0.23229,hora,congestion_origem
+17,"(17.0, 36.0]",22719,6525,0.2872,0.266,hora,congestion_origem
+17,"(2.0, 4.0]",13416,2565,0.19119,0.21074,hora,congestion_origem
+17,"(4.0, 8.0]",25933,6074,0.23422,0.20792,hora,congestion_origem
+17,"(8.0, 17.0]",29438,5991,0.20351,0.22261,hora,congestion_origem
+18,"(0.999, 2.0]",23568,4410,0.18712,0.23107,hora,congestion_origem
+18,"(17.0, 36.0]",13885,3722,0.26806,0.26467,hora,congestion_origem
+18,"(2.0, 4.0]",17079,3912,0.22905,0.2096,hora,congestion_origem
+18,"(4.0, 8.0]",18217,3737,0.20514,0.2068,hora,congestion_origem
+18,"(8.0, 17.0]",17812,4570,0.25657,0.22143,hora,congestion_origem
+19,"(0.999, 2.0]",23494,4900,0.20856,0.24021,hora,congestion_origem
+19,"(17.0, 36.0]",55,9,0.16364,0.27466,hora,congestion_origem
+19,"(2.0, 4.0]",18333,3813,0.20799,0.21814,hora,congestion_origem
+19,"(4.0, 8.0]",23857,5469,0.22924,0.21525,hora,congestion_origem
+19,"(8.0, 17.0]",10702,3077,0.28752,0.23031,hora,congestion_origem
+20,"(0.999, 2.0]",22260,5093,0.2288,0.22345,hora,congestion_origem
+20,"(17.0, 36.0]",9265,1763,0.19029,0.2563,hora,congestion_origem
+20,"(2.0, 4.0]",11106,2506,0.22564,0.2025,hora,congestion_origem
+20,"(4.0, 8.0]",11599,2183,0.18821,0.19977,hora,congestion_origem
+20,"(8.0, 17.0]",18820,4397,0.23363,0.21404,hora,congestion_origem
+21,"(0.999, 2.0]",13957,3417,0.24482,0.20552,hora,congestion_origem
+21,"(17.0, 36.0]",17057,3858,0.22618,0.23654,hora,congestion_origem
+21,"(2.0, 4.0]",5385,1028,0.1909,0.18585,hora,congestion_origem
+21,"(4.0, 8.0]",8080,1477,0.1828,0.18329,hora,congestion_origem
+21,"(8.0, 17.0]",24092,4324,0.17948,0.19667,hora,congestion_origem
+22,"(0.999, 2.0]",9971,2181,0.21873,0.22167,hora,congestion_origem
+22,"(17.0, 36.0]",20178,6629,0.32853,0.25435,hora,congestion_origem
+22,"(2.0, 4.0]",4179,513,0.12276,0.20085,hora,congestion_origem
+22,"(4.0, 8.0]",13691,2004,0.14637,0.19813,hora,congestion_origem
+22,"(8.0, 17.0]",13015,2315,0.17787,0.21232,hora,congestion_origem
+23,"(0.999, 2.0]",14052,3584,0.25505,0.21512,hora,congestion_origem
+23,"(17.0, 36.0]",24903,6799,0.27302,0.24713,hora,congestion_origem
+23,"(2.0, 4.0]",4962,898,0.18098,0.19475,hora,congestion_origem
+23,"(4.0, 8.0]",6471,933,0.14418,0.1921,hora,congestion_origem
+23,"(8.0, 17.0]",13545,1939,0.14315,0.20596,hora,congestion_origem
 0,SBBE,884,108,0.12217,0.16636,hora,origem_te
 0,SBBR,647,57,0.0881,0.11842,hora,origem_te
 0,SBCF,631,108,0.17116,0.18537,hora,origem_te
@@ -345,6 +459,121 @@ nivel_a,nivel_b,n,k,taxa,previsto_sem_interacao,feature_a,feature_b
 23,SBPA,408,49,0.1201,0.16917,hora,origem_te
 23,SBRF,1738,353,0.20311,0.16198,hora,origem_te
 23,SBSV,2200,393,0.17864,0.14258,hora,origem_te
+ACN,SBBE,1541,244,0.15834,0.21284,empresa_te,origem_te
+ACN,SBCF,3701,1118,0.30208,0.24569,empresa_te,origem_te
+ACN,SBCT,688,115,0.16715,0.19771,empresa_te,origem_te
+ACN,SBEG,1279,196,0.15324,0.21382,empresa_te,origem_te
+ACN,SBFZ,410,53,0.12927,0.18079,empresa_te,origem_te
+ACN,SBKP,2131,516,0.24214,0.21936,empresa_te,origem_te
+ACN,SBPA,158,18,0.11392,0.20551,empresa_te,origem_te
+ACN,SBRF,1358,162,0.11929,0.20102,empresa_te,origem_te
+ACN,SBSP,1901,330,0.17359,0.26004,empresa_te,origem_te
+ARG,SBBR,141,35,0.24823,0.12318,empresa_te,origem_te
+ARG,SBCF,12,9,0.75,0.19299,empresa_te,origem_te
+ARG,SBCT,410,52,0.12683,0.15322,empresa_te,origem_te
+ARG,SBFL,366,107,0.29235,0.15253,empresa_te,origem_te
+ARG,SBFZ,3,3,1.0,0.13944,empresa_te,origem_te
+ARG,SBGL,2387,495,0.20737,0.1654,empresa_te,origem_te
+ARG,SBGR,2319,444,0.19146,0.24362,empresa_te,origem_te
+ARG,SBKP,2,1,0.5,0.17103,empresa_te,origem_te
+ARG,SBPA,161,24,0.14907,0.1596,empresa_te,origem_te
+ARG,SBSV,431,57,0.13225,0.14089,empresa_te,origem_te
+AZU,SBBE,17170,2204,0.12836,0.15143,empresa_te,origem_te
+AZU,SBBR,12406,2089,0.16839,0.11213,empresa_te,origem_te
+AZU,SBCF,69430,12484,0.17981,0.17693,empresa_te,origem_te
+AZU,SBCT,21665,3175,0.14655,0.13989,empresa_te,origem_te
+AZU,SBEG,9788,1653,0.16888,0.15219,empresa_te,origem_te
+AZU,SBFL,5376,652,0.12128,0.13926,empresa_te,origem_te
+AZU,SBFZ,7357,1000,0.13592,0.12713,empresa_te,origem_te
+AZU,SBGL,12331,2196,0.17809,0.15121,empresa_te,origem_te
+AZU,SBGR,17109,2057,0.12023,0.22452,empresa_te,origem_te
+AZU,SBKP,96262,15082,0.15668,0.15644,empresa_te,origem_te
+AZU,SBPA,14040,2135,0.15207,0.14582,empresa_te,origem_te
+AZU,SBRF,47797,6996,0.14637,0.14241,empresa_te,origem_te
+AZU,SBRJ,15950,2324,0.14571,0.10742,empresa_te,origem_te
+AZU,SBSP,24654,4196,0.1702,0.18827,empresa_te,origem_te
+AZU,SBSV,10713,1578,0.1473,0.12848,empresa_te,origem_te
+CMP,SBBR,731,156,0.21341,0.19674,empresa_te,origem_te
+CMP,SBCF,795,156,0.19623,0.29425,empresa_te,origem_te
+CMP,SBEG,285,27,0.09474,0.25824,empresa_te,origem_te
+CMP,SBFL,272,111,0.40809,0.23884,empresa_te,origem_te
+CMP,SBGL,1586,652,0.4111,0.25679,empresa_te,origem_te
+CMP,SBGR,3476,1126,0.32394,0.35961,empresa_te,origem_te
+CMP,SBPA,348,58,0.16667,0.24874,empresa_te,origem_te
+GLO,SBBE,4439,574,0.12931,0.13723,empresa_te,origem_te
+GLO,SBBR,36169,3672,0.10152,0.10117,empresa_te,origem_te
+GLO,SBCF,13809,1845,0.13361,0.1608,empresa_te,origem_te
+GLO,SBCT,9919,1079,0.10878,0.12662,empresa_te,origem_te
+GLO,SBEG,4938,691,0.13994,0.13793,empresa_te,origem_te
+GLO,SBFL,10387,1452,0.13979,0.12603,empresa_te,origem_te
+GLO,SBFZ,9031,1341,0.14849,0.1149,empresa_te,origem_te
+GLO,SBGL,40793,5424,0.13296,0.13703,empresa_te,origem_te
+GLO,SBGR,58799,10680,0.18164,0.20513,empresa_te,origem_te
+GLO,SBKP,2425,250,0.10309,0.14185,empresa_te,origem_te
+GLO,SBPA,8896,1331,0.14962,0.13207,empresa_te,origem_te
+GLO,SBRF,9828,1306,0.13289,0.12892,empresa_te,origem_te
+GLO,SBRJ,17210,1586,0.09216,0.09687,empresa_te,origem_te
+GLO,SBSP,68170,13437,0.19711,0.17131,empresa_te,origem_te
+GLO,SBSV,22248,2492,0.11201,0.11614,empresa_te,origem_te
+LAN,SBBR,70,7,0.1,0.1523,empresa_te,origem_te
+LAN,SBCF,448,234,0.52232,0.2342,empresa_te,origem_te
+LAN,SBCT,452,100,0.22124,0.18791,empresa_te,origem_te
+LAN,SBFL,1247,124,0.09944,0.1871,empresa_te,origem_te
+LAN,SBFZ,1,0,0.0,0.17164,empresa_te,origem_te
+LAN,SBGL,1978,468,0.2366,0.2022,empresa_te,origem_te
+LAN,SBGR,4319,1241,0.28734,0.29173,empresa_te,origem_te
+LAN,SBPA,254,42,0.16535,0.19541,empresa_te,origem_te
+LAN,SBSV,1,1,1.0,0.17337,empresa_te,origem_te
+PTB,SBBR,119,44,0.36975,0.22934,empresa_te,origem_te
+PTB,SBCF,13,0,0.0,0.33623,empresa_te,origem_te
+PTB,SBFL,474,161,0.33966,0.27601,empresa_te,origem_te
+PTB,SBFZ,163,24,0.14724,0.25552,empresa_te,origem_te
+PTB,SBGL,126,48,0.38095,0.29567,empresa_te,origem_te
+PTB,SBGR,2166,574,0.265,0.40556,empresa_te,origem_te
+PTB,SBPA,353,78,0.22096,0.28688,empresa_te,origem_te
+PTB,SBRF,551,63,0.11434,0.28124,empresa_te,origem_te
+PTB,SBRJ,251,68,0.27092,0.22093,empresa_te,origem_te
+PTB,SBSP,4281,1899,0.44359,0.35339,empresa_te,origem_te
+PTB,SBSV,356,76,0.21348,0.25782,empresa_te,origem_te
+SID,SBBE,7,3,0.42857,0.20725,empresa_te,origem_te
+SID,SBBR,1227,187,0.1524,0.15612,empresa_te,origem_te
+SID,SBCF,1063,299,0.28128,0.2395,empresa_te,origem_te
+SID,SBCT,49,12,0.2449,0.19243,empresa_te,origem_te
+SID,SBEG,482,35,0.07261,0.20822,empresa_te,origem_te
+SID,SBFL,9,3,0.33333,0.1916,empresa_te,origem_te
+SID,SBFZ,422,17,0.04028,0.17585,empresa_te,origem_te
+SID,SBGL,765,150,0.19608,0.20697,empresa_te,origem_te
+SID,SBGR,2950,1235,0.41864,0.29783,empresa_te,origem_te
+SID,SBKP,2,1,0.5,0.21365,empresa_te,origem_te
+SID,SBPA,47,4,0.08511,0.20006,empresa_te,origem_te
+SID,SBRF,489,61,0.12474,0.19566,empresa_te,origem_te
+SID,SBSV,1127,37,0.03283,0.17761,empresa_te,origem_te
+TAM,SBBE,4987,1046,0.20975,0.15783,empresa_te,origem_te
+TAM,SBBR,48643,4826,0.09921,0.11709,empresa_te,origem_te
+TAM,SBCF,12174,2110,0.17332,0.18417,empresa_te,origem_te
+TAM,SBCT,12164,1895,0.15579,0.14588,empresa_te,origem_te
+TAM,SBEG,5357,911,0.17006,0.1586,empresa_te,origem_te
+TAM,SBFL,9947,1412,0.14195,0.14522,empresa_te,origem_te
+TAM,SBFZ,16535,1878,0.11358,0.13266,empresa_te,origem_te
+TAM,SBGL,17211,2251,0.13079,0.1576,empresa_te,origem_te
+TAM,SBGR,120323,31664,0.26316,0.23316,empresa_te,origem_te
+TAM,SBKP,272,27,0.09926,0.16301,empresa_te,origem_te
+TAM,SBPA,11100,1579,0.14225,0.15202,empresa_te,origem_te
+TAM,SBRF,8729,1250,0.1432,0.14848,empresa_te,origem_te
+TAM,SBRJ,18499,1540,0.08325,0.1122,empresa_te,origem_te
+TAM,SBSP,71018,12380,0.17432,0.19586,empresa_te,origem_te
+TAM,SBSV,12824,1760,0.13724,0.13406,empresa_te,origem_te
+TAP,SBBE,646,150,0.2322,0.28548,empresa_te,origem_te
+TAP,SBBR,591,272,0.46024,0.22042,empresa_te,origem_te
+TAP,SBCF,622,248,0.39871,0.32491,empresa_te,origem_te
+TAP,SBEG,155,23,0.14839,0.28667,empresa_te,origem_te
+TAP,SBFL,181,39,0.21547,0.2659,empresa_te,origem_te
+TAP,SBFZ,755,239,0.31656,0.2459,empresa_te,origem_te
+TAP,SBGL,1283,184,0.14341,0.28512,empresa_te,origem_te
+TAP,SBGR,2081,618,0.29697,0.39328,empresa_te,origem_te
+TAP,SBPA,143,38,0.26573,0.27652,empresa_te,origem_te
+TAP,SBRF,1000,396,0.396,0.27101,empresa_te,origem_te
+TAP,SBSV,647,248,0.38331,0.24815,empresa_te,origem_te
 0,C,2211,378,0.17096,0.22473,hora,tipo_linha_N
 0,G,607,273,0.44975,0.54692,hora,tipo_linha_N
 0,I,7909,2052,0.25945,0.26603,hora,tipo_linha_N

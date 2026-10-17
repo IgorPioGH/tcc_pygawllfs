@@ -104,11 +104,13 @@ def teste_classificacao():
 
 
 def teste_selecao_e_tipos():
-    """Controles não repetem o par de domínio de nenhum candidato.
+    """Controles não repetem o par de domínio de nenhum candidato e têm rank nos três
+    modelos.
 
     Usada em: bloco __main__ desta suíte (python tests/test_dominio.py; também em
     python main.py --testes).
-    Importância: controles repetidos não seriam independentes.
+    Importância: controles repetidos não seriam independentes, e um par sem rank não
+    foi medido o bastante para ser chamado de fraco.
     """
     media = v.interacao_media()
     pares = v.selecionar_pares(media)
@@ -128,6 +130,8 @@ def teste_selecao_e_tipos():
     chaves_controles = [dominio(linha) for linha in controles.itertuples()]
     assert not (set(chaves_controles) & chaves_candidatos)
     assert len(set(chaves_controles)) == len(chaves_controles)
+    # Decisão 15: controle é par medido e fraco, não par nunca sondado
+    assert controles[[f"rank_{m}" for m in v.MODELOS]].notna().all().all()
 
     for modelo in v.MODELOS:  # todo par do top-10 de cada modelo é candidato
         top = media[(media["model"] == modelo) & (media["rank"] <= v.TOP_PARES_POR_MODELO)]

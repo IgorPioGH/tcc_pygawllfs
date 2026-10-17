@@ -121,10 +121,13 @@ PyGAwLLfs (5% das arestas mais fortes). Usar só (a) excluiria, por
 construção, os atributos que o PyGAwLLfs aponta como mais interativos.
 Background de ~500 linhas. Se o custo ficar inviável, corta-se por (a),
 preservando sempre os atributos das 5 arestas mais fortes do PyGAwLLfs.
-*Implementado em `src/interaction/friedman_h.py`:* a união ficou com 24 (RF)
-e 25 (XGBoost) atributos, sem corte (~7 min no total); escala logit, 5
+*Implementado em `src/interaction/friedman_h.py`:* a união ficou com 25 (RF)
+e 27 (XGBoost) atributos, sem corte (~7 min no total); escala logit, 5
 amostras de 500 linhas da validação; H não normalizado como versão principal.
-A LogReg fica de fora: é aditiva no logit, então H = 0 por construção.
+O grafo de (b) entra nas duas agregações das sementes do `docs/decisoes.md`
+§15 (só sementes em que o par foi sondado, a principal; e com zeros, a da
+análise de sensibilidade). A LogReg fica de fora: é aditiva no logit, então
+H = 0 por construção.
 
 ### 4.8 Comparação por rank, não por valor
 
@@ -280,6 +283,7 @@ anterior produziu. O `main.py` da raiz roda tudo nesta ordem (`python main.py
 | 12 | `src/compare/fidelity.py` | `fidelidade.csv`, `fidelidade_resumo.csv`, figura (~50 min; toca o teste) |
 | 13a | `src/interaction/friedman_h.py` | `interacao_h.csv` (~7 min) |
 | 13b | `src/compare/interacoes.py` (depois da 15) | `interacoes*.csv`, figura PyGAwLLfs × H |
+| 13c | `src/compare/sensibilidade_agregacao.py` (depois da 13b) | `sensibilidade_*.csv`, figura da sensibilidade à agregação das sementes (~2 min) |
 | 15 | `src/domain/validate_pairs.py` | `dominio_pares.csv`, `dominio_celulas.csv`, grafo e heatmaps (~1 min) |
 | — | `src/data/{figuras,auditar_congestionamento}.py` | histograma do atraso; auditoria do congestionamento |
 

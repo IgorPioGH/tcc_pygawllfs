@@ -12,8 +12,10 @@ Recebe:
     data/interim/vra_target.parquet      empresa e aeroportos em texto (para ler os pares)
 
 Passos:
-1. Seleção dos pares: vint médio das 5 sementes por modelo; candidatos = união
-   do top-10 de cada modelo. Controles = os 10 pares com pior rank médio nos
+1. Seleção dos pares: vint médio das sementes em que o par foi sondado, por
+   modelo, ranqueando só os pares sondados em pelo menos 2 sementes
+   (graph.interacao_media, decisão 15); candidatos = união do top-10 de cada
+   modelo. Controles = os 10 pares com pior rank médio, entre os ranqueados nos
    três modelos (mostram se o teste descritivo distingue alguma coisa).
 2. Cada feature volta à variável de domínio que codifica (empresa_te →
    empresa, as dummies de porte → porte, dia_ano → semana do ano...).
@@ -39,8 +41,9 @@ Passos:
    produzir o mesmo padrão (docs/metodologia.md, Diferencial 4).
 
 Produz:
-    results/tables/dominio_pares.csv       um par por linha: ranks no PyGAwLLfs,
-                                           tipo, desvios por ano, ruído, replicação
+    results/tables/dominio_pares.csv       um par por linha: ranks no PyGAwLLfs, nº
+                                           de sementes sondadas, tipo, desvios por
+                                           ano, ruído, replicação
     results/tables/dominio_celulas.csv     células dos pares das figuras (anos juntos)
     results/figures/grafo_interacao.{png,pdf}        grafo reduzido (5% das arestas)
     results/figures/dominio_<a>_x_<b>.{png,pdf}      heatmaps dos N_HEATMAPS pares
@@ -85,12 +88,13 @@ ANOS = [2024, 2025]          # 2025 vai só até outubro (o teste fica de fora)
 N_BOOTSTRAP = 200
 LIMIAR_PP = 1.0              # relevância prática mínima do desvio, em pontos percentuais
 LIMIAR_REPLICACAO = 0.5      # correlação mínima dos resíduos entre os dois anos ("forte")
-# Coeficiente de incerteza a partir do qual o par é redundante. Nos 35 pares
-# analisados há um vão entre 0,40 e 0,85: os derivados do calendário ficam
-# acima (dia_mes × dia_ano dá 0,85, e não 1, porque 2024 é bissexto) e os
-# demais abaixo. Qualquer limiar dentro do vão dá a mesma classificação.
+# Coeficiente de incerteza a partir do qual o par é redundante. Nos 36 pares
+# analisados há um vão entre 0,40 e 0,99: os derivados do calendário e da hora
+# ficam acima e os demais abaixo (na seleção com zeros da decisão 15, dia_mes ×
+# dia_ano dava 0,85, e não 1, porque 2024 é bissexto). Qualquer limiar dentro
+# do vão dá a mesma classificação.
 LIMIAR_REDUNDANCIA = 0.8
-N_HEATMAPS = 2
+N_HEATMAPS = 4               # os corroborados de melhor rank médio (hoje são 4)
 CELULA_MINIMA = 100          # células menores ficam fora da replicação e dos heatmaps
 SEMENTE = 42
 
@@ -171,28 +175,29 @@ def variavel(feature: str) -> str:
 # Seleção e tipo dos pares
 # ---------------------------------------------------------------------------
 
-def interacao_media() -> pd.DataFrame:
-    """vint médio das 5 sementes, com o rank de cada par em cada modelo (lê
-    interacao_gawll.csv e usa graph.interacao_media).
+def interacao_media(agregacao: str = "sondadas") -> pd.DataFrame:
+    """vint médio das sementes, com o nº de sementes sondadas e o rank de cada par em
+    cada modelo (lê interacao_gawll.csv e usa graph.interacao_media).
 
-    Usada em: main.
+    Usada em: main; sensibilidade_agregacao; tests/test_dominio.py.
     Importância: os pares candidatos saem desse ranking médio.
     """
     interacao = pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv")
-    return graph.interacao_media(interacao)
+    return graph.interacao_media(interacao, agregacao=agregacao)
 
 
 def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
     """Uma linha por par, com o rank em cada modelo: candidatos são os pares no top-10
-    de algum modelo; controles vêm do fundo do ranking, sem repetir o par de domínio
-    de um candidato nem de outro controle.
+    de algum modelo; controles vêm do fundo do ranking (entre os pares com rank nos
+    três modelos), sem repetir o par de domínio de um candidato nem de outro controle.
 
-    Usada em: main; tests/test_dominio.py.
+    Usada em: main; sensibilidade_agregacao; tests/test_dominio.py.
     Importância: os controles dão a taxa de "corroboração por acaso", sem a qual o
-    número de corroborados não teria referência.
+    número de corroborados não teria referência. Um par sem rank não foi medido o
+    bastante para ser chamado de fraco.
     """
     largo = media.pivot_table(index=["feature_a", "feature_b"], columns="model",
-                              values=["rank", "interaction"])
+                              values=["rank", "interaction", "n_sementes"])
     largo.columns = [f"{metrica}_{modelo}" for metrica, modelo in largo.columns]
     largo = largo.reset_index()
     ranks = largo[[f"rank_{m}" for m in MODELOS]]
@@ -217,7 +222,8 @@ def selecionar_pares(media: pd.DataFrame) -> pd.DataFrame:
 
     usados = {par_de_dominio(linha) for _, linha in candidatos.iterrows()}
     escolhidos = []
-    for _, linha in largo.sort_values("rank_medio", ascending=False).iterrows():
+    com_rank = largo[ranks.notna().all(axis=1)]
+    for _, linha in com_rank.sort_values("rank_medio", ascending=False).iterrows():
         chave = par_de_dominio(linha)
         if len(chave) == 2 and chave not in usados:  # len 1 = mesma variável (estrutural)
             escolhidos.append(linha)
@@ -445,19 +451,19 @@ def afastar_nos(posicao: dict, distancia_minima: float = 0.15, iteracoes: int = 
     return dict(zip(nos, pontos))
 
 
-def figura_grafo(media: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
+def figura_grafo(arestas: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
                  caminho_base: Path) -> None:
-    """Grafo reduzido de cada modelo (5% das arestas mais fortes): largura da aresta
-    pela interação, cor pelo tipo do par, tamanho do nó pela importância.
+    """Grafo reduzido de cada modelo (as arestas de graph.arestas_reduzidas, 5% das
+    mais fortes): largura da aresta pela interação, cor pelo tipo do par, tamanho do
+    nó pela importância.
 
     Usada em: main.
     Importância: é a figura análoga ao grafo do Boson no artigo.
     """
     fig, eixos = plt.subplots(1, 3, figsize=(18, 7), layout="constrained")
     for ax, modelo in zip(eixos, MODELOS):
-        pares = media[media["model"] == modelo]
-        n_arestas = int(round(len(pares) * FRACAO_GRAFO))
-        fortes = pares.nlargest(n_arestas, "interaction")
+        fortes = arestas[arestas["model"] == modelo]
+        n_arestas = len(fortes)
 
         grafo = nx.Graph()
         for linha in fortes.itertuples():
@@ -493,10 +499,12 @@ def figura_grafo(media: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
     fig.legend(handles=legenda, loc="outside upper right", ncol=3, frameon=False,
                fontsize=9, title="tipo do par", title_fontsize=9)
     fig.suptitle("Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes, "
-                 "média das 5 sementes)", x=0.01, ha="left", color=COR_TEXTO, fontsize=12)
+                 "média das sementes em que o par foi sondado)", x=0.01, ha="left",
+                 color=COR_TEXTO, fontsize=12)
     fig.supxlabel("Espessura = força da interação (vint); tamanho do nó = importância (vimp, "
                   "normalizada). Estrutural = mesma variável; redundante = uma variável quase "
-                  "determina a outra.", x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
+                  "determina a outra. Só pares sondados em pelo menos 2 das 5 sementes.",
+                  x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
     salvar(fig, caminho_base)
 
 
@@ -571,6 +579,7 @@ def main() -> None:
             "grupo": par.grupo, "feature_a": par.feature_a, "feature_b": par.feature_b,
             "variavel_a": variavel(par.feature_a), "variavel_b": variavel(par.feature_b),
             **{f"rank_{m}": getattr(par, f"rank_{m}") for m in MODELOS},
+            **{f"n_sementes_{m}": getattr(par, f"n_sementes_{m}") for m in MODELOS},
             "rank_medio": par.rank_medio, "modelos_top10": par.modelos_top10,
             "tipo": tipo, "coef_incerteza": incerteza,
         }
@@ -587,17 +596,14 @@ def main() -> None:
     comum.salvar_tabela(resultado.round(4), "dominio_pares.csv")
 
     # Grafo reduzido: precisa do tipo de todas as arestas que entram nele
+    arestas = graph.arestas_reduzidas(media, FRACAO_GRAFO)
     tipos = {}
-    for modelo in MODELOS:
-        pares_modelo = media[media["model"] == modelo]
-        for linha in pares_modelo.nlargest(int(round(len(pares_modelo) * FRACAO_GRAFO)),
-                                           "interaction").itertuples():
-            chave = (linha.feature_a, linha.feature_b)
-            if chave not in tipos:
-                tipos[chave] = tipo_do_par(*chave, dominio)[0]
+    for chave in zip(arestas["feature_a"], arestas["feature_b"]):
+        if chave not in tipos:
+            tipos[chave] = tipo_do_par(*chave, dominio)[0]
     importancia = pd.read_csv(comum.DIR_TABELAS / "ranking_consolidado.csv")
     importancia = importancia[importancia["method"] == "gawll"]
-    figura_grafo(media, tipos, importancia, DIR_FIGURAS / "grafo_interacao")
+    figura_grafo(arestas, tipos, importancia, DIR_FIGURAS / "grafo_interacao")
 
     # Heatmaps: os N_HEATMAPS pares corroborados mais fortes no PyGAwLLfs
     corroborados = resultado[(resultado["grupo"] == "candidato")

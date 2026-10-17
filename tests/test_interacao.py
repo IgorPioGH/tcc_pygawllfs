@@ -4,10 +4,10 @@ Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de friedman_h.py, compare/interacoes.py e synthetic/aplicar_metodos.py:
     python tests/test_interacao.py
 
-Os quatro primeiros conferem o H e o grafo em casos com resposta conhecida
-(inclusive a justificativa de deixar a LogReg de fora); o quinto roda os
-scripts inteiros em miniatura com o test.parquet bloqueado (§4.9); o último
-confere as tabelas reais.
+Os cinco primeiros conferem o H, o grafo e a agregação das sementes em casos
+com resposta conhecida (inclusive a justificativa de deixar a LogReg de fora);
+o sexto roda os scripts inteiros em miniatura com o test.parquet bloqueado
+(§4.9); o último confere as tabelas reais.
 """
 
 import logging
@@ -24,7 +24,7 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import interacoes  # noqa: E402
+from src.compare import interacoes, sensibilidade_agregacao  # noqa: E402
 from src.domain import validate_pairs  # noqa: E402
 from src.importance import comum  # noqa: E402
 from src.interaction import friedman_h, graph  # noqa: E402
@@ -95,19 +95,79 @@ def teste_grafo_e_conjunto_do_h():
     python main.py --testes).
     Importância: garante que a restrição do H não exclui as features do PyGAwLLfs.
     """
-    media = graph.interacao_media(pd.read_csv(DIR_TABELAS / "interacao_gawll.csv"))
-    assert media.groupby(["method", "model"])["rank"].min().eq(1).all()
-    arestas = graph.arestas_reduzidas(media)
-    assert arestas.groupby("model").size().eq(round(406 * graph.FRACAO_ARESTAS)).all()
-
-    # §4.7: o conjunto do H contém o grafo do PyGAwLLfs inteiro e o top-15 por consenso
+    interacao = pd.read_csv(DIR_TABELAS / "interacao_gawll.csv")
     ranking = pd.read_csv(DIR_TABELAS / "ranking_consolidado.csv")
-    for modelo in friedman_h.MODELOS_H:
-        conjunto = set(friedman_h.conjunto_de_features(modelo))
-        assert graph.features_do_grafo(arestas[arestas["model"] == modelo]) <= conjunto
-        consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"]
-                    .mean().nsmallest(friedman_h.TOP_CONSENSO).index)
-        assert set(consenso) <= conjunto
+    conjuntos = {m: set(friedman_h.conjunto_de_features(m)) for m in friedman_h.MODELOS_H}
+    for agregacao in graph.AGREGACOES:
+        media = graph.interacao_media(interacao, agregacao=agregacao)
+        assert media.groupby(["method", "model"])["rank"].min().eq(1).all()
+        arestas = graph.arestas_reduzidas(media)
+        assert arestas.groupby("model").size().eq(round(406 * graph.FRACAO_ARESTAS)).all()
+
+        # §4.7: o conjunto do H contém o grafo do PyGAwLLfs inteiro (nas duas
+        # agregações) e o top-15 por consenso
+        for modelo, conjunto in conjuntos.items():
+            assert graph.features_do_grafo(arestas[arestas["model"] == modelo]) <= conjunto
+            consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"]
+                        .mean().nsmallest(friedman_h.TOP_CONSENSO).index)
+            assert set(consenso) <= conjunto
+
+
+def teste_agregacao_das_sementes():
+    """Decisão 15: na agregação "sondadas", o zero do PyGAwLLfs fica fora da média se o
+    par não foi sondado naquela semente (vint 0 em todos os modelos) e entra se foi
+    (vint > 0 em outro modelo da mesma semente); par nunca sondado não tem média e
+    par sondado numa semente só tem média mas não tem rank; no H, o zero é medida.
+    "com_zeros" é a média simples.
+
+    Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
+    python main.py --testes).
+    Importância: é a regra que decide quais pares entram no ranking, no top-k e no grafo.
+    """
+    valores = {("a", "b"): [0.2, 0, 0, 0.4, 0],   # sondado em 2 sementes
+               ("a", "c"): [0.9, 0, 0, 0, 0],     # sondado em 1 semente
+               ("b", "c"): [0, 0, 0, 0, 0]}       # nunca sondado
+    linhas = [{"feature_a": a, "feature_b": b, "interaction": x, "method": metodo,
+               "model": "rf", "seed": semente}
+              for metodo in ["gawll", "friedman_h_abs"]
+              for (a, b), serie in valores.items() for semente, x in enumerate(serie)]
+    # Outro modelo, nas mesmas sementes: em (a, b), o zero da semente 0 é medida
+    # (o rf sondou o par nessa semente), não falta de sondagem
+    linhas += [{"feature_a": "a", "feature_b": "b", "interaction": x, "method": "gawll",
+                "model": "xgb", "seed": semente} for semente, x in enumerate([0, 0, 0, 0.4, 0])]
+    interacao = pd.DataFrame(linhas)
+
+    sondadas = graph.interacao_media(interacao)
+    xgb = sondadas[sondadas["model"] == "xgb"].iloc[0]
+    assert np.isclose(xgb["interaction"], 0.2) and xgb["n_sementes"] == 2
+    sondadas = sondadas[sondadas["model"] == "rf"].set_index(["method", "feature_a", "feature_b"])
+    gawll = sondadas.loc["gawll"]
+    assert np.isclose(gawll.loc[("a", "b"), "interaction"], 0.3)
+    assert gawll.loc[("a", "b"), "n_sementes"] == 2 and gawll.loc[("a", "b"), "rank"] == 1
+    assert np.isclose(gawll.loc[("a", "c"), "interaction"], 0.9)
+    assert gawll.loc[("a", "c"), "n_sementes"] == 1 and np.isnan(gawll.loc[("a", "c"), "rank"])
+    assert np.isnan(gawll.loc[("b", "c"), "interaction"]) and gawll.loc[("b", "c"), "n_sementes"] == 0
+    h = sondadas.loc["friedman_h_abs"]  # no H, todo par é medido nas 5 amostras
+    assert h["n_sementes"].eq(5).all() and h.loc[("b", "c"), "interaction"] == 0
+    assert h["rank"].notna().all()
+
+    com_zeros = graph.interacao_media(interacao, agregacao="com_zeros")
+    com_zeros = (com_zeros[com_zeros["model"] == "rf"]
+                 .set_index(["method", "feature_a", "feature_b"]).loc["gawll"])
+    assert np.allclose(com_zeros["interaction"], [0.12, 0.18, 0.0])
+    assert list(com_zeros["rank"]) == [2, 1, 3]
+
+    # O grafo só usa pares com rank: (a, c), o mais forte, fica de fora na "sondadas"
+    arestas = graph.arestas_reduzidas(graph.interacao_media(interacao), fracao=1.0)
+    arestas = arestas[(arestas["method"] == "gawll") & (arestas["model"] == "rf")]
+    assert set(zip(arestas["feature_a"], arestas["feature_b"])) == {("a", "b")}
+
+    # rankings.comparar ignora NaN: correlação nos itens comuns, listas em cada um
+    a = pd.Series([3.0, 2.0, np.nan, 1.0], index=list("wxyz"))
+    b = pd.Series([1.0, 2.0, 5.0, 3.0], index=list("wxyz"))
+    resultado = interacoes.comparar(a, b)
+    assert np.isclose(resultado["spearman"], -1.0)
+    assert resultado["top5"] == 3 / 5  # w, x, z de um lado; os quatro do outro
 
 
 def teste_scripts_nao_leem_o_teste():
@@ -139,13 +199,18 @@ def teste_scripts_nao_leem_o_teste():
                 mock.patch.object(comum, "SEMENTES", [42, 43]), \
                 mock.patch.object(friedman_h, "AMOSTRA", 30), \
                 mock.patch.object(validate_pairs, "N_BOOTSTRAP", 5), \
-                mock.patch.object(interacoes, "DIR_FIGURAS", pasta / "figuras"):
+                mock.patch.object(interacoes, "DIR_FIGURAS", pasta / "figuras"), \
+                mock.patch.object(sensibilidade_agregacao, "DIR_FIGURAS", pasta / "figuras"):
             friedman_h.main()
             interacoes.main()
+            sensibilidade_agregacao.main()
         for esperado in ["interacao_h.csv", "interacoes.csv", "interacoes_pares.csv",
-                         "interacoes_redundancia.csv", "interacoes_dominio.csv"]:
+                         "interacoes_redundancia.csv", "interacoes_dominio.csv",
+                         "sensibilidade_cobertura.csv", "sensibilidade_agregacao.csv",
+                         "sensibilidade_top10.csv"]:
             assert (pasta / esperado).exists(), esperado
         assert (pasta / "figuras" / "interacao_gawll_x_h.png").exists()
+        assert (pasta / "figuras" / "sensibilidade_agregacao.png").exists()
 
 
 def teste_tabelas_reais():
@@ -194,6 +259,7 @@ if __name__ == "__main__":
         teste_dependencia_parcial,
         teste_logreg_tem_h_zero,
         teste_grafo_e_conjunto_do_h,
+        teste_agregacao_das_sementes,
         teste_scripts_nao_leem_o_teste,
         teste_tabelas_reais,
     ]

@@ -5,8 +5,8 @@ Recebe o RF e o XGBoost treinados na Etapa 6, a VALIDAÇÃO (nunca o teste,
 Para cada modelo, calcula o H em todos os pares do conjunto do §4.7:
     união de (a) as 15 features de melhor rank médio entre os métodos de
     importância e (b) as features do grafo reduzido do PyGAwLLfs (5% das
-    arestas). Só (a) excluiria, por construção, as features que o PyGAwLLfs
-    aponta como mais interativas.
+    arestas), nas duas agregações das sementes (decisão 15). Só (a) excluiria,
+    por construção, as features que o PyGAwLLfs aponta como mais interativas.
 
 Como o H é calculado (dependência parcial, PD):
     PD_j(x)   = média, sobre a amostra, da previsão com a feature j fixada em x
@@ -50,7 +50,12 @@ RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
 from src.importance import comum  # noqa: E402
-from src.interaction.graph import arestas_reduzidas, features_do_grafo, interacao_media  # noqa: E402
+from src.interaction.graph import (  # noqa: E402
+    AGREGACOES,
+    arestas_reduzidas,
+    features_do_grafo,
+    interacao_media,
+)
 from src.models.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -155,8 +160,13 @@ def conjunto_de_features(modelo: str) -> list[str]:
     ranking = pd.read_csv(comum.DIR_TABELAS / "ranking_consolidado.csv")
     consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"].mean()
                 .nsmallest(TOP_CONSENSO).index)
-    gawll = interacao_media(pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv"))
-    grafo = features_do_grafo(arestas_reduzidas(gawll[gawll["model"] == modelo]))
+    # Grafo das duas agregações das sementes (decisão 15): o H cobre o grafo da
+    # principal e as duas são comparadas com o H nos mesmos pares
+    interacao = pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv")
+    grafo = set()
+    for agregacao in AGREGACOES:
+        gawll = interacao_media(interacao, agregacao=agregacao)
+        grafo |= features_do_grafo(arestas_reduzidas(gawll[gawll["model"] == modelo]))
     return sorted(set(consenso) | grafo)
 
 

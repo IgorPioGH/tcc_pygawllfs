@@ -30,9 +30,10 @@ figuras em `results/figures/` (PNG e PDF). Resultados congelados em 12 out
 
 - **Importância:** Permutation e SHAP ≥ 0,99 (Spearman entre sementes);
   PyGAwLLfs 0,56–0,80, com o topo razoavelmente estável (top-5 0,68–0,84).
-- **Interação:** H de Friedman 0,93–0,98; PyGAwLLfs ≈ 0 — o ranking de pares
-  não se repete entre execuções (cada par é sondado ~0,7 vez por execução
-  com N = 29).
+- **Interação:** H de Friedman 0,90–0,98; PyGAwLLfs 0,04–0,06 — o ranking de
+  pares quase não se repete entre execuções (cada par é sondado ~0,7 vez por
+  execução com N = 29). A média das 5 sementes é mais confiável (split-half
+  0,06 no RF, 0,24 no XGBoost, 0,38 na LogReg), mas ainda baixa.
 - Fontes: `estabilidade.csv`, `estabilidade_features.csv`, `interacoes.csv`;
   figura `estabilidade_sementes`. Interpretação: `docs/interacoes-h.md` §3.
 
@@ -54,7 +55,7 @@ figuras em `results/figures/` (PNG e PDF). Resultados congelados em 12 out
 | Intrínseca | 1 × 3 | ~2 s | 0 (lê o modelo treinado) |
 | Permutation (29 × 10 repetições) | 5 × 3 | 5,4 min | 0 |
 | TreeSHAP (10 mil linhas) | 5 × 2 | 11,7 min | 0 |
-| H de Friedman (até 300 pares) | 5 × 2 | 6,8 min | 0 |
+| H de Friedman (até 351 pares) | 5 × 2 | 7,2 min | 0 |
 | **PyGAwLLfs** (100 gerações) | 5 × 3 | **5,4 h** | **3.200–4.400 por execução** |
 
 Os quatro primeiros explicam um modelo já treinado (o da Etapa 6: 4 s na
@@ -65,12 +66,17 @@ detalhes do GA em `docs/piloto-custo.md`.
 
 ## 5. Interações: PyGAwLLfs × H de Friedman (Etapa 13)
 
-- **Não concordam:** Spearman 0,08–0,12; top-10 com 0–1 par em comum.
+- **Não concordam:** Spearman 0,15–0,16; top-10 com 0–2 pares em comum.
 - **Causas:** baixa confiabilidade da matriz do PyGAwLLfs com este orçamento
   e conceitos diferentes (não aditividade do desempenho × da função do modelo).
-- **Teste de domínio dos tops:** H corroborou 9 de 20 pares; PyGAwLLfs, 1 de 20.
-- Fontes: `interacao_h.csv`, `interacoes*.csv`; figura `interacao_gawll_x_h`.
-  Interpretação: `docs/interacoes-h.md`.
+- **Teste de domínio dos tops:** H corroborou 9 de 20 pares; PyGAwLLfs, 2 de 20.
+- **Sensibilidade à agregação das sementes:** com os pares não sondados
+  contando como zero, o ranking do PyGAwLLfs acompanhava a cobertura (Spearman
+  0,43–0,68 com o nº de sementes sondadas; ≈ 0 na agregação atual). As
+  conclusões acima valem nas duas (`docs/decisoes.md` §15).
+- Fontes: `interacao_h.csv`, `interacoes*.csv`, `sensibilidade_*.csv`; figuras
+  `interacao_gawll_x_h`, `sensibilidade_agregacao`. Interpretação:
+  `docs/interacoes-h.md`.
 
 ## 6. Diferencial 1 — dataset sintético com gabarito (Etapas 10 e 13)
 
@@ -85,12 +91,13 @@ detalhes do GA em `docs/piloto-custo.md`.
 
 ## 7. Diferencial 4 — validação de domínio (Etapa 15)
 
-- Dos 25 pares do topo do PyGAwLLfs: 1 estrutural, 5 redundantes, 19
-  operacionais → **2 corroborados descritivamente** (`hora` × origem e `hora` ×
-  tipo de linha); nenhum dos 10 controles.
-- Redundância concentrada no topo: 8 das 15 arestas do top-5 dos três modelos.
+- Dos 26 pares do topo do PyGAwLLfs: 6 redundantes e 20 operacionais → **4
+  corroborados descritivamente** (`hora` × origem, `hora` × congestionamento na
+  origem, empresa × origem e `hora` × tipo de linha); nenhum dos 10 controles.
+  Com a média com zeros, eram 25 pares e 2 corroborados (`docs/decisoes.md` §15).
+- Redundância concentrada no topo: 6 das 15 arestas do top-5 dos três modelos.
 - Fontes: `dominio_pares.csv`, `dominio_celulas.csv`; figuras
-  `grafo_interacao`, `dominio_hora_x_origem`, `dominio_hora_x_tipo_linha`.
+  `grafo_interacao` e `dominio_*` (um heatmap por par corroborado).
   Interpretação: `docs/validacao-dominio.md`.
 
 ## 8. Quadro-síntese

@@ -4,7 +4,7 @@ Decisões tomadas para **finalizar o projeto** com a opção mais segura, mas qu
 podem mudar depois da conversa com o orientador. Para cada uma: o estado
 atual, por que foi a escolha, a alternativa, **como trocar** e quanto custa.
 
-Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodologia.md` §11.
+Estado em 17 out 2026. A ordem de reexecução do pipeline está no `docs/metodologia.md` §11.
 
 ## Resumo
 
@@ -22,8 +22,9 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 10 | Significado das letras do `Código Tipo Linha` | **confirmado** (C/G: cargueira doméstica/internacional; N/I: mista doméstica/internacional) | não | — (só texto) |
 | 11 | Critérios da validação de domínio (Etapa 15) | top-10 por modelo; 1 p.p.; replicação ≥ 0,5; escala logit | talvez | ~1 min |
 | 12 | Cálculo do H de Friedman (Etapa 13) | logit; H_abs como principal; RF e XGBoost; 500 linhas × 5 sementes | não | ~7 min |
-| 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes, ganho pequeno |
+| 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes; ganho moderado na LogReg e no XGBoost (item 15) |
 | 14 | Desenho da fidelidade (Etapa 12) | k = 5/10/15; 10 sorteios; treino completo; F1 e PR-AUC | não | ~50 min |
+| 15 | Agregação das sementes na matriz de interação | **só as sementes em que o par foi sondado**; ranking com pares sondados em ≥ 2 sementes; a média com zeros fica como sensibilidade | **sim** (contador) | ~3 min (ou ~5,4 h com contador) |
 
 ## 1. Bugs de mutação e elitismo — corrigidos
 
@@ -142,10 +143,12 @@ Estado em 11 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 Constantes no topo de `src/domain/validate_pairs.py`; rodar de novo leva ~1 min.
 Resultados em `docs/validacao-dominio.md`.
 
-- **Pares:** união do top-10 de cada modelo (`TOP_PARES_POR_MODELO`) — 25 pares;
-  10 controles do fundo do ranking (`N_CONTROLES`), sem repetir par de domínio.
+- **Pares:** união do top-10 de cada modelo (`TOP_PARES_POR_MODELO`) — 26 pares;
+  10 controles do fundo do ranking (`N_CONTROLES`), entre os pares com rank nos
+  três modelos e sem repetir par de domínio. O ranking segue a agregação da
+  decisão 15.
 - **Redundância:** coeficiente de incerteza ≥ 0,8 (`LIMIAR_REDUNDANCIA`). Os
-  35 pares têm um vão entre 0,40 e 0,85, então qualquer valor nesse intervalo
+  36 pares têm um vão entre 0,40 e 0,99, então qualquer valor nesse intervalo
   dá a mesma classificação.
 - **Relevância prática:** desvio médio ≥ 1 ponto percentual (`LIMIAR_PP`),
   nos dois anos. Com 1,7 milhão de voos, quase tudo passa do limiar de ruído;
@@ -162,8 +165,9 @@ Resultados em `docs/validacao-dominio.md`.
   Alternativa: modelo aditivo nas probabilidades.
 - **Cobertura:** top-15 aeroportos e top-10 empresas (`TOP_CATEGORIAS`).
 - **Sensibilidade (verificada):** com `LIMIAR_PP = 0,75` o resultado é o mesmo
-  (2 corroborados); com 0,5, entra também `tipo_linha` × origem (0,75 e
-  1,18 p.p.; r = 0,60) — e, mesmo assim, nenhum controle passa.
+  (4 corroborados); com 0,5, entra `tipo_linha` × origem (0,75 e 1,18 p.p.;
+  r = 0,60), mas também um controle, `hora` × porte da origem (0,62 e 0,58 p.p.;
+  r = 0,74). O piso de 1 p.p. é o que separa candidatos de controles.
 
 ## 12. Cálculo do H de Friedman (Etapa 13)
 
@@ -174,23 +178,29 @@ Resultados em `docs/interacoes-h.md`.
   (`predict_proba` direto) — os valores mudam, e a LogReg passaria a ter H > 0
   só por causa da curva sigmoide.
 - **H_abs (não normalizado) como principal**, H² normalizado salvo junto. O
-  normalizado se mostrou menos estável (Spearman entre sementes 0,87 × 0,93 no
+  normalizado se mostrou menos estável (Spearman entre sementes 0,82 × 0,90 no
   XGBoost) e passou de 1 num par de dummies da mesma variável (denominador
   quase zero). Para trocar: usar `friedman_h` no lugar de `friedman_h_abs` em
   `compare/interacoes.py`.
 - **LogReg fora:** aditiva no logit, H = 0 por construção (testado).
 - **500 linhas × 5 sementes** (`AMOSTRA`, `comum.SEMENTES`), da validação.
-- **Conjunto de pares** do §4.7, sem corte (o custo ficou muito abaixo do limite).
+- **Conjunto de pares** do §4.7, sem corte (o custo ficou muito abaixo do limite),
+  com o grafo do PyGAwLLfs nas duas agregações da decisão 15: 25 features (300
+  pares) no RF e 27 (351) no XGBoost.
 
 ## 13. Orçamento do PyGAwLLfs para a matriz de interação
 
 - **Estado:** parâmetros do artigo (população 50, 100 gerações, 3 sondagens de
   linkage learning por geração). Com N = 29, cada par é sondado em média 0,7
   vez por execução, e o ranking de pares quase não se repete entre execuções
-  (split-half ≈ 0–0,11). Documentado como resultado e limitação
+  (split-half 0,06–0,38 só com as sementes sondadas; ≈ 0–0,11 com a média com
+  zeros, decisão 15). Documentado como resultado e limitação
   (`docs/interacoes-h.md` §3).
-- **Alternativa A — mais sementes:** +5 sementes custam ~5,4 h e levariam a
-  confiabilidade da média de ~0,2 a ~0,3 (Spearman-Brown). Pouco ganho.
+- **Alternativa A — mais sementes:** +5 sementes custam ~5,4 h. Com a média com
+  zeros, levariam a confiabilidade da média de ~0,2 a ~0,3 (Spearman-Brown).
+  Com a agregação da decisão 15, a das 5 sementes já é 0,55 (LogReg), 0,39
+  (XGBoost) e 0,12 (RF), e com 10 iria a ~0,71, ~0,56 e ~0,21: ganho moderado
+  na LogReg e no XGBoost, quase nenhum no RF.
 - **Alternativa B — mais sondagens por geração:** mudaria o algoritmo do artigo
   (a fração de linkage learning na geração é fixa no `_generation_ll`); seria
   uma variante, não o método original.
@@ -213,6 +223,99 @@ Resultados em `docs/fidelidade.md`.
 - **Validação e teste** avaliados; o teste é o resultado principal.
 - **Rankings usados:** os consolidados da Etapa 11 (média das sementes).
 
+## 15. Agregação das sementes na matriz de interação do PyGAwLLfs
+
+- **Problema:** o `vint` de uma execução começa em 0 e só registra um par quando
+  uma sondagem do linkage learning o sorteia (300 sorteios por execução, 406
+  pares; ~48% dos pares ficam sem sondagem em cada execução). Na média das 5
+  sementes, um par não sorteado entrava como "interação 0". Com isso, a posição
+  do par no ranking acompanhava **quantas vezes ele foi sondado**: Spearman entre
+  a média do par e o nº de sementes em que ele foi sondado de 0,43 (LogReg),
+  0,68 (RF) e 0,58 (XGBoost), nos 406 pares.
+- **Estado:** `graph.interacao_media(agregacao="sondadas")`, o padrão: média só
+  das sementes em que o par foi sondado; par nunca sondado fica sem média; o
+  ranking (top-k, grafo reduzido, candidatos e controles da Etapa 15) só inclui
+  pares sondados em pelo menos 2 sementes (`MIN_SEMENTES_RANKING`), porque uma
+  sondagem única guarda o máximo de um retreino só. Na comparação com o H,
+  Spearman e Kendall usam todos os pares com média; RBO e top-k, só os ranqueados.
+- **Como se sabe se o par foi sondado, sem contador:** os três modelos de uma
+  mesma semente sondam os mesmos pares. O sorteio do par usa o `random` do
+  Python, e o nº de chamadas a ele (torneio e sorteio do par) não depende do
+  fitness. Então "sondado na semente s" = vint > 0 em algum dos três modelos
+  nessa semente (`graph.marcar_sondagens`). Conferido em
+  `sensibilidade_cobertura.csv`: 210 pares sondados por execução, contra
+  212 ± 6 esperados para 300 sorteios uniformes; o RF nunca deu efeito nulo
+  exato num par que outro modelo registrou.
+- **Zeros que são medida:** com o par sondado, o vint pode dar 0 exato quando o
+  modelo não usa nenhuma das duas features (retreinar com ou sem ela dá o mesmo
+  modelo). Isso acontece 0 vez por execução no RF, 3,8 na LogReg e 14,8 no
+  XGBoost (ex.: os pares com `periodo_dia`, que o XGBoost não usa: SHAP = 0).
+  Esses zeros **entram** na média. A regra literal "média dos valores > 0" os
+  trataria como par não sondado.
+- **Evidência do sintético:** com N = 10 (45 pares), cada par é sorteado ~6,7
+  vezes por execução, e nenhum dos 675 valores do vint (15 execuções × 45
+  pares) é zero. As duas agregações coincidem, e o Diferencial 1 não muda. É o
+  regime em que o PyGAwLLfs foi desenhado: com cobertura total, a média com
+  zeros não tem o problema.
+- **Análise de sensibilidade** (`src/compare/sensibilidade_agregacao.py` →
+  `results/tables/sensibilidade_*.csv`, figura `sensibilidade_agregacao`):
+
+| Medida | Com zeros (original) | Só sondadas (principal) |
+|---|---:|---:|
+| Spearman(média do par, nº de sementes sondadas): LogReg / RF / XGBoost | 0,43 / 0,68 / 0,58 | −0,01 / 0,02 / −0,02 |
+| PyGAwLLfs × H_abs, Spearman: RF / XGBoost | 0,09 / 0,08 | 0,16 / 0,15 |
+| PyGAwLLfs × H_abs, top-10 em comum: RF / XGBoost | 1 / 0 | 2 / 0 |
+| Estabilidade entre sementes (Spearman): RF / XGBoost | −0,01 / −0,00 | 0,04 / 0,06 |
+| Split-half (2 × 3 sementes): LogReg / RF / XGBoost | 0,11 / −0,00 / 0,09 | 0,38 / 0,06 / 0,24 |
+| Confiabilidade da média de 5 (Spearman-Brown): LogReg / RF / XGBoost | 0,20 / −0,01 / 0,17 | 0,55 / 0,12 / 0,39 |
+| Pares redundantes: rank médio em percentil, RF / XGBoost (H_abs: 39 / 49) | 27 / 35 | 33 / 40 |
+| Pares redundantes no top-5 dos três modelos | 8 de 15 | 6 de 15 |
+| Etapa 15: candidatos / corroborados | 25 / 2 | 26 / 4 |
+| Etapa 15: controles corroborados / controles nunca sondados | 0 / 5 | 0 / 0 |
+| Top-10 do PyGAwLLfs corroborados no domínio (pares do H, RF + XGBoost) | 1 de 20 | 2 de 20 |
+
+  Os números "com zeros" usam o conjunto do H atual (300/351 pares); no
+  conjunto anterior (276/300), o Spearman PyGAwLLfs × H_abs do RF era 0,12.
+- **O que não muda:** (1) PyGAwLLfs e H não concordam (Spearman ≤ 0,16; top-10
+  com 0–2 pares em comum); (2) no RF, o ranking de pares não se repete entre
+  sementes; (3) o PyGAwLLfs põe os pares redundantes mais alto que o H; (4)
+  nenhum controle é corroborado, e o top-10 do H tem mais pares corroborados
+  (9 de 20) que o do PyGAwLLfs.
+- **O que muda:** (1) o artefato de cobertura some (0,43–0,68 → ≈ 0); (2) a
+  confiabilidade sobe na LogReg e no XGBoost: a instabilidade era em parte
+  cobertura e em parte ruído; no RF, segue perto de 0; (3) o top-10 de cada
+  modelo muda (mantêm-se 7 dos 10 pares na LogReg, 5 no RF e 3 no XGBoost;
+  `sensibilidade_top10.csv`), e a Etapa 15 passa de 2 para 4
+  pares corroborados (entram `hora` × congestionamento na origem e empresa ×
+  origem); (4) os controles antigos eram, na maioria, pares que o PyGAwLLfs
+  nunca mediu (5 dos 10 nunca sondados; 0,6 semente em média); os novos são
+  pares medidos e fracos (2,8 sementes); (5) a redundância no topo diminui (8 →
+  6 das 15 arestas do top-5), mas continua acima da do H.
+- **Ressalvas:** (a) uma média de 2 ou 3 sementes varia mais que uma de 5, e o
+  top-10 novo tem em média 2,4–2,8 sementes, contra 2,9 entre os pares
+  ranqueados: o viés de cobertura deu lugar a um viés de variância, bem menor;
+  (b) o vint guarda o **máximo** das sondagens de cada execução, e quantas vezes
+  o par foi sondado dentro da execução (k) não é conhecido: um par sondado 3
+  vezes tende a ter máximo maior; (c) a reconstrução depende de o sorteio ser o
+  mesmo nos três modelos, o que vale nestas execuções (conferido), mas não é uma
+  garantia do PyGAwLLfs.
+- **Efeito no H:** o conjunto do §4.7 passou a incluir o grafo das duas
+  agregações (+`porte_destino_hub` no RF; +`fim_semana` e
+  +`porte_origem_pequeno` no XGBoost): 300 pares no RF (eram 276) e 351 no
+  XGBoost (eram 300). O H dos pares antigos é idêntico (diferença < 10⁻¹³). Os
+  pares novos do XGBoost têm muitos H = 0 (o modelo não usa `fim_semana`), e a
+  estabilidade do H_abs nele foi de 0,93 para 0,90.
+- **Como trocar:** `agregacao="com_zeros"` em `validate_pairs.interacao_media` e
+  em `interacoes.comparar_modelo`; `MIN_SEMENTES_RANKING` em
+  `src/interaction/graph.py`. Rodar `validate_pairs.py`, `interacoes.py` e
+  `sensibilidade_agregacao.py`: ~3 min.
+- **Alternativa — contador de sondagens:** registrar, no wrapper
+  (`GAwLLCorrigido`, sem mexer no PyGAwLLfs), quantas vezes cada par foi
+  sondado em cada execução. Daria k, que a reconstrução não dá (ressalva b), e
+  dispensaria a ressalva c. Custa uma nova rodada do PyGAwLLfs (~5,4 h). Se o GA
+  for determinístico por semente (a conferir com uma execução), todos os outros
+  resultados ficariam iguais. Pergunta 6 da reunião.
+
 ## Perguntas para a reunião com o Prof. Tinós
 
 1. Os dois comportamentos do código (mutação e elitismo) são bugs? O TCC deve
@@ -221,7 +324,7 @@ Resultados em `docs/fidelidade.md`.
    impacto medido de ±0,002 no F1? (item 2)
 3. Sobre a leitura de redundância como interação no PyGAwLLfs (resultado do
    sintético, `docs/sintetico.md` §3): ele vê isso como propriedade
-   esperada do método? Nos dados reais, 8 das 15 arestas do top-5 dos três
+   esperada do método? Nos dados reais, 6 das 15 arestas do top-5 dos três
    modelos são pares redundantes (`docs/validacao-dominio.md` §2).
 4. Os critérios da validação de domínio (1 p.p. e replicação entre anos) são
    adequados, ou ele prefere um critério mais brando? (item 11)
@@ -229,3 +332,10 @@ Resultados em `docs/fidelidade.md`.
    ranking de interações não se repete entre execuções. Isso é esperado com o
    orçamento do artigo? Vale testar mais gerações ou mais sondagens, ou fica
    como limitação discutida? (item 13)
+6. Na média das sementes, o zero do vint era tratado como "sem interação",
+   quando quase sempre é "par não sondado"; agora a média usa só as sementes
+   sondadas, reconstruídas pelo sorteio comum aos três modelos (item 15). Ele
+   aceita a reconstrução, ou prefere uma nova rodada (~5,4 h) com um contador de
+   sondagens por par? A pergunta conversa com a 5: se houver nova rodada, dá
+   para somar o contador e mais sementes (com a agregação nova, 10 sementes
+   levariam a confiabilidade da LogReg e do XGBoost a ~0,7 e ~0,56).

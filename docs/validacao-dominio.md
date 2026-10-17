@@ -3,8 +3,9 @@
 Resultados da Etapa 15, base para a seção correspondente do Cap. 4.
 Script: `src/domain/validate_pairs.py`; tabelas: `results/tables/dominio_pares.csv`
 e `dominio_celulas.csv`; figuras: `grafo_interacao`, `dominio_hora_x_origem`,
+`dominio_hora_x_congestion_origem`, `dominio_empresa_x_origem`,
 `dominio_hora_x_tipo_linha` (em `results/figures/`). Escolhas e como mudá-las:
-`docs/decisoes.md` §11.
+`docs/decisoes.md` §11 e §15.
 
 ## 1. Pergunta e método, em resumo
 
@@ -13,8 +14,11 @@ de atraso? Para cada par, compara-se a taxa de atraso observada em cada célula
 do cruzamento das duas variáveis com a taxa prevista por um modelo **só com os
 efeitos isolados** de cada uma (regressão logística sem termo de interação).
 
-- **Pares:** 25 candidatos (a união do top-10 de vint médio de cada modelo) e
-  10 controles (do fundo do ranking, sem repetir o par de domínio de um candidato).
+- **Pares:** 26 candidatos (a união do top-10 de vint médio de cada modelo) e
+  10 controles (do fundo do ranking, sem repetir o par de domínio de um
+  candidato). O vint médio usa só as sementes em que o par foi sondado, e o
+  ranking só inclui pares sondados em pelo menos 2 das 5 sementes
+  (`docs/decisoes.md` §15); os controles, portanto, são pares medidos e fracos.
 - **Dados:** treino + validação (1.697.911 voos, jan/2024–out/2025). O teste
   fica de fora (§4.9).
 - **Leitura dos pares:** cada feature volta à variável que codifica (ex.:
@@ -33,30 +37,37 @@ efeitos isolados** de cada uma (regressão logística sem termo de interação).
 
 | Grupo | Pares | Estrutural | Redundante | Operacional | Corroborados |
 |---|---:|---:|---:|---:|---:|
-| Candidatos (top-10 dos modelos) | 25 | 1 | 5 | 19 | **2** |
+| Candidatos (top-10 dos modelos) | 26 | 0 | 6 | 20 | **4** |
 | Controles (fundo do ranking) | 10 | 0 | 0 | 10 | 0 |
 
 - **Redundância concentrada no topo.** No grafo reduzido (20 arestas por
-  modelo), 11 das 60 arestas (18%) são pares redundantes e 1 é estrutural. No
-  top-5 de cada modelo, são **8 das 15 (53%)**: `dia_ano` × `trimestre`,
-  `mes` × `dia_ano`, `dia_mes` × `dia_ano`, `hora` × `periodo_dia`,
-  `mes` × `trimestre`. É o mesmo fenômeno do Diferencial 1: o PyGAwLLfs mede
-  interação no fitness, e duas variáveis redundantes produzem exatamente esse
-  sinal (tirar uma não custa, tirar as duas custa).
+  modelo), 10 das 60 arestas (17%) são pares redundantes. No top-5 de cada
+  modelo, são **6 das 15 (40%)**: `dia_ano` × `trimestre` (LogReg e RF),
+  `hora` × `periodo_dia`, porte da origem × origem, `mes` × `dia_ano` e
+  `dia_sem` × `fim_semana`. É o mesmo fenômeno do Diferencial 1: o PyGAwLLfs
+  mede interação no fitness, e duas variáveis redundantes produzem exatamente
+  esse sinal (tirar uma não custa, tirar as duas custa).
 - **Candidatos × controles.** Entre os pares operacionais, o desvio médio dos
-  candidatos foi de 0,88 p.p. (2024) e 0,71 p.p. (2025), com máximo de 2,8; o
-  dos controles, 0,26 e 0,27, com máximo de 0,52. Os pares que o PyGAwLLfs
+  candidatos foi de 1,32 p.p. (2024) e 1,13 p.p. (2025), com máximo de 3,8; o
+  dos controles, 0,19 e 0,17, com máximo de 0,62. Os pares que o PyGAwLLfs
   põe no topo têm interações descritivas maiores que os do fundo.
 - **Detectável não é relevante.** Com 1,7 milhão de voos, quase todo par passa
   do limiar de ruído — inclusive controles. O que separa é o tamanho do desvio
   e a replicação: os controles até se repetem entre anos (correlação média
-  0,55), mas com desvios de décimos de ponto.
+  0,47), mas com desvios de décimos de ponto.
+- **Sensibilidade à agregação das sementes** (`docs/decisoes.md` §15). Com os
+  pares não sondados contando como interação 0 (versão anterior), eram 25
+  candidatos e 2 corroborados (`hora` × origem e `hora` × tipo de linha, que
+  continuam), com 8 redundantes nas 15 arestas do top-5. E 5 dos 10 controles
+  eram pares que o PyGAwLLfs **nunca sondou**: estavam no fundo do ranking por
+  falta de medida, não por interação fraca. Nas duas versões, nenhum controle
+  é corroborado.
 
 ## 3. Pares corroborados descritivamente
 
 ### `hora` × aeroporto de origem (`hora` × `origem_te`)
 
-1º par do Random Forest. Desvio médio de 2,84 p.p. em 2024 e 2,48 em 2025
+3º par do Random Forest. Desvio médio de 2,84 p.p. em 2024 e 2,48 em 2025
 (ruído: 0,60); replicação r = 0,53.
 
 | Célula | Voos | Taxa observada | Prevista sem interação | Desvio |
@@ -76,9 +87,53 @@ aeronaves chegando de outros voos longos. Em Congonhas, o desvio negativo às
 pressiona a pontualidade no fim do dia. ⚠️ Possível confundidor: a composição
 de empresas e de tipos de linha em cada aeroporto e horário (não controlada aqui).
 
+### `hora` × congestionamento na origem (`hora` × `congestion_origem`)
+
+9º par do Random Forest. Desvio médio de 2,15 p.p. em 2024 e 2,12 em 2025
+(ruído: 0,32); replicação r = 0,57. O congestionamento é o nº de partidas
+previstas na mesma origem e na mesma hora, aqui em quintis.
+
+| Célula | Voos | Taxa observada | Prevista sem interação | Desvio |
+|---|---:|---:|---:|---:|
+| 0h, 5–8 partidas | 655 | 26,3% | 16,7% | +9,6 p.p. |
+| 8h, 1–2 partidas | 15.396 | 20,8% | 12,9% | +7,9 p.p. |
+| 7h, 1–2 partidas | 10.563 | 20,7% | 13,8% | +6,9 p.p. |
+| 22h, 18–36 partidas | 20.178 | 32,9% | 25,4% | +7,4 p.p. |
+| 22h, 3–4 partidas | 4.179 | 12,3% | 20,1% | −7,8 p.p. |
+
+O efeito do congestionamento **muda com a hora**. Às 22h, a origem muito
+movimentada atrasa 7 p.p. acima do previsto e a pouco movimentada, 8 abaixo.
+De manhã (7h–8h), são os aeroportos com 1–2 partidas na hora que atrasam acima
+do previsto. Leitura para a discussão (hipóteses, não verificadas aqui): no fim
+do dia, os grandes aeroportos acumulam os atrasos das rotações anteriores; de
+manhã, o primeiro voo de um aeroporto pequeno depende de uma única aeronave
+pernoitada. ⚠️ O congestionamento conta só voos realizados (limitação 2,
+`docs/decisoes.md` §2), e o porte do aeroporto é um confundidor provável.
+
+### Empresa × aeroporto de origem (`empresa_te` × `origem_te`)
+
+6º par da LogReg (é também o 1º par do H no XGBoost). Desvio médio de 2,53 p.p.
+em 2024 e 1,56 em 2025 (ruído: 0,28); replicação r = 0,61.
+
+| Célula | Voos | Taxa observada | Prevista sem interação | Desvio |
+|---|---:|---:|---:|---:|
+| LAN em SBCF (Confins) | 448 | 52,2% | 23,4% | +28,8 p.p. |
+| TAP em SBBR (Brasília) | 591 | 46,0% | 22,0% | +24,0 p.p. |
+| CMP em SBGL (Galeão) | 1.586 | 41,1% | 25,7% | +15,4 p.p. |
+| PTB em SBRF (Recife) | 551 | 11,4% | 28,1% | −16,7 p.p. |
+| CMP em SBEG (Manaus) | 285 | 9,5% | 25,8% | −16,4 p.p. |
+
+Códigos ICAO das empresas. Leitura para a discussão (hipóteses, não
+verificadas aqui): os maiores desvios positivos são de empresas estrangeiras
+em aeroportos onde elas têm poucos voos internacionais por dia, que dependem
+de aeronaves vindas do exterior; a mesma empresa pode ser pontual num
+aeroporto e não em outro (CMP: +15 no Galeão, −16 em Manaus). ⚠️ Confundidor
+provável: o tipo de linha (internacional) e o horário desses voos.
+
 ### `hora` × tipo de linha (`hora` × `tipo_linha_N`)
 
-Desvio médio de 1,84 p.p. em 2024 e 1,58 em 2025 (ruído: 0,21); replicação r = 0,70.
+7º par da LogReg. Desvio médio de 1,84 p.p. em 2024 e 1,58 em 2025 (ruído:
+0,20); replicação r = 0,70.
 
 | Célula | Voos | Taxa observada | Prevista sem interação | Desvio |
 |---|---:|---:|---:|---:|
@@ -103,23 +158,25 @@ Galeão concentram os voos internacionais).
 
 ## 4. Pares não corroborados (também são resultado)
 
-- **Redundantes (5) e estrutural (1):** não são interações operacionais, por
-  construção. Isso não é falha do teste, é a leitura correta: são o efeito
-  "redundância como interação" do PyGAwLLfs aparecendo nos dados reais.
+- **Redundantes (6):** não são interações operacionais, por construção. Isso
+  não é falha do teste, é a leitura correta: são o efeito "redundância como
+  interação" do PyGAwLLfs aparecendo nos dados reais.
 - **`dia_ano` × empresa:** desvio grande nos dois anos (2,63 e 2,29 p.p.), mas
   **sem replicação** (r = 0,06). O padrão de uma semana numa empresa num ano
   não se repete no outro: são choques pontuais (problemas operacionais de uma
   empresa em semanas específicas), não uma interação estável entre
-  sazonalidade e empresa. O mesmo vale para `hora` × `dia_ano` (1,96 e 1,57;
-  r = 0,18).
-- **Quase lá:** `hora` × `trimestre` (1,32 e 0,86 p.p.; r = 0,34),
-  `tipo_linha` × origem (0,75 e 1,18; r = 0,60) e `trimestre` × tipo de linha
-  (1,01 e 0,36; r = 0,40) passam em um ano e falham no outro. Sensibilidade:
-  com piso de 0,75 p.p. o resultado não muda; com 0,5 p.p., `tipo_linha` ×
-  origem passa a corroborado, e nenhum controle passa em nenhum dos casos.
+  sazonalidade e empresa. O mesmo vale para `mes` × `dia_mes` (3,79 e 3,21;
+  r = 0,00), `dia_ano` × destino (2,07 e 1,65; r = 0,11), `hora` × `dia_ano`
+  (1,96 e 1,57; r = 0,18) e `trimestre` × empresa (1,54 e 1,66; r = −0,21).
+- **Quase lá:** `tipo_linha` × origem (0,75 e 1,18 p.p.; r = 0,60), `dia_ano` ×
+  `fim_semana` (1,06 e 0,76; r = 0,32) e `trimestre` × destino (1,09 e 0,91;
+  r = 0,20) falham no piso de um dos anos ou na replicação. Sensibilidade: com
+  piso de 0,75 p.p. o resultado não muda; com 0,5 p.p., `tipo_linha` × origem
+  passa a corroborado, mas também um controle (`hora` × porte da origem, 0,62 e
+  0,58; r = 0,74) — o piso de 1 p.p. é o que separa candidatos de controles.
 - **Desvios pequenos:** os demais ficam abaixo de 1 p.p. nos dois anos (ex.:
-  `dia_sem` × congestionamento na origem, 0,48 e 0,53; `feriado` × origem, 0,08
-  e 0,07). Detectáveis em parte, mas sem relevância prática.
+  porte da origem × empresa, 0,12 e 0,09; `mes` × porte do destino, 0,10 e
+  0,11). Detectáveis em parte, mas sem relevância prática.
 
 ## 5. Limitações
 
@@ -141,15 +198,17 @@ Galeão concentram os voos internacionais).
 
 ## 6. Ligação com o resto do trabalho
 
-- O top do grafo do PyGAwLLfs mistura três coisas: redundância (laranja no
-  grafo), estrutura do encoding (cinza) e interações operacionais (azul). Só
-  as do terceiro tipo são candidatas a conhecimento de domínio — e, dessas, 2
-  de 19 passaram no critério rigoroso.
+- O top do grafo do PyGAwLLfs mistura redundância (laranja no grafo) e
+  interações operacionais (azul); com a média com zeros, aparecia também um par
+  estrutural (cinza). Só as operacionais são candidatas a conhecimento de
+  domínio — e, dessas, 4 de 20 passaram no critério rigoroso.
 - Isso reforça, nos dados reais, a hipótese da redundância testada no
   sintético (`docs/sintetico.md` §3).
   A outra metade (o H de Friedman não acusa os pares redundantes) foi
   verificada na Etapa 13 (`docs/interacoes-h.md`).
 - **Etapa 13:** o mesmo teste aplicado ao top-10 do H corroborou 9 de 20 pares
-  (contra 1 de 20 do top-10 do PyGAwLLfs). E o ranking de pares do PyGAwLLfs
-  se mostrou pouco confiável entre execuções (cada par é sondado ~0,7 vez por
-  execução): parte dos pares do top acima está lá por acaso de sondagem.
+  (contra 2 de 20 do top-10 do PyGAwLLfs, nos pares em que o H foi calculado).
+  E o ranking de pares do PyGAwLLfs se mostrou pouco confiável entre execuções
+  (cada par é sondado ~0,7 vez por execução): mesmo com a média só das
+  sementes sondadas, um par do top tem em média 2–3 sondagens, e parte deles
+  está lá por ruído de retreino.

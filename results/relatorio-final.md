@@ -24,7 +24,7 @@ Principais resultados:
   mais importantes de cada método, o modelo retém 87%–98% do PR-AUC do modelo
   completo no teste, contra 72%–81% de 5 features sorteadas.
 - **Os métodos discordam sobre o que interage**: PyGAwLLfs e H de Friedman
-  quase não concordam (Spearman ≈ 0,1). Num dataset sintético com gabarito, os
+  quase não concordam (Spearman ≈ 0,15). Num dataset sintético com gabarito, os
   dois encontram a interação verdadeira, mas só o PyGAwLLfs trata **pares
   redundantes** como interação.
 - **O custo difere em duas ordens de grandeza**: 5,4 h e milhares de treinos
@@ -190,7 +190,7 @@ calculado na escala logit, em que a regressão logística é exatamente aditiva
 (H = 0 por construção; por isso só RF e XGBoost entram). A versão principal é
 a não normalizada (H_abs), mais estável. Por custo, o H foi calculado só para
 a união entre o top-15 de importância por consenso e todos os atributos do
-grafo de interação do PyGAwLLfs: 24 atributos (276 pares) no RF e 25 (300
+grafo de interação do PyGAwLLfs: 25 atributos (300 pares) no RF e 27 (351
 pares) no XGBoost. A união garante que os atributos apontados pelo PyGAwLLfs
 não fiquem de fora da comparação.
 
@@ -215,6 +215,13 @@ modelo.
 **Estabilidade (P2).** As mesmas métricas, entre as 10 duplas de sementes de
 cada método. A intrínseca é determinística e fica de fora.
 
+**Interações (P5).** Numa execução do PyGAwLLfs, só os pares que o *linkage
+learning* sorteou recebem valor na matriz de interação (cerca de metade). A
+média das 5 sementes usa só as execuções em que o par foi sondado, e o ranking
+só inclui pares sondados em pelo menos 2 delas; contar o par não sondado como
+interação zero faria o ranking acompanhar a cobertura das sondagens (seção
+6.7). No H, a média é das 5 amostras.
+
 **Fidelidade (P3).** Se um método diz que certos atributos são os mais
 importantes, um modelo treinado **só com eles** deve chegar perto do modelo
 completo. Para cada modelo, o mesmo algoritmo com os mesmos hiperparâmetros
@@ -238,7 +245,7 @@ Todos os métodos rodaram com o mesmo código usado nos dados reais, e cada
 resultado foi comparado com esse gabarito.
 
 **Validação de domínio (P6).** Para os pares do topo do PyGAwLLfs (top-10 de
-cada modelo, 25 pares), mais 10 pares do fundo do ranking como controle:
+cada modelo, 26 pares), mais 10 pares do fundo do ranking como controle:
 
 1. cada par foi classificado como **estrutural** (duas codificações da mesma
    variável), **redundante** (uma variável quase determina a outra) ou
@@ -255,7 +262,7 @@ fator não observado pode produzir o mesmo padrão.
 
 **Reprodutibilidade.** Todo o pipeline roda com um comando (`python main.py`,
 ~7,5 h, quase tudo no PyGAwLLfs), com retomada por checkpoint. Há 8 suítes de
-testes automáticos (40 testes). Entre outras coisas, elas verificam que nenhum
+testes automáticos (41 testes). Entre outras coisas, elas verificam que nenhum
 método abre o conjunto de teste, que os dois bugs existem no original e foram
 corrigidos, que o H acerta funções com resposta conhecida e que as tabelas
 finais reproduzem as fontes.
@@ -320,10 +327,10 @@ que retreina o modelo sem cada atributo, não cai nessa armadilha.
 - **PyGAwLLfs**: 0,80 na LogReg, 0,56 no RF e 0,57 no XGBoost. Aqui a semente
   muda a busca inteira. O topo é mais firme que a cauda: 68%–84% do top-5 se
   repete entre execuções.
-- A **matriz de interação** do PyGAwLLfs não se repete entre execuções
-  (Spearman ≈ 0), enquanto a do H fica em 0,93–0,98. Com 29 atributos há 406
-  pares, e cada execução faz ~300 sondagens. Cada par é sondado, em média,
-  0,7 vez, e metade fica sem nenhuma medição.
+- A **matriz de interação** do PyGAwLLfs quase não se repete entre execuções
+  (Spearman 0,04–0,06), enquanto a do H fica em 0,90–0,98. Com 29 atributos
+  há 406 pares, e cada execução faz 300 sondagens. Cada par é sondado, em
+  média, 0,7 vez, e metade fica sem nenhuma medição.
 
 ### 6.4 Fidelidade
 
@@ -359,7 +366,7 @@ Fração do PR-AUC do modelo completo retida no teste:
 | Intrínseca | < 2 s | 0 | ~2 s |
 | Permutation (29 atributos × 10 repetições) | 17–28 s | 0 | 5,4 min |
 | TreeSHAP (10 mil linhas) | 2 s (XGBoost) – 2,3 min (RF) | 0 | 11,7 min |
-| H de Friedman (até 300 pares) | 33–49 s | 0 | 6,8 min |
+| H de Friedman (até 351 pares) | 35–49 s | 0 | 7,2 min |
 | **PyGAwLLfs** | 5,4 min (LogReg) – 33 min (XGBoost) | **3.200–4.400** | **5,4 h** |
 
 Os quatro primeiros explicam um modelo já treinado. O PyGAwLLfs retreina o
@@ -400,20 +407,35 @@ XGBoost, só 72%, e os métodos chegam a 94%–98%.
 
 | Modelo | Spearman | RBO | Top-10 em comum | Estabilidade PyGAwLLfs | Estabilidade H |
 |---|---:|---:|---:|---:|---:|
-| RF | 0,12 | 0,07 | 1 de 10 | −0,01 | 0,98 |
-| XGBoost | 0,08 | 0,02 | 0 de 10 | 0,00 | 0,93 |
+| RF | 0,16 | 0,09 | 2 de 10 | 0,04 | 0,98 |
+| XGBoost | 0,15 | 0,03 | 0 de 10 | 0,06 | 0,90 |
 
 Os dois métodos praticamente não concordam, por duas causas:
 
 1. **Confiabilidade.** Com o orçamento do artigo e 29 atributos, a matriz do
-   PyGAwLLfs é pouco confiável (seção 6.3). Somar mais 5 sementes elevaria a
-   confiabilidade da média apenas de ~0,2 para ~0,3.
+   PyGAwLLfs é pouco confiável (seção 6.3). A confiabilidade da média das 5
+   sementes é de 0,55 na LogReg, 0,39 no XGBoost e 0,12 no RF; mais 5 sementes
+   a levariam a ~0,71, ~0,56 e ~0,21.
 2. **Conceitos diferentes.** O PyGAwLLfs mede a não aditividade do
    **desempenho**; o H, a da **função** do modelo. Atributos redundantes geram a
    primeira e não a segunda: tirar um só não custa, porque o outro compensa,
-   mas tirar os dois custa. Nos dados reais, 8 das 15 arestas mais fortes do
-   PyGAwLLfs (top-5 de cada modelo) são pares redundantes de calendário, como
-   mês × dia do ano e hora × período do dia.
+   mas tirar os dois custa. Nos dados reais, 6 das 15 arestas mais fortes do
+   PyGAwLLfs (top-5 de cada modelo) são pares redundantes, como mês × dia do
+   ano e hora × período do dia.
+
+![](figures/sensibilidade_agregacao.png)
+
+*Figura 6 — Posição do par no ranking do PyGAwLLfs pelo número de sementes em que ele foi sondado, com o par não sondado contando como zero (laranja) e só com as sementes sondadas (azul, a versão usada).*
+
+**Sensibilidade à agregação das sementes.** Se o par não sondado contasse
+como interação zero, a posição do par acompanharia quantas vezes ele foi
+sondado (Spearman de 0,43 a 0,68 entre as duas coisas), e não a força da
+interação; só com as sementes sondadas, essa relação some (≈ 0). Que pares
+foram sondados se reconstrói sem rodar o GA de novo: os três modelos de uma
+mesma semente sorteiam os mesmos pares. Com os zeros na média, o Spearman com
+o H cai para 0,08–0,09, a confiabilidade da média para 0,2 ou menos, e o
+top-10 de cada modelo troca de 3 a 7 pares. As conclusões desta seção valem
+nas duas versões.
 
 ### 6.8 Dataset sintético (gabarito conhecido)
 
@@ -458,26 +480,30 @@ XGBoost acrescentou uma redundante (F1 = 0,89). A LogReg incluiu um ruído (F1 =
 
 ![](figures/grafo_interacao.png)
 
-*Figura 6 — Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes), com cada aresta classificada como operacional, redundante ou estrutural.*
+*Figura 7 — Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes), com cada aresta classificada como operacional, redundante ou estrutural.*
 
 | Grupo | Pares | Estrutural | Redundante | Operacional | Corroborados |
 |---|---:|---:|---:|---:|---:|
-| Candidatos (topo do PyGAwLLfs) | 25 | 1 | 5 | 19 | **2** |
+| Candidatos (topo do PyGAwLLfs) | 26 | 0 | 6 | 20 | **4** |
 | Controles (fundo do ranking) | 10 | 0 | 0 | 10 | 0 |
 
-- **Corroborados descritivamente:** hora × aeroporto de origem e hora × tipo de
+- **Corroborados descritivamente:** hora × aeroporto de origem, hora ×
+  congestionamento na origem, empresa × aeroporto de origem e hora × tipo de
   linha.
 - Os candidatos têm interações descritivas maiores que os controles. Desvio
-  médio dos operacionais: 0,88 e 0,71 ponto percentual (2024 e 2025), contra
-  0,26 e 0,27 nos controles.
-- Mas só 2 dos 19 candidatos operacionais passam no critério completo. Aplicado
-  ao top-10 do H, o mesmo teste corroborou **9 de 20 pares**, contra **1 de 20**
+  médio dos operacionais: 1,32 e 1,13 ponto percentual (2024 e 2025), contra
+  0,19 e 0,17 nos controles.
+- Mas só 4 dos 20 candidatos operacionais passam no critério completo. Aplicado
+  ao top-10 do H, o mesmo teste corroborou **9 de 20 pares**, contra **2 de 20**
   do PyGAwLLfs. Parte dessa vantagem é esperada, porque o H e o teste usam a
   mesma definição de interação.
+- Com o par não sondado contando como zero, seriam 25 candidatos e 2
+  corroborados (hora × origem e hora × tipo de linha), e metade dos controles
+  seriam pares que o PyGAwLLfs nunca mediu.
 
 ![](figures/dominio_hora_x_origem.png)
 
-*Figura 7 — Hora × aeroporto de origem. À esquerda, a taxa de atraso observada; à direita, observado menos o previsto sem interação.*
+*Figura 8 — Hora × aeroporto de origem. À esquerda, a taxa de atraso observada; à direita, observado menos o previsto sem interação.*
 
 Partidas de madrugada em Guarulhos (2h: 41% de atraso, contra 25% previstos
 sem interação) e no Galeão atrasam muito mais do que "ser esse aeroporto" e
@@ -485,8 +511,15 @@ sem interação) e no Galeão atrasam muito mais do que "ser esse aeroporto" e
 de voos internacionais longos. Em Congonhas às 22h ocorre o contrário (−8,6
 p.p.), compatível com a restrição de horário de operação do aeroporto.
 
-No segundo par corroborado, hora × tipo de linha, o efeito da hora **muda de
-sinal** conforme o tipo de voo:
+Em hora × congestionamento na origem, o efeito do congestionamento depende da
+hora: às 22h, a origem muito movimentada atrasa 7 pontos acima do previsto e
+a pouco movimentada, 8 abaixo; às 7h–8h, são os aeroportos com 1–2 partidas na
+hora que atrasam mais (21% contra 13%–14% previstos). Em empresa × aeroporto,
+algumas empresas estrangeiras atrasam muito mais num aeroporto específico (LAN
+em Confins: 52% contra 23% previstos; TAP em Brasília: 46% contra 22%).
+
+Em hora × tipo de linha, o efeito da hora **muda de sinal** conforme o tipo de
+voo:
 
 - os **cargueiros domésticos** (C) das 2h–3h atrasam 45%–51%, contra 17%–22%
   previstos sem interação, e os das 22h quase não atrasam (7% contra 28%);
@@ -505,7 +538,9 @@ domínio, não verificadas aqui.
   penaliza rankings baseados em calendário.
 - **Orçamento do PyGAwLLfs:** os parâmetros do artigo deixam a matriz de
   interação esparsa com 29 atributos. A importância é bem mais estável
-  (0,56–0,80), e o topo dela se mantém.
+  (0,56–0,80), e o topo dela se mantém. Não se sabe quantas vezes cada par foi
+  sondado dentro de uma execução, só se foi sondado (reconstruído pelo
+  sorteio comum aos três modelos).
 - **H de Friedman e atributos dependentes:** a dependência parcial avalia
   combinações que não existem nos dados (ex.: hora 3 com período "tarde"),
   inflando o H de alguns pares de calendário no RF.
@@ -537,18 +572,21 @@ domínio, não verificadas aqui.
    acham a interação verdadeira quando ela existe.
 5. **A matriz de interação do PyGAwLLfs precisa de mais sondagens** do que o
    orçamento do artigo oferece com ~30 atributos. Com 10 atributos (sintético),
-   a cobertura é total e o método funciona bem.
-6. **Do grafo de interação saíram dois padrões operacionais plausíveis**
-   (hora × aeroporto e hora × tipo de linha). Para extrair conhecimento de
-   domínio, porém, o topo do grafo precisa ser filtrado: metade das arestas
-   mais fortes é redundância.
+   a cobertura é total e o método funciona bem. Com cobertura parcial, o par
+   não sondado não pode entrar na média como interação zero: o ranking passaria
+   a medir a cobertura.
+6. **Do grafo de interação saíram quatro padrões operacionais plausíveis**
+   (hora × aeroporto, hora × congestionamento, empresa × aeroporto e hora ×
+   tipo de linha). Para extrair conhecimento de domínio, porém, o topo do grafo
+   precisa ser filtrado: 40% das arestas mais fortes são redundância.
 7. **Contribuições metodológicas:** a correção do protocolo do PyGAwLLfs
    (fitness na validação, F1, divisão temporal), a identificação e correção de
    dois bugs do código original, e um protocolo que separa redundância de
    interação usando um gabarito sintético.
 
-**Trabalhos futuros:** aumentar as sondagens de *linkage learning* por geração;
-versões do H robustas a atributos dependentes; incluir clima e propagação de
+**Trabalhos futuros:** aumentar as sondagens de *linkage learning* por geração
+e registrar quantas vezes cada par foi sondado; versões do H robustas a
+atributos dependentes; incluir clima e propagação de
 atrasos; repetir o protocolo em outros períodos de teste.
 
 ## 9. Respostas às perguntas de pesquisa
@@ -565,8 +603,8 @@ diverge (0,62 contra 0,79 nas duplas sem ele).
 **P2 — Os rankings se repetem com outra semente?**
 Para Permutation e SHAP, sim (0,99–1,00), e a intrínseca é determinística. Para
 o PyGAwLLfs, só em parte: 0,56–0,80 no ranking inteiro, mas 68%–84% do top-5 se
-repete. A matriz de interação do PyGAwLLfs não se repete (≈ 0) com o orçamento
-do artigo; a do H, sim (0,93–0,98).
+repete. A matriz de interação do PyGAwLLfs quase não se repete (0,04–0,06) com
+o orçamento do artigo; a do H, sim (0,90–0,98).
 
 **P3 — Os atributos apontados como importantes carregam a informação?**
 Sim, para todos os métodos. O top-5 retém 87%–98% do PR-AUC no teste, contra
@@ -576,12 +614,12 @@ PyGAwLLfs retém 95%–99% com um terço dos atributos.
 
 **P4 — Quanto custa cada método?**
 Intrínseca: instantânea. Permutation: 17–28 s. TreeSHAP: 2 s a 2,3 min. H de
-Friedman: 33–49 s por amostra. Nenhum deles retreina o modelo. O PyGAwLLfs leva
+Friedman: 35–49 s por amostra. Nenhum deles retreina o modelo. O PyGAwLLfs leva
 5–33 min e 3.200–4.400 treinos por execução (5,4 h no protocolo), duas ordens de
 grandeza a mais, em troca de também selecionar atributos e estimar interações.
 
 **P5 — PyGAwLLfs e H concordam sobre as interações? Qual recupera a verdade?**
-Não concordam nos dados reais (Spearman 0,08–0,12). No sintético, **os dois
+Não concordam nos dados reais (Spearman 0,15–0,16). No sintético, **os dois
 recuperam a interação verdadeira** (1º lugar em todas as execuções). A
 diferença está na redundância: o PyGAwLLfs a põe logo abaixo da interação
 verdadeira (2º–3º), e o H não (7º–44º). O PyGAwLLfs mede não aditividade do
@@ -590,10 +628,11 @@ PyGAwLLfs é, além disso, pouco confiável com 29 atributos.
 
 **P6 — As interações do PyGAwLLfs correspondem a padrões reais?**
 Parcialmente. Os pares do topo têm interações descritivas maiores que os do
-fundo, e dois foram corroborados nos dois anos: hora × aeroporto de origem e
-hora × tipo de linha. Nenhum controle foi corroborado. Mas só 2 de 19 pares
-operacionais passaram, 6 dos 25 pares do topo são redundância ou estrutura, e o
-top-10 do H teve mais pares corroborados (9 de 20, contra 1 de 20).
+fundo, e quatro foram corroborados nos dois anos: hora × aeroporto de origem,
+hora × congestionamento na origem, empresa × aeroporto de origem e hora × tipo
+de linha. Nenhum controle foi corroborado. Mas só 4 de 20 pares operacionais
+passaram, 6 dos 26 pares do topo são redundância, e o top-10 do H teve mais
+pares corroborados (9 de 20, contra 2 de 20).
 
 **Pergunta principal — como os métodos se comparam nos quatro critérios?**
 
