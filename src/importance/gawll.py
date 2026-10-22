@@ -73,7 +73,9 @@ TAU_RESET = 50
 N_PROCESSOS = max(1, int((os.cpu_count() or 1) * 0.8))
 
 
-def carregar_subamostra() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]]:
+def carregar_subamostra() -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]
+]:
     """Lê a subamostra de 50 mil linhas, confere que não há coluna proibida e devolve
     (x_treino, y_treino, x_val, y_val, features), separados pela coluna "origem".
     Nunca lê test.parquet.
@@ -117,8 +119,8 @@ def treinar_e_medir(
     fora da classe para o joblib conseguir mandá-la aos outros processos.
 
     Usada em: AvaliadorFitness._treinar_lote; tests/test_gawll.py.
-    Importância: é o f1(x) da fitness corrigida: validação em vez de teste (§4.1) e
-    F1 em vez de acurácia (§4.2).
+    Importância: é o f1(x) da fitness corrigida: validação em vez de teste e
+    F1 em vez de acurácia
     """
     modelo = criar_modelo(nome_modelo, parametros, peso_positivo, n_jobs=1)
     modelo.fit(x_treino[:, mascara], y_treino)
@@ -204,7 +206,11 @@ class AvaliadorFitness:
         if self.nome_modelo == "xgboost":
             return [
                 treinar_e_medir(
-                    self.nome_modelo, self.parametros, self.peso_positivo, m, *argumentos
+                    self.nome_modelo,
+                    self.parametros,
+                    self.peso_positivo,
+                    m,
+                    *argumentos,
                 )
                 for m in mascaras
             ]
@@ -229,7 +235,9 @@ class MutacaoInPlace(Mutation):
     """
 
     @staticmethod
-    def bit_flip_mutation(chromosome: np.ndarray, mutation_probability: float) -> np.ndarray:
+    def bit_flip_mutation(
+        chromosome: np.ndarray, mutation_probability: float
+    ) -> np.ndarray:
         """Inverte cada bit com probabilidade mutation_probability no próprio cromossomo
         (XOR in place) e o devolve.
 
@@ -323,7 +331,9 @@ class GAwLLCorrigido(GAwLL):
             else:
                 self.population = self._generation(fittest)
 
-        self.final_fittest = self.population_analyzer.get_fittest_individual(self.population)
+        self.final_fittest = self.population_analyzer.get_fittest_individual(
+            self.population
+        )
 
 
 def executar(
@@ -346,7 +356,9 @@ def executar(
     x_treino, y_treino, x_val, y_val, features = dados
     n = len(features)
 
-    avaliador = AvaliadorFitness(nome_modelo, parametros, x_treino, y_treino, x_val, y_val)
+    avaliador = AvaliadorFitness(
+        nome_modelo, parametros, x_treino, y_treino, x_val, y_val
+    )
     ga = GAwLLCorrigido(
         perf_batch=avaliador,
         chrom_size=n,
@@ -425,9 +437,7 @@ def main() -> None:
 
     # O console já vem do basicConfig; aqui só se acrescenta o arquivo de log
     arquivo_log = logging.FileHandler(dir_saida / "gawll.log", encoding="utf-8")
-    arquivo_log.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    )
+    arquivo_log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(arquivo_log)
 
     dados = carregar_subamostra()
