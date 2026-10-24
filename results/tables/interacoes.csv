@@ -1,13 +1,13 @@
 model,comparacao,n_pares,n_pares_correlacao,spearman,kendall_tau_b,rbo,top5,top10,top15
-random_forest,gawll x friedman_h_abs,300,294.0,0.1551,0.1049,0.0855,0.0,0.2,0.2
-random_forest,gawll x friedman_h,300,294.0,0.0294,0.0194,0.0407,0.0,0.1,0.0667
-random_forest,friedman_h_abs x friedman_h,300,300.0,0.6921,0.522,0.2302,0.2,0.3,0.4667
-random_forest,estabilidade gawll,300,,0.0374,0.0264,0.0508,0.04,0.05,0.0667
-random_forest,estabilidade friedman_h_abs,300,,0.9816,0.8992,0.9094,0.78,0.89,0.9733
-random_forest,estabilidade friedman_h,300,,0.9338,0.8191,0.8409,0.86,0.76,0.8
-xgboost,gawll x friedman_h_abs,351,344.0,0.1536,0.1042,0.026,0.0,0.0,0.0667
-xgboost,gawll x friedman_h,351,344.0,0.0655,0.0456,0.0082,0.0,0.0,0.0
-xgboost,friedman_h_abs x friedman_h,351,351.0,0.7251,0.6298,0.0345,0.0,0.0,0.0
-xgboost,estabilidade gawll,351,,0.0635,0.0399,0.0668,0.08,0.05,0.0467
-xgboost,estabilidade friedman_h_abs,351,,0.896,0.8021,0.8361,0.8,0.89,0.9267
-xgboost,estabilidade friedman_h,351,,0.8222,0.7339,0.4786,0.46,0.46,0.4933
+random_forest,gawll x friedman_h_abs,253,248.0,0.21,0.1422,0.0744,0.0,0.1,0.0667
+random_forest,gawll x friedman_h,253,248.0,0.1075,0.0724,0.0421,0.0,0.0,0.0667
+random_forest,friedman_h_abs x friedman_h,253,253.0,0.6937,0.513,0.3231,0.2,0.4,0.4667
+random_forest,estabilidade gawll,253,,0.0843,0.0541,0.103,0.1,0.09,0.0867
+random_forest,estabilidade friedman_h_abs,253,,0.9761,0.8838,0.871,0.86,0.93,0.86
+random_forest,estabilidade friedman_h,253,,0.9263,0.7947,0.7036,0.6,0.73,0.7533
+xgboost,gawll x friedman_h_abs,300,294.0,0.1305,0.0854,0.1594,0.2,0.2,0.2
+xgboost,gawll x friedman_h,300,294.0,0.0432,0.0289,0.041,0.0,0.0,0.1333
+xgboost,friedman_h_abs x friedman_h,300,300.0,0.8709,0.7217,0.1937,0.2,0.2,0.3333
+xgboost,estabilidade gawll,300,,0.1097,0.0723,0.1184,0.12,0.1,0.1133
+xgboost,estabilidade friedman_h_abs,300,,0.9753,0.8958,0.9321,0.88,0.9,1.0
+xgboost,estabilidade friedman_h,300,,0.9339,0.8434,0.5653,0.5,0.71,0.72

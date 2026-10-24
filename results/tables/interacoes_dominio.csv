@@ -1,41 +1,41 @@
 model,method,rank,feature_a,feature_b,n_sementes_gawll,tipo,desvio_2024_pp,desvio_2025_pp,replicacao_anos,classificacao
-random_forest,gawll,1.0,tipo_linha_I,origem_te,2.0,operacional,0.7461,1.1777,0.6011,não corroborado
-random_forest,gawll,2.0,porte_origem_hub,origem_te,2.0,redundante,0.0224,0.0371,0.1112,redundância (não é interação operacional)
-random_forest,gawll,3.0,hora,origem_te,3.0,operacional,2.8364,2.479,0.5312,corroborado descritivamente
-random_forest,gawll,4.0,dia_ano,trimestre,3.0,redundante,0.1412,0.0978,-0.2651,redundância (não é interação operacional)
-random_forest,gawll,5.0,fim_semana,duracao_prevista_min,2.0,operacional,0.2013,0.3776,0.9897,não corroborado
-random_forest,gawll,6.0,porte_origem_hub,empresa_te,2.0,operacional,0.1163,0.0928,0.8571,não corroborado
-random_forest,gawll,7.0,mes,trimestre,3.0,redundante,0.0342,0.0072,0.3893,redundância (não é interação operacional)
-random_forest,gawll,8.0,hora,dia_ano,3.0,operacional,1.9588,1.5655,0.1785,não corroborado
-random_forest,gawll,9.0,hora,congestion_origem,3.0,operacional,2.1452,2.1238,0.5685,corroborado descritivamente
-random_forest,gawll,10.0,hora,periodo_dia,3.0,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
+random_forest,gawll,1.0,hora,periodo_dia,3.0,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
+random_forest,gawll,2.0,dia_sem,fim_semana,2.0,redundante,0.0239,0.0102,0.7568,redundância (não é interação operacional)
+random_forest,gawll,3.0,origem_te,destino_te,2.0,operacional,1.6318,1.4199,0.406,não corroborado
+random_forest,gawll,4.0,dia_ano,origem_te,4.0,operacional,2.645,2.28,0.0696,não corroborado
+random_forest,gawll,5.0,mes,trimestre,3.0,redundante,0.0342,0.0072,0.3893,redundância (não é interação operacional)
+random_forest,gawll,6.0,dia_ano,trimestre,3.0,redundante,0.1412,0.0978,-0.2651,redundância (não é interação operacional)
+random_forest,gawll,7.0,trimestre,destino_te,2.0,operacional,1.0894,0.9089,0.1994,não corroborado
+random_forest,gawll,8.0,duracao_prevista_min,tipo_linha_C,2.0,operacional,0.5713,0.2845,0.4246,não corroborado
+random_forest,gawll,9.0,porte_origem_medio,origem_te,2.0,redundante,0.0224,0.0371,0.1112,redundância (não é interação operacional)
+random_forest,gawll,10.0,periodo_dia,duracao_prevista_min,2.0,operacional,1.2326,1.0948,0.9582,corroborado descritivamente
 random_forest,friedman_h_abs,1.0,hora,empresa_te,3.0,operacional,2.0604,1.7318,0.6756,corroborado descritivamente
 random_forest,friedman_h_abs,2.0,hora,tipo_linha_N,3.0,operacional,1.8391,1.5764,0.6979,corroborado descritivamente
 random_forest,friedman_h_abs,3.0,hora,dia_ano,3.0,operacional,1.9588,1.5655,0.1785,não corroborado
-random_forest,friedman_h_abs,4.0,duracao_prevista_min,empresa_te,2.0,operacional,1.0334,0.5784,0.7254,não corroborado
-random_forest,friedman_h_abs,5.0,periodo_dia,empresa_te,3.0,operacional,1.464,1.0694,0.6612,corroborado descritivamente
+random_forest,friedman_h_abs,4.0,tipo_linha_N,empresa_te,1.0,operacional,0.5856,0.3138,0.5079,não corroborado
+random_forest,friedman_h_abs,5.0,empresa_te,origem_te,2.0,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
 random_forest,friedman_h_abs,6.0,hora,duracao_prevista_min,3.0,operacional,1.6135,1.5216,0.7661,corroborado descritivamente
-random_forest,friedman_h_abs,7.0,dia_ano,empresa_te,3.0,operacional,2.632,2.292,0.0639,não corroborado
-random_forest,friedman_h_abs,8.0,hora,periodo_dia,3.0,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
-random_forest,friedman_h_abs,9.0,tipo_linha_N,empresa_te,1.0,operacional,0.5856,0.3138,0.5079,não corroborado
-random_forest,friedman_h_abs,10.0,empresa_te,origem_te,2.0,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
-xgboost,gawll,1.0,mes,dia_ano,4.0,redundante,0.1189,0.2479,-0.07,redundância (não é interação operacional)
-xgboost,gawll,2.0,mes,porte_destino_hub,3.0,operacional,0.1,0.1135,-0.2948,não corroborado
-xgboost,gawll,3.0,dia_mes,porte_destino_medio,2.0,operacional,0.1266,0.1784,0.4726,não corroborado
-xgboost,gawll,4.0,dia_sem,fim_semana,2.0,redundante,0.0239,0.0102,0.7568,redundância (não é interação operacional)
-xgboost,gawll,5.0,congestion_origem,porte_origem_pequeno,2.0,operacional,0.0249,0.0145,-0.9605,não corroborado
-xgboost,gawll,6.0,duracao_prevista_min,porte_destino_medio,2.0,operacional,0.0948,0.0547,0.3444,não corroborado
-xgboost,gawll,7.0,mes,dia_mes,2.0,operacional,3.7933,3.2051,-0.0023,não corroborado
-xgboost,gawll,8.0,trimestre,congestion_origem,3.0,operacional,0.9745,0.5652,0.1783,não corroborado
-xgboost,gawll,9.0,dia_ano,destino_te,2.0,operacional,2.0664,1.6538,0.1067,não corroborado
-xgboost,gawll,10.0,duracao_prevista_min,tipo_linha_G,2.0,operacional,0.5713,0.2845,0.4246,não corroborado
-xgboost,friedman_h_abs,1.0,empresa_te,origem_te,2.0,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
-xgboost,friedman_h_abs,2.0,duracao_prevista_min,empresa_te,2.0,operacional,1.0334,0.5784,0.7254,não corroborado
+random_forest,friedman_h_abs,7.0,hora,periodo_dia,3.0,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
+random_forest,friedman_h_abs,8.0,hora,origem_te,3.0,operacional,2.8364,2.479,0.5312,corroborado descritivamente
+random_forest,friedman_h_abs,9.0,periodo_dia,empresa_te,3.0,operacional,1.464,1.0694,0.6612,corroborado descritivamente
+random_forest,friedman_h_abs,10.0,duracao_prevista_min,empresa_te,2.0,operacional,1.0334,0.5784,0.7254,não corroborado
+xgboost,gawll,1.0,dia_ano,trimestre,3.0,redundante,0.1412,0.0978,-0.2651,redundância (não é interação operacional)
+xgboost,gawll,2.0,hora,periodo_dia,3.0,redundante,0.0364,0.0874,0.9552,redundância (não é interação operacional)
+xgboost,gawll,3.0,empresa_te,origem_te,2.0,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
+xgboost,gawll,4.0,dia_ano,origem_te,4.0,operacional,2.645,2.28,0.0696,não corroborado
+xgboost,gawll,5.0,dia_sem,porte_destino_grande,2.0,operacional,0.0848,0.086,0.4459,não corroborado
+xgboost,gawll,6.0,congestion_destino,destino_te,2.0,operacional,1.1704,1.1095,0.6291,corroborado descritivamente
+xgboost,gawll,7.0,dia_sem,mes,5.0,operacional,1.2699,1.2274,-0.104,não corroborado
+xgboost,gawll,8.0,tipo_linha_I,origem_te,2.0,operacional,0.7461,1.1777,0.6011,não corroborado
+xgboost,gawll,9.0,dia_sem,porte_origem_medio,3.0,operacional,0.1264,0.1233,0.5835,não corroborado
+xgboost,gawll,10.0,hora,dia_ano,3.0,operacional,1.9588,1.5655,0.1785,não corroborado
+xgboost,friedman_h_abs,1.0,duracao_prevista_min,empresa_te,2.0,operacional,1.0334,0.5784,0.7254,não corroborado
+xgboost,friedman_h_abs,2.0,empresa_te,origem_te,2.0,operacional,2.5317,1.5589,0.6055,corroborado descritivamente
 xgboost,friedman_h_abs,3.0,hora,empresa_te,3.0,operacional,2.0604,1.7318,0.6756,corroborado descritivamente
-xgboost,friedman_h_abs,4.0,hora,dia_ano,3.0,operacional,1.9588,1.5655,0.1785,não corroborado
-xgboost,friedman_h_abs,5.0,hora,origem_te,3.0,operacional,2.8364,2.479,0.5312,corroborado descritivamente
-xgboost,friedman_h_abs,6.0,hora,dia_sem,3.0,operacional,0.9519,1.0133,0.6715,não corroborado
-xgboost,friedman_h_abs,7.0,dia_ano,empresa_te,3.0,operacional,2.632,2.292,0.0639,não corroborado
+xgboost,friedman_h_abs,4.0,hora,origem_te,3.0,operacional,2.8364,2.479,0.5312,corroborado descritivamente
+xgboost,friedman_h_abs,5.0,hora,dia_ano,3.0,operacional,1.9588,1.5655,0.1785,não corroborado
+xgboost,friedman_h_abs,6.0,hora,duracao_prevista_min,3.0,operacional,1.6135,1.5216,0.7661,corroborado descritivamente
+xgboost,friedman_h_abs,7.0,hora,dia_sem,3.0,operacional,0.9519,1.0133,0.6715,não corroborado
 xgboost,friedman_h_abs,8.0,empresa_te,destino_te,2.0,operacional,1.7142,0.9314,0.6395,não corroborado
-xgboost,friedman_h_abs,9.0,hora,duracao_prevista_min,3.0,operacional,1.6135,1.5216,0.7661,corroborado descritivamente
-xgboost,friedman_h_abs,10.0,tipo_linha_I,empresa_te,3.0,operacional,0.5856,0.3138,0.5079,não corroborado
+xgboost,friedman_h_abs,9.0,dia_ano,empresa_te,3.0,operacional,2.632,2.292,0.0639,não corroborado
+xgboost,friedman_h_abs,10.0,duracao_prevista_min,origem_te,3.0,operacional,1.2366,1.4811,0.8259,corroborado descritivamente

@@ -1,37 +1,34 @@
 grupo,feature_a,feature_b,variavel_a,variavel_b,rank_logreg,rank_random_forest,rank_xgboost,n_sementes_logreg,n_sementes_random_forest,n_sementes_xgboost,rank_medio,modelos_top10,tipo,coef_incerteza,desvio_2024_pp,ruido_p95_2024_pp,desvio_2025_pp,ruido_p95_2025_pp,celulas_comuns,replicacao_anos,n_celulas,cobertura,classificacao
-candidato,dia_ano,trimestre,semana,trimestre,1.0,4.0,16.0,3.0,3.0,3.0,7.0,logreg;random_forest,redundante,0.9955,0.1412,0.0612,0.0978,0.0544,44,-0.2651,56,1.0,redundância (não é interação operacional)
-candidato,dia_ano,destino_te,semana,destino,34.0,12.0,9.0,2.0,2.0,2.0,18.3333,xgboost,operacional,0.0012,2.0664,0.9984,1.6538,0.9222,636,0.1067,795,0.7045,não corroborado
-candidato,hora,periodo_dia,hora,periodo_dia,5.0,10.0,40.0,3.0,3.0,3.0,18.3333,logreg;random_forest,redundante,1.0,0.0364,0.0499,0.0874,0.0529,24,0.9552,24,1.0,redundância (não é interação operacional)
-candidato,hora,congestion_origem,hora,congestion_origem,15.0,9.0,33.0,3.0,3.0,3.0,19.0,random_forest,operacional,0.0875,2.1452,0.3197,2.1238,0.3198,111,0.5685,114,1.0,corroborado descritivamente
-candidato,trimestre,congestion_origem,trimestre,congestion_origem,12.0,85.0,8.0,3.0,3.0,3.0,35.0,xgboost,operacional,0.0002,0.9745,0.16,0.5652,0.153,20,0.1783,20,1.0,não corroborado
-candidato,dia_sem,fim_semana,dia_sem,fim_semana,33.0,77.0,4.0,2.0,2.0,2.0,38.0,xgboost,redundante,1.0,0.0239,0.0457,0.0102,0.048,7,0.7568,7,1.0,redundância (não é interação operacional)
-candidato,hora,origem_te,hora,origem,29.0,3.0,89.0,3.0,3.0,3.0,40.3333,random_forest,operacional,0.0666,2.8364,0.6133,2.479,0.5969,313,0.5312,346,0.7057,corroborado descritivamente
-candidato,empresa_te,origem_te,empresa,origem,6.0,66.0,69.0,2.0,2.0,2.0,47.0,logreg,operacional,0.1854,2.5317,0.2814,1.5589,0.2698,82,0.6055,115,0.6656,corroborado descritivamente
-candidato,mes,dia_ano,mes,semana,10.0,142.0,1.0,4.0,4.0,4.0,51.0,logreg;xgboost,redundante,0.9934,0.1189,0.1043,0.2479,0.0893,50,-0.07,64,1.0,redundância (não é interação operacional)
-candidato,hora,tipo_linha_N,hora,tipo_linha,7.0,70.0,77.0,3.0,3.0,3.0,51.3333,logreg,operacional,0.0503,1.8391,0.2047,1.5764,0.2047,96,0.6979,96,1.0,corroborado descritivamente
-candidato,porte_origem_hub,origem_te,porte_origem,origem,72.0,2.0,95.0,2.0,2.0,2.0,56.3333,random_forest,redundante,1.0,0.0224,0.0669,0.0371,0.0587,15,0.1112,15,0.7057,redundância (não é interação operacional)
-candidato,fim_semana,duracao_prevista_min,fim_semana,duracao_prevista_min,31.0,5.0,137.0,2.0,2.0,2.0,57.6667,random_forest,operacional,0.0016,0.2013,0.1029,0.3776,0.0893,10,0.9897,10,1.0,não corroborado
-candidato,dia_ano,fim_semana,semana,fim_semana,4.0,150.0,29.0,3.0,3.0,3.0,61.0,logreg,operacional,0.3986,1.0592,0.2389,0.7623,0.2204,87,0.3237,105,1.0,não corroborado
-candidato,dia_ano,empresa_te,semana,empresa,3.0,62.0,147.0,3.0,3.0,3.0,70.6667,logreg,operacional,0.0017,2.632,0.5691,2.292,0.4959,345,0.0639,529,0.9183,não corroborado
-candidato,tipo_linha_I,origem_te,tipo_linha,origem,61.0,1.0,153.0,2.0,2.0,2.0,71.6667,random_forest,operacional,0.1861,0.7461,0.1382,1.1777,0.1288,46,0.6011,53,0.7057,não corroborado
-candidato,porte_origem_hub,empresa_te,porte_origem,empresa,148.0,6.0,70.0,2.0,2.0,2.0,74.6667,random_forest,operacional,0.1665,0.1163,0.0632,0.0928,0.0648,18,0.8571,31,0.9183,não corroborado
-candidato,hora,dia_ano,hora,semana,9.0,8.0,210.0,3.0,3.0,3.0,75.6667,logreg;random_forest,operacional,0.0007,1.9588,1.1216,1.5655,1.0458,1054,0.1785,1272,1.0,não corroborado
-candidato,mes,dia_mes,mes,dia_mes,176.0,44.0,7.0,2.0,2.0,2.0,75.6667,xgboost,operacional,0.0055,3.7933,0.6319,3.2051,0.5832,304,-0.0023,366,1.0,não corroborado
-candidato,mes,porte_destino_hub,mes,porte_destino,208.0,48.0,2.0,3.0,3.0,3.0,86.0,xgboost,operacional,0.0008,0.1,0.082,0.1135,0.0807,30,-0.2948,48,1.0,não corroborado
-candidato,duracao_prevista_min,porte_destino_medio,duracao_prevista_min,porte_destino,242.0,41.0,6.0,2.0,2.0,2.0,96.3333,xgboost,operacional,0.0201,0.0948,0.0619,0.0547,0.0651,15,0.3444,20,1.0,não corroborado
-candidato,duracao_prevista_min,tipo_linha_G,duracao_prevista_min,tipo_linha,254.0,56.0,10.0,2.0,2.0,2.0,106.6667,xgboost,operacional,0.3385,0.5713,0.0871,0.2845,0.0846,20,0.4246,20,1.0,não corroborado
-candidato,trimestre,empresa_te,trimestre,empresa,8.0,245.0,112.0,2.0,2.0,2.0,121.6667,logreg,operacional,0.0004,1.5432,0.1662,1.6649,0.1665,37,-0.2068,40,0.9183,não corroborado
-candidato,mes,trimestre,mes,trimestre,211.0,7.0,151.0,3.0,3.0,3.0,123.0,random_forest,redundante,1.0,0.0342,0.0514,0.0072,0.0501,10,0.3893,12,1.0,redundância (não é interação operacional)
-candidato,dia_mes,porte_destino_medio,dia_mes,porte_destino,218.0,220.0,3.0,2.0,2.0,2.0,147.0,xgboost,operacional,0.0001,0.1266,0.1062,0.1784,0.1055,90,0.4726,124,1.0,não corroborado
-candidato,trimestre,destino_te,trimestre,destino,2.0,210.0,299.0,2.0,2.0,2.0,170.3333,logreg,operacional,0.0008,1.0894,0.2718,0.9089,0.2772,59,0.1994,60,0.7045,não corroborado
-candidato,congestion_origem,porte_origem_pequeno,congestion_origem,porte_origem,275.0,334.0,5.0,2.0,2.0,2.0,204.6667,xgboost,operacional,0.2672,0.0249,0.0478,0.0145,0.0487,7,-0.9605,9,1.0,não corroborado
-controle,vespera_feriado,porte_destino_medio,vespera_feriado,porte_destino,310.0,263.0,271.0,3.0,3.0,3.0,281.3333,,operacional,0.0,0.0171,0.0318,0.0292,0.0322,5,0.9732,8,1.0,não corroborado
-controle,dia_sem,porte_destino_pequeno,dia_sem,porte_destino,324.0,336.0,190.0,3.0,3.0,3.0,283.3333,,operacional,0.0012,0.0848,0.0746,0.086,0.0789,21,0.4459,28,1.0,não corroborado
-controle,tipo_linha_G,porte_destino_medio,tipo_linha,porte_destino,301.0,305.0,245.0,3.0,3.0,3.0,283.6667,,operacional,0.0345,0.0979,0.0438,0.0783,0.0428,10,0.5536,15,1.0,não corroborado
-controle,minuto,porte_origem_grande,minuto_quarto,porte_origem,297.0,332.0,233.0,2.0,2.0,2.0,287.3333,,operacional,0.0019,0.2145,0.056,0.1679,0.0578,12,0.7774,16,1.0,não corroborado
-controle,congestion_destino,porte_origem_grande,congestion_destino,porte_origem,308.0,310.0,266.0,3.0,3.0,3.0,294.6667,,operacional,0.0146,0.2107,0.0609,0.2481,0.0668,15,0.5838,20,1.0,não corroborado
-controle,porte_destino_pequeno,origem_te,porte_destino,origem,339.0,312.0,238.0,3.0,3.0,3.0,296.3333,,operacional,0.1047,0.2959,0.1007,0.2842,0.0998,33,0.5688,54,0.7057,não corroborado
-controle,porte_origem_pequeno,porte_destino_medio,porte_origem,porte_destino,319.0,331.0,287.0,4.0,4.0,4.0,312.3333,,operacional,0.0103,0.0385,0.0388,0.0512,0.0439,9,-0.0017,16,1.0,não corroborado
-controle,fim_semana,porte_destino_pequeno,fim_semana,porte_destino,321.0,326.0,305.0,3.0,3.0,3.0,317.3333,,operacional,0.0,0.0102,0.0301,0.0122,0.0355,6,-0.7635,8,1.0,não corroborado
-controle,hora,porte_origem_pequeno,hora,porte_origem,337.0,337.0,281.0,2.0,2.0,2.0,318.3333,,operacional,0.0443,0.6163,0.1079,0.5757,0.1098,58,0.7375,96,1.0,não corroborado
-controle,periodo_dia,porte_destino_hub,periodo_dia,porte_destino,332.0,324.0,319.0,2.0,2.0,2.0,325.0,,operacional,0.0063,0.268,0.0556,0.1996,0.0574,12,0.8571,16,1.0,não corroborado
+candidato,hora,periodo_dia,hora,periodo_dia,1.0,1.0,2.0,3.0,3.0,3.0,1.3333,logreg;random_forest;xgboost,redundante,1.0,0.0364,0.0531,0.0874,0.0527,24,0.9552,24,1.0,redundância (não é interação operacional)
+candidato,dia_ano,trimestre,semana,trimestre,12.0,6.0,1.0,3.0,3.0,3.0,6.3333,random_forest;xgboost,redundante,0.9955,0.1412,0.0635,0.0978,0.0514,44,-0.2651,56,1.0,redundância (não é interação operacional)
+candidato,dia_sem,fim_semana,dia_sem,fim_semana,4.0,2.0,24.0,2.0,2.0,2.0,10.0,logreg;random_forest,redundante,1.0,0.0239,0.0475,0.0102,0.0482,7,0.7568,7,1.0,redundância (não é interação operacional)
+candidato,origem_te,destino_te,origem,destino,13.0,3.0,14.0,2.0,2.0,2.0,10.0,random_forest,operacional,0.1812,1.6318,0.5289,1.4199,0.5072,150,0.406,183,0.4325,não corroborado
+candidato,dia_ano,origem_te,semana,origem,39.0,4.0,4.0,4.0,4.0,4.0,15.6667,random_forest;xgboost,operacional,0.0012,2.645,0.9704,2.28,0.8979,636,0.0696,795,0.7057,não corroborado
+candidato,hora,dia_ano,hora,semana,2.0,38.0,10.0,3.0,3.0,3.0,16.6667,logreg;xgboost,operacional,0.0007,1.9588,1.1201,1.5655,1.0425,1054,0.1785,1272,1.0,não corroborado
+candidato,empresa_te,origem_te,empresa,origem,3.0,51.0,3.0,2.0,2.0,2.0,19.0,logreg;xgboost,operacional,0.1854,2.5317,0.2859,1.5589,0.2627,82,0.6055,115,0.6656,corroborado descritivamente
+candidato,congestion_destino,destino_te,congestion_destino,destino,35.0,31.0,6.0,2.0,2.0,2.0,24.0,xgboost,operacional,0.3066,1.1704,0.252,1.1095,0.246,61,0.6291,65,0.7045,corroborado descritivamente
+candidato,tipo_linha_I,origem_te,tipo_linha,origem,31.0,57.0,8.0,2.0,2.0,2.0,32.0,xgboost,operacional,0.1861,0.7461,0.1432,1.1777,0.143,46,0.6011,53,0.7057,não corroborado
+candidato,mes,trimestre,mes,trimestre,76.0,5.0,36.0,3.0,3.0,3.0,39.0,random_forest,redundante,1.0,0.0342,0.0489,0.0072,0.0503,10,0.3893,12,1.0,redundância (não é interação operacional)
+candidato,tipo_linha_I,destino_te,tipo_linha,destino,9.0,123.0,26.0,2.0,2.0,2.0,52.6667,logreg,operacional,0.1844,0.7338,0.1469,0.5378,0.1474,45,0.6013,53,0.7045,não corroborado
+candidato,dia_sem,mes,dia_sem,mes,49.0,104.0,7.0,5.0,5.0,5.0,53.3333,xgboost,operacional,0.0018,1.2699,0.3093,1.2274,0.2856,70,-0.104,84,1.0,não corroborado
+candidato,hora,origem_te,hora,origem,7.0,33.0,175.0,3.0,3.0,3.0,71.6667,logreg,operacional,0.0666,2.8364,0.6058,2.479,0.5942,313,0.5312,346,0.7057,corroborado descritivamente
+candidato,hora,empresa_te,hora,empresa,10.0,126.0,80.0,3.0,3.0,3.0,72.0,logreg,operacional,0.0322,2.0604,0.3619,1.7318,0.3542,171,0.6756,227,0.9183,corroborado descritivamente
+candidato,trimestre,destino_te,trimestre,destino,48.0,7.0,196.0,2.0,2.0,2.0,83.6667,random_forest,operacional,0.0008,1.0894,0.2798,0.9089,0.2742,59,0.1994,60,0.7045,não corroborado
+candidato,hora,fim_semana,hora,fim_semana,5.0,27.0,235.0,2.0,2.0,2.0,89.0,logreg,operacional,0.0004,0.6131,0.1725,0.4926,0.1745,48,0.8565,48,1.0,não corroborado
+candidato,dia_sem,dia_ano,dia_sem,semana,8.0,48.0,221.0,3.0,3.0,3.0,92.3333,logreg,operacional,0.677,2.7451,0.6118,2.5759,0.5748,304,-0.0145,366,1.0,não corroborado
+candidato,porte_origem_medio,origem_te,porte_origem,origem,118.0,9.0,170.0,2.0,2.0,2.0,99.0,random_forest,redundante,1.0,0.0224,0.062,0.0371,0.0598,15,0.1112,15,0.7057,redundância (não é interação operacional)
+candidato,periodo_dia,duracao_prevista_min,periodo_dia,duracao_prevista_min,108.0,10.0,211.0,2.0,2.0,2.0,109.6667,random_forest,operacional,0.0164,1.2326,0.1483,1.0948,0.1539,20,0.9582,20,1.0,corroborado descritivamente
+candidato,duracao_prevista_min,tipo_linha_C,duracao_prevista_min,tipo_linha,214.0,8.0,141.0,2.0,2.0,2.0,121.0,random_forest,operacional,0.3385,0.5713,0.089,0.2845,0.0858,20,0.4246,20,1.0,não corroborado
+candidato,dia_sem,porte_origem_medio,dia_sem,porte_origem,235.0,131.0,9.0,3.0,3.0,3.0,125.0,xgboost,operacional,0.0007,0.1264,0.0762,0.1233,0.0776,21,0.5835,28,1.0,não corroborado
+candidato,hora,destino_te,hora,destino,6.0,247.0,245.0,3.0,3.0,3.0,166.0,logreg,operacional,0.0454,2.5084,0.6338,2.1593,0.6353,315,0.3784,350,0.7045,não corroborado
+candidato,dia_sem,porte_destino_grande,dia_sem,porte_destino,266.0,310.0,5.0,2.0,2.0,2.0,193.6667,xgboost,operacional,0.0012,0.0848,0.0793,0.086,0.0754,21,0.4459,28,1.0,não corroborado
+controle,dia_ano,porte_destino_medio,semana,porte_destino,332.0,277.0,234.0,2.0,2.0,2.0,281.0,,operacional,0.0023,0.1938,0.152,0.1914,0.1239,89,0.1068,201,1.0,não corroborado
+controle,trimestre,tipo_linha_C,trimestre,tipo_linha,257.0,337.0,269.0,2.0,2.0,2.0,287.6667,,operacional,0.0003,1.0052,0.1014,0.3591,0.0985,16,0.4032,16,1.0,não corroborado
+controle,porte_origem_pequeno,empresa_te,porte_origem,empresa,294.0,273.0,300.0,4.0,4.0,4.0,289.0,,operacional,0.1665,0.1163,0.0621,0.0928,0.0632,18,0.8571,31,0.9183,não corroborado
+controle,periodo_dia,porte_destino_hub,periodo_dia,porte_destino,274.0,300.0,303.0,2.0,2.0,2.0,292.3333,,operacional,0.0063,0.268,0.054,0.1996,0.0572,12,0.8571,16,1.0,não corroborado
+controle,porte_destino_pequeno,destino_te,porte_destino,destino,308.0,278.0,298.0,4.0,4.0,4.0,294.6667,,redundante,1.0,0.0218,0.0638,0.0384,0.0594,15,-0.1609,15,0.7045,redundância (não é interação operacional)
+controle,tipo_linha_I,porte_destino_medio,tipo_linha,porte_destino,261.0,335.0,293.0,2.0,2.0,2.0,296.3333,,operacional,0.0345,0.0979,0.0473,0.0783,0.0461,10,0.5536,15,1.0,não corroborado
+controle,duracao_prevista_min,porte_destino_hub,duracao_prevista_min,porte_destino,314.0,313.0,277.0,4.0,4.0,4.0,301.3333,,operacional,0.0201,0.0948,0.0619,0.0547,0.0623,15,0.3444,20,1.0,não corroborado
+controle,porte_origem_hub,porte_destino_pequeno,porte_origem,porte_destino,327.0,294.0,310.0,2.0,2.0,2.0,310.3333,,operacional,0.0103,0.0385,0.0397,0.0512,0.0409,9,-0.0017,16,1.0,não corroborado
+controle,dia_mes,porte_destino_pequeno,dia_mes,porte_destino,330.0,314.0,307.0,3.0,3.0,3.0,317.0,,operacional,0.0001,0.1266,0.1041,0.1784,0.1055,90,0.4726,124,1.0,não corroborado
+controle,vespera_feriado,porte_origem_pequeno,vespera_feriado,porte_origem,339.0,330.0,310.0,4.0,4.0,4.0,326.3333,,operacional,0.0,0.0238,0.0337,0.0097,0.0305,5,-0.2287,8,1.0,não corroborado

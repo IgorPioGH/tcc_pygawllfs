@@ -1,61 +1,61 @@
 agregacao,model,rank,feature_a,feature_b,interaction,n_sementes,tipo,classificacao,no_top10_da_outra
-sondadas,logreg,1.0,dia_ano,trimestre,0.015971,3,redundante,redundância (não é interação operacional),True
-sondadas,logreg,2.0,trimestre,destino_te,0.013088,2,operacional,não corroborado,False
-sondadas,logreg,3.0,dia_ano,empresa_te,0.012862,3,operacional,não corroborado,True
-sondadas,logreg,4.0,dia_ano,fim_semana,0.012591,3,operacional,não corroborado,True
-sondadas,logreg,5.0,hora,periodo_dia,0.012441,3,redundante,redundância (não é interação operacional),True
-sondadas,logreg,6.0,empresa_te,origem_te,0.010538,2,operacional,corroborado descritivamente,False
-sondadas,logreg,7.0,hora,tipo_linha_N,0.009726,3,operacional,corroborado descritivamente,True
-sondadas,logreg,8.0,trimestre,empresa_te,0.009338,2,operacional,não corroborado,False
-sondadas,logreg,9.0,hora,dia_ano,0.009203,3,operacional,não corroborado,True
-sondadas,logreg,10.0,mes,dia_ano,0.009168,4,redundante,redundância (não é interação operacional),True
-sondadas,random_forest,1.0,tipo_linha_I,origem_te,0.023085,2,operacional,não corroborado,True
-sondadas,random_forest,2.0,porte_origem_hub,origem_te,0.022246,2,redundante,redundância (não é interação operacional),False
-sondadas,random_forest,3.0,hora,origem_te,0.021463,3,operacional,corroborado descritivamente,True
-sondadas,random_forest,4.0,dia_ano,trimestre,0.021402,3,redundante,redundância (não é interação operacional),True
-sondadas,random_forest,5.0,fim_semana,duracao_prevista_min,0.017148,2,operacional,não corroborado,False
-sondadas,random_forest,6.0,porte_origem_hub,empresa_te,0.016818,2,operacional,não corroborado,False
-sondadas,random_forest,7.0,mes,trimestre,0.016512,3,redundante,redundância (não é interação operacional),True
-sondadas,random_forest,8.0,hora,dia_ano,0.01517,3,operacional,não corroborado,True
-sondadas,random_forest,9.0,hora,congestion_origem,0.014735,3,operacional,corroborado descritivamente,False
-sondadas,random_forest,10.0,hora,periodo_dia,0.014577,3,redundante,redundância (não é interação operacional),False
-sondadas,xgboost,1.0,mes,dia_ano,0.031422,4,redundante,redundância (não é interação operacional),True
-sondadas,xgboost,2.0,mes,porte_destino_hub,0.028543,3,operacional,não corroborado,True
-sondadas,xgboost,3.0,dia_mes,porte_destino_medio,0.028048,2,operacional,não corroborado,False
-sondadas,xgboost,4.0,dia_sem,fim_semana,0.028031,2,redundante,redundância (não é interação operacional),False
-sondadas,xgboost,5.0,congestion_origem,porte_origem_pequeno,0.027408,2,operacional,não corroborado,False
-sondadas,xgboost,6.0,duracao_prevista_min,porte_destino_medio,0.026724,2,operacional,não corroborado,False
-sondadas,xgboost,7.0,mes,dia_mes,0.026228,2,operacional,não corroborado,False
-sondadas,xgboost,8.0,trimestre,congestion_origem,0.026075,3,operacional,não corroborado,True
-sondadas,xgboost,9.0,dia_ano,destino_te,0.026069,2,operacional,não corroborado,False
-sondadas,xgboost,10.0,duracao_prevista_min,tipo_linha_G,0.024805,2,operacional,não corroborado,False
-com_zeros,logreg,1.0,dia_ano,trimestre,0.009582,3,redundante,redundância (não é interação operacional),True
-com_zeros,logreg,2.0,dia_ano,empresa_te,0.007717,3,operacional,não corroborado,True
-com_zeros,logreg,3.0,dia_ano,fim_semana,0.007555,3,operacional,não corroborado,True
-com_zeros,logreg,4.0,hora,periodo_dia,0.007465,3,redundante,redundância (não é interação operacional),True
-com_zeros,logreg,5.0,mes,dia_ano,0.007334,4,redundante,redundância (não é interação operacional),True
-com_zeros,logreg,6.0,hora,trimestre,0.005984,4,operacional,não corroborado,False
-com_zeros,logreg,7.0,hora,tipo_linha_N,0.005835,3,operacional,corroborado descritivamente,True
-com_zeros,logreg,8.0,dia_sem,congestion_origem,0.00556,5,operacional,não corroborado,False
-com_zeros,logreg,9.0,hora,dia_ano,0.005522,3,operacional,não corroborado,True
-com_zeros,logreg,10.0,trimestre,congestion_origem,0.005427,3,operacional,não corroborado,False
-com_zeros,random_forest,1.0,hora,origem_te,0.012878,3,operacional,corroborado descritivamente,True
-com_zeros,random_forest,2.0,dia_ano,trimestre,0.012841,3,redundante,redundância (não é interação operacional),True
-com_zeros,random_forest,3.0,mes,minuto,0.010815,4,operacional,não corroborado,False
-com_zeros,random_forest,4.0,dia_mes,dia_ano,0.009935,5,redundante,redundância (não é interação operacional),False
-com_zeros,random_forest,5.0,mes,trimestre,0.009907,3,redundante,redundância (não é interação operacional),True
-com_zeros,random_forest,6.0,trimestre,vespera_feriado,0.009748,4,operacional,não corroborado,False
-com_zeros,random_forest,7.0,tipo_linha_G,porte_destino_grande,0.009507,5,operacional,não corroborado,False
-com_zeros,random_forest,8.0,tipo_linha_I,origem_te,0.009234,2,operacional,não corroborado,True
-com_zeros,random_forest,9.0,porte_origem_grande,destino_te,0.009147,5,operacional,não corroborado,False
-com_zeros,random_forest,10.0,hora,dia_ano,0.009102,3,operacional,não corroborado,True
-com_zeros,xgboost,1.0,mes,dia_ano,0.025138,4,redundante,redundância (não é interação operacional),True
-com_zeros,xgboost,2.0,porte_destino_medio,origem_te,0.019155,5,operacional,não corroborado,False
-com_zeros,xgboost,3.0,mes,porte_destino_hub,0.017126,3,operacional,não corroborado,True
-com_zeros,xgboost,4.0,dia_mes,dia_ano,0.017096,5,redundante,redundância (não é interação operacional),False
-com_zeros,xgboost,5.0,trimestre,tipo_linha_G,0.016953,5,operacional,não corroborado,False
-com_zeros,xgboost,6.0,tipo_linha_I,tipo_linha_N,0.016379,4,estrutural,não testável (mesma variável),False
-com_zeros,xgboost,7.0,feriado,origem_te,0.015991,5,operacional,não corroborado,False
-com_zeros,xgboost,8.0,vespera_feriado,porte_origem_grande,0.015958,4,operacional,não corroborado,False
-com_zeros,xgboost,9.0,trimestre,congestion_origem,0.015645,3,operacional,não corroborado,True
-com_zeros,xgboost,10.0,dia_mes,vespera_feriado,0.015599,4,operacional,não corroborado,False
+sondadas,logreg,1.0,hora,periodo_dia,0.03036,3,redundante,redundância (não é interação operacional),True
+sondadas,logreg,2.0,hora,dia_ano,0.014045,3,operacional,não corroborado,True
+sondadas,logreg,3.0,empresa_te,origem_te,0.013227,2,operacional,corroborado descritivamente,True
+sondadas,logreg,4.0,dia_sem,fim_semana,0.012596,2,redundante,redundância (não é interação operacional),True
+sondadas,logreg,5.0,hora,fim_semana,0.011546,2,operacional,não corroborado,False
+sondadas,logreg,6.0,hora,destino_te,0.009987,3,operacional,não corroborado,True
+sondadas,logreg,7.0,hora,origem_te,0.009665,3,operacional,corroborado descritivamente,True
+sondadas,logreg,8.0,dia_sem,dia_ano,0.009177,3,operacional,não corroborado,True
+sondadas,logreg,9.0,tipo_linha_I,destino_te,0.008685,2,operacional,não corroborado,False
+sondadas,logreg,10.0,hora,empresa_te,0.008577,3,operacional,corroborado descritivamente,True
+sondadas,random_forest,1.0,hora,periodo_dia,0.030396,3,redundante,redundância (não é interação operacional),True
+sondadas,random_forest,2.0,dia_sem,fim_semana,0.020882,2,redundante,redundância (não é interação operacional),False
+sondadas,random_forest,3.0,origem_te,destino_te,0.018331,2,operacional,não corroborado,False
+sondadas,random_forest,4.0,dia_ano,origem_te,0.017674,4,operacional,não corroborado,True
+sondadas,random_forest,5.0,mes,trimestre,0.017388,3,redundante,redundância (não é interação operacional),True
+sondadas,random_forest,6.0,dia_ano,trimestre,0.017105,3,redundante,redundância (não é interação operacional),True
+sondadas,random_forest,7.0,trimestre,destino_te,0.01654,2,operacional,não corroborado,False
+sondadas,random_forest,8.0,duracao_prevista_min,tipo_linha_C,0.015146,2,operacional,não corroborado,False
+sondadas,random_forest,9.0,porte_origem_medio,origem_te,0.014141,2,redundante,redundância (não é interação operacional),False
+sondadas,random_forest,10.0,periodo_dia,duracao_prevista_min,0.014104,2,operacional,corroborado descritivamente,False
+sondadas,xgboost,1.0,dia_ano,trimestre,0.044714,3,redundante,redundância (não é interação operacional),True
+sondadas,xgboost,2.0,hora,periodo_dia,0.044083,3,redundante,redundância (não é interação operacional),True
+sondadas,xgboost,3.0,empresa_te,origem_te,0.040705,2,operacional,corroborado descritivamente,False
+sondadas,xgboost,4.0,dia_ano,origem_te,0.034927,4,operacional,não corroborado,True
+sondadas,xgboost,5.0,dia_sem,porte_destino_grande,0.028798,2,operacional,não corroborado,False
+sondadas,xgboost,6.0,congestion_destino,destino_te,0.028676,2,operacional,corroborado descritivamente,False
+sondadas,xgboost,7.0,dia_sem,mes,0.027663,5,operacional,não corroborado,True
+sondadas,xgboost,8.0,tipo_linha_I,origem_te,0.027419,2,operacional,não corroborado,False
+sondadas,xgboost,9.0,dia_sem,porte_origem_medio,0.025451,3,operacional,não corroborado,False
+sondadas,xgboost,10.0,hora,dia_ano,0.025342,3,operacional,não corroborado,False
+com_zeros,logreg,1.0,hora,periodo_dia,0.018216,3,redundante,redundância (não é interação operacional),True
+com_zeros,logreg,2.0,hora,dia_ano,0.008427,3,operacional,não corroborado,True
+com_zeros,logreg,3.0,hora,destino_te,0.005992,3,operacional,não corroborado,True
+com_zeros,logreg,4.0,hora,origem_te,0.005799,3,operacional,corroborado descritivamente,True
+com_zeros,logreg,5.0,dia_sem,dia_ano,0.005506,3,operacional,não corroborado,True
+com_zeros,logreg,6.0,mes,periodo_dia,0.005469,4,operacional,não corroborado,False
+com_zeros,logreg,7.0,empresa_te,origem_te,0.005291,2,operacional,corroborado descritivamente,True
+com_zeros,logreg,8.0,mes,dia_ano,0.00522,4,redundante,redundância (não é interação operacional),False
+com_zeros,logreg,9.0,hora,empresa_te,0.005146,3,operacional,corroborado descritivamente,True
+com_zeros,logreg,10.0,dia_sem,fim_semana,0.005038,2,redundante,redundância (não é interação operacional),True
+com_zeros,random_forest,1.0,hora,periodo_dia,0.018238,3,redundante,redundância (não é interação operacional),True
+com_zeros,random_forest,2.0,dia_ano,origem_te,0.014139,4,operacional,não corroborado,True
+com_zeros,random_forest,3.0,mes,fim_semana,0.011215,4,operacional,não corroborado,False
+com_zeros,random_forest,4.0,mes,trimestre,0.010433,3,redundante,redundância (não é interação operacional),True
+com_zeros,random_forest,5.0,dia_ano,trimestre,0.010263,3,redundante,redundância (não é interação operacional),True
+com_zeros,random_forest,6.0,feriado,origem_te,0.009883,5,operacional,não corroborado,False
+com_zeros,random_forest,7.0,mes,periodo_dia,0.009084,4,operacional,não corroborado,False
+com_zeros,random_forest,8.0,fim_semana,porte_origem_hub,0.009014,4,operacional,não corroborado,False
+com_zeros,random_forest,9.0,congestion_destino,origem_te,0.008897,4,operacional,não corroborado,False
+com_zeros,random_forest,10.0,trimestre,tipo_linha_N,0.008423,3,operacional,não corroborado,False
+com_zeros,xgboost,1.0,dia_ano,origem_te,0.027941,4,operacional,não corroborado,True
+com_zeros,xgboost,2.0,dia_sem,mes,0.027663,5,operacional,não corroborado,True
+com_zeros,xgboost,3.0,dia_ano,trimestre,0.026829,3,redundante,redundância (não é interação operacional),True
+com_zeros,xgboost,4.0,hora,periodo_dia,0.02645,3,redundante,redundância (não é interação operacional),True
+com_zeros,xgboost,5.0,mes,dia_ano,0.019216,4,redundante,redundância (não é interação operacional),False
+com_zeros,xgboost,6.0,duracao_prevista_min,congestion_origem,0.019047,4,operacional,corroborado descritivamente,False
+com_zeros,xgboost,7.0,dia_sem,porte_destino_hub,0.017726,4,operacional,não corroborado,False
+com_zeros,xgboost,8.0,dia_ano,tipo_linha_G,0.01756,4,operacional,não corroborado,False
+com_zeros,xgboost,9.0,mes,tipo_linha_G,0.017239,4,operacional,não corroborado,False
+com_zeros,xgboost,10.0,trimestre,tipo_linha_G,0.016764,5,operacional,não corroborado,False
