@@ -144,6 +144,12 @@ nem para estimar, nem para escolher parâmetros. Todos usam a validação. O
 teste aparece em dois lugares só: a avaliação final dos modelos (Etapa 6) e
 a fidelidade por retenção top-k (Etapa 12), sempre como última coisa.
 
+As matrizes de confusão (Etapa 6b) e os intervalos de confiança por bootstrap
+(Etapa 12b) não são novos usos do teste: reaproveitam as previsões dessas duas
+etapas, de configurações já fixadas, e nada é escolhido a partir deles. O
+bootstrap só mede quanto cada resultado varia com a amostra de dias do teste
+(`docs/incerteza.md`).
+
 ### 4.10 Target encoding sem vazamento dentro do treino
 
 No treino, o valor de cada linha vem de validação cruzada **out-of-fold**
@@ -275,12 +281,14 @@ anterior produziu. O `main.py` da raiz roda tudo nesta ordem (`python main.py
 | 4 | `src/data/target.py` | `data/interim/vra_target.parquet` |
 | 5 | `src/data/features.py` | `data/processed/{train,val,test,subamostra}.parquet` |
 | 6 | `src/models/baselines.py` | `results/tables/baselines*.csv`, modelos em `experiments/runs/baselines/` |
+| 6b | `src/models/matriz_confusao.py` | `matriz_confusao.csv` e figura (segundos; lê os modelos salvos) |
 | 7 | `src/importance/gawll.py` | checkpoints em `experiments/runs/gawll/` (~5,4 h) |
 | 8 | `src/importance/consolidar_gawll.py` | `importancia_gawll.csv`, `interacao_gawll.csv`, `selecao_gawll.csv` |
 | 9 | `src/importance/{intrinsic,permutation,shap_global}.py` | `importancia_{intrinseca,permutation,shap}.csv` |
 | 10 | `src/synthetic/{generate,aplicar_metodos,recovery}.py` | `sintetico_*.csv`, `recuperacao_sintetico*.csv` (~30 min) |
 | 11 | `src/compare/{rankings,stability,figuras}.py` | `concordancia*.csv`, `estabilidade*.csv`, figuras |
-| 12 | `src/compare/fidelity.py` | `fidelidade.csv`, `fidelidade_resumo.csv`, figura (~50 min; toca o teste) |
+| 12 | `src/compare/fidelity.py` | `fidelidade.csv`, `fidelidade_resumo.csv`, figura e previsões no teste em `experiments/runs/fidelidade/` (~50 min; toca o teste) |
+| 12b | `src/compare/incerteza.py` | `incerteza_*.csv`: IC de 95% por bootstrap de dias (~5 min; reaproveita as previsões das Etapas 6 e 12) |
 | 13a | `src/interaction/friedman_h.py` | `interacao_h.csv` (~7 min) |
 | 13b | `src/compare/interacoes.py` (depois da 15) | `interacoes*.csv`, figura PyGAwLLfs × H |
 | 13c | `src/compare/sensibilidade_agregacao.py` (depois da 13b) | `sensibilidade_*.csv`, figura da sensibilidade à agregação das sementes (~2 min) |
@@ -289,7 +297,8 @@ anterior produziu. O `main.py` da raiz roda tudo nesta ordem (`python main.py
 
 Testes (scripts com `assert`): `tests/test_gawll.py`, `tests/test_importancia.py`,
 `tests/test_sintetico.py`, `tests/test_comparacao.py`, `tests/test_dominio.py`,
-`tests/test_interacao.py`, `tests/test_fidelidade.py`. (O `aplicar_metodos.py` do sintético calcula também o
+`tests/test_interacao.py`, `tests/test_fidelidade.py`, `tests/test_incerteza.py`,
+`tests/test_sintese.py`. (O `aplicar_metodos.py` do sintético calcula também o
 H, então depende do `friedman_h.py`.)
 
 O projeto e o clone `PyGAwLLfs/` (não versionado) têm, cada um, uma pasta

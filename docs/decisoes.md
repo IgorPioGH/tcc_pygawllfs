@@ -25,6 +25,7 @@ Estado em 17 out 2026. A ordem de reexecução do pipeline está no `docs/metodo
 | 13 | Orçamento do PyGAwLLfs para a matriz de interação | **mantido o do artigo** (matriz pouco confiável com N = 29, documentado) | **sim** | ~5,4 h por +5 sementes; ganho moderado na LogReg e no XGBoost (item 15) |
 | 14 | Desenho da fidelidade (Etapa 12) | k = 5/10/15; 10 sorteios; treino completo; F1 e PR-AUC | não | ~50 min |
 | 15 | Agregação das sementes na matriz de interação | **só as sementes em que o par foi sondado**; ranking com pares sondados em ≥ 2 sementes; a média com zeros fica como sensibilidade | **sim** (contador) | ~3 min (ou ~5,4 h com contador) |
+| 16 | Incerteza dos resultados no teste (Etapa 12b) | bootstrap **por dias** (61 blocos), **pareado**, B = 1.000, IC percentil de 95%, sem correção para comparações múltiplas | talvez (correção) | ~5 min |
 
 ## 1. Bugs de mutação e elitismo — corrigidos
 
@@ -315,6 +316,37 @@ Resultados em `docs/fidelidade.md`.
   dispensaria a ressalva c. Custa uma nova rodada do PyGAwLLfs (~5,4 h). Se o GA
   for determinístico por semente (a conferir com uma execução), todos os outros
   resultados ficariam iguais. Pergunta 6 da reunião.
+
+## 16. Incerteza dos resultados no teste (Etapa 12b)
+
+Constantes no topo de `src/compare/incerteza.py`; rodar de novo leva ~5 min.
+Resultados em `docs/incerteza.md`.
+
+- **Estado:** bootstrap por dias (os 61 dias do teste sorteados com
+  reposição), B = 1.000 (`N_REPETICOES`), semente 42, IC pelos percentis 2,5 e
+  97,5. Pareado: o mesmo sorteio para todos os modelos e configurações, e as
+  comparações usam o IC da diferença. Métricas: F1, PR-AUC e ROC-AUC dos
+  modelos; PR-AUC (retenção) na fidelidade.
+- **Por quê:** voos do mesmo dia não são independentes (a taxa de atraso
+  diária no teste vai de 9% a 62%); sortear voos daria IC estreito demais. O
+  pareamento cancela a variação comum aos dois lados (um dia ruim é ruim para
+  todos os modelos), que a comparação de ICs sobrepostos não cancela.
+- **Pré-requisito:** a Etapa 12 passou a salvar o y_score de cada
+  configuração no teste (`experiments/runs/fidelidade/previsoes_teste.npz`).
+  Rodá-la de novo para isso reproduziu `fidelidade.csv` e
+  `fidelidade_resumo.csv` exatamente (só o tempo de treino muda).
+- **Isolamento do teste:** não é um novo uso (§4.9 da metodologia). Usa as
+  mesmas previsões das Etapas 6 e 12, de configurações já fixadas, e nada é
+  escolhido a partir do bootstrap.
+- **Alternativas:** (a) bootstrap por voo: mais estreito, mas ignora a
+  dependência dentro do dia; (b) blocos de vários dias (ex.: semanas): captura
+  a dependência entre dias vizinhos, mas sobram só ~9 blocos; (c) correção de
+  Holm ou Bonferroni para as 87 comparações: mais conservadora; as
+  diferenças no limite (ex.: Permutation × SHAP no top-5 do RF, IC de +0,1 a
+  +1,7 ponto) deixariam de contar como reais.
+- **Como trocar:** `N_REPETICOES`, `SEMENTE` e `PERCENTIS` em
+  `src/compare/incerteza.py`; o bloco é o dia em `dias_do_teste`. Rodar
+  `python src/compare/incerteza.py` (~5 min).
 
 ## Perguntas para a reunião com o Prof. Tinós
 

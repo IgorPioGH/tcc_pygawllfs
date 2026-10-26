@@ -121,11 +121,19 @@ def teste_execucao_em_miniatura():
                 mock.patch.object(fidelity, "carregar", lambda nome: fatias[nome]), \
                 mock.patch.object(fidelity, "MODELOS", ["logreg"]), \
                 mock.patch.object(fidelity, "N_SORTEIOS", 2), \
-                mock.patch.object(fidelity, "DIR_FIGURAS", pasta / "figuras"):
+                mock.patch.object(fidelity, "DIR_FIGURAS", pasta / "figuras"), \
+                mock.patch.object(fidelity, "DIR_PREVISOES", pasta / "previsoes"):
             fidelity.main()
         tabela = pd.read_csv(pasta / "fidelidade.csv")
         assert set(tabela["conjunto"]) == {"val", "test"}
         assert (pasta / "figuras" / "fidelidade.png").exists()
+
+        # Uma previsão por configuração, na ordem do teste
+        previsoes = np.load(pasta / "previsoes" / "previsoes_teste.npz")
+        teste = tabela[tabela["conjunto"] == "test"]
+        assert len(previsoes["ids"]) == len(teste)
+        assert previsoes["scores"].shape == (len(teste), 3000)
+        assert (previsoes["y"] == fatias["test"][1].to_numpy()).all()
 
 
 def teste_tabela_real():

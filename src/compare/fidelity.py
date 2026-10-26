@@ -21,6 +21,10 @@ Produz:
     results/tables/fidelidade_resumo.csv  média por (modelo, método, k, conjunto),
                                           e a fração do desempenho de "todas"
     results/figures/fidelidade.{png,pdf}  curvas no teste (F1 e PR-AUC)
+    experiments/runs/fidelidade/previsoes_teste.npz
+                                          probabilidade prevista no teste de cada
+                                          configuração (y_score), para o bootstrap
+                                          da Etapa 12b (src/compare/incerteza.py)
 Quem consome: o Cap. 4 (fidelidade é um dos quatro critérios da pergunta de pesquisa).
 """
 
@@ -60,6 +64,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 DIR_FIGURAS = RAIZ / "results" / "figures"
+DIR_PREVISOES = RAIZ / "experiments" / "runs" / "fidelidade"
 TOP_K = [5, 10, 15]
 N_SORTEIOS = 10
 SEMENTE = 42
@@ -107,10 +112,21 @@ def listas_de_features(modelo: str, features: list[str], ranking: pd.DataFrame,
     return configuracoes
 
 
-def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: dict) -> list[dict]:
+def id_configuracao(modelo: str, config: dict) -> str:
+    """Identificador único de uma configuração: "modelo|método|k|semente".
+
+    Usada em: avaliar_configuracoes; incerteza.py.
+    Importância: liga cada linha do fidelidade.csv à sua previsão salva no teste.
+    """
+    return f"{modelo}|{config['method']}|{config['k']}|{config['seed']}"
+
+
+def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict],
+                          dados: dict) -> tuple[list[dict], dict[str, np.ndarray]]:
     """Treina cada configuração no treino completo e avalia na validação e, por último,
     no teste. Conjuntos de features repetidos (ex.: dois métodos com o mesmo top-15)
-    reaproveitam o resultado: mesmo treino, mesmos números.
+    reaproveitam o resultado: mesmo treino, mesmos números. Devolve também a
+    probabilidade prevista no teste de cada configuração (float32), para o bootstrap.
 
     Usada em: main.
     Importância: é um dos dois únicos usos do teste (§4.9); usa os hiperparâmetros da
@@ -120,7 +136,7 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: di
     parametros = ler_configuracoes_escolhidas()[modelo_nome]
     peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
 
-    cache, linhas = {}, []
+    cache, linhas, previsoes = {}, [], {}
     for config in configuracoes:
         chave = frozenset(config["features"])
         if chave not in cache:
@@ -134,6 +150,9 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: di
                 for conjunto in CONJUNTOS  # val e, por último, test
             }
             cache[chave]["tempo_treino_s"] = tempo
+            cache[chave]["score_teste"] = (
+                modelo.predict_proba(dados["test"][0][colunas])[:, 1].astype(np.float32))
+        previsoes[id_configuracao(modelo_nome, config)] = cache[chave]["score_teste"]
         for conjunto in CONJUNTOS:
             linhas.append({
                 "model": modelo_nome, "method": config["method"], "k": config["k"],
@@ -143,7 +162,7 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict], dados: di
                 "features": ";".join(config["features"]),
             })
     logger.info(f"{modelo_nome}: {len(configuracoes)} configurações, {len(cache)} treinos")
-    return linhas
+    return linhas, previsoes
 
 
 def resumir(fidelidade: pd.DataFrame) -> pd.DataFrame:
@@ -242,10 +261,27 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
     salvar(fig, caminho_base)
 
 
+def salvar_previsoes(previsoes: dict[str, np.ndarray], y_teste: pd.Series) -> None:
+    """Grava as previsões no teste num .npz: ids (um por configuração), scores
+    (configurações × voos, na ordem do test.parquet) e y (o alvo, para conferir o
+    alinhamento na leitura).
+
+    Usada em: main.
+    Importância: o bootstrap da Etapa 12b mede a incerteza dessas mesmas previsões,
+    sem retreinar nada e sem escolher nada a partir do teste.
+    """
+    DIR_PREVISOES.mkdir(parents=True, exist_ok=True)
+    ids = list(previsoes)
+    np.savez_compressed(DIR_PREVISOES / "previsoes_teste.npz", ids=np.array(ids),
+                        scores=np.stack([previsoes[i] for i in ids]),
+                        y=y_teste.to_numpy(dtype=np.int8))
+    logger.info(f"Previsões no teste de {len(ids)} configurações salvas em {DIR_PREVISOES}")
+
+
 def main() -> None:
     """Etapa 12: lê os três conjuntos, o ranking consolidado e o x* do GA, avalia as
-    configurações dos três modelos e salva fidelidade.csv, fidelidade_resumo.csv e a
-    figura.
+    configurações dos três modelos e salva fidelidade.csv, fidelidade_resumo.csv, a
+    figura e as previsões no teste.
 
     Usada em: python src/compare/fidelity.py; main.py, etapa "fidelidade";
     tests/test_fidelidade.py.
@@ -259,16 +295,19 @@ def main() -> None:
     logger.info(f"Treino {dados['train'][0].shape} | validação {dados['val'][0].shape} | "
                 f"teste {dados['test'][0].shape}")
 
-    linhas = []
+    linhas, previsoes = [], {}
     for modelo in MODELOS:
         configuracoes = listas_de_features(modelo, features, ranking, selecao)
-        linhas.extend(avaliar_configuracoes(modelo, configuracoes, dados))
+        linhas_modelo, previsoes_modelo = avaliar_configuracoes(modelo, configuracoes, dados)
+        linhas.extend(linhas_modelo)
+        previsoes.update(previsoes_modelo)
 
     fidelidade = pd.DataFrame(linhas)
     resumo = resumir(fidelidade)
     comum.salvar_tabela(fidelidade.round(5), "fidelidade.csv")
     comum.salvar_tabela(resumo.round(4), "fidelidade_resumo.csv")
     figura_fidelidade(resumo, fidelidade, DIR_FIGURAS / "fidelidade")
+    salvar_previsoes(previsoes, dados["test"][1])
 
     with pd.option_context("display.width", 220, "display.max_rows", 200):
         teste = resumo[(resumo["conjunto"] == "test") & (resumo["method"] != "gawll_x*")]

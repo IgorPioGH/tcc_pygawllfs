@@ -1,0 +1,10 @@
+modelo,metrica,valor,ic_inf,ic_sup
+logreg,f1,0.4167,0.3934,0.4376
+random_forest,f1,0.4404,0.4085,0.4731
+xgboost,f1,0.4506,0.4166,0.4845
+logreg,pr_auc,0.3541,0.3323,0.3766
+random_forest,pr_auc,0.4035,0.3741,0.4339
+xgboost,pr_auc,0.3942,0.3651,0.4266
+logreg,roc_auc,0.6439,0.631,0.6577
+random_forest,roc_auc,0.6817,0.6706,0.6929
+xgboost,roc_auc,0.676,0.6624,0.6908

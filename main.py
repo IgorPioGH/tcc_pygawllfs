@@ -56,8 +56,9 @@ ETAPAS = [
                     "src/data/target.py", "src/data/features.py"],
           "consolida, limpa, cria o alvo, as 29 features, o split temporal e a subamostra",
           "~3 min"),
-    Etapa("baselines", ["src/models/baselines.py"],
-          "LogReg, RF e XGBoost: tuning na validação e avaliação única no teste",
+    Etapa("baselines", ["src/models/baselines.py", "src/models/matriz_confusao.py"],
+          "LogReg, RF e XGBoost: tuning na validação, avaliação única no teste "
+          "e matrizes de confusão",
           "~3 min"),
     Etapa("pygawllfs", ["src/importance/gawll.py", "src/importance/consolidar_gawll.py"],
           "15 execuções do PyGAwLLfs corrigido (3 modelos x 5 sementes) e suas tabelas",
@@ -83,8 +84,12 @@ ETAPAS = [
           "à agregação das sementes",
           "~10 min"),
     Etapa("fidelidade", ["src/compare/fidelity.py"],
-          "retenção top-k, subconjuntos do GA e sorteios; avalia no teste",
+          "retenção top-k, subconjuntos do GA e sorteios; avalia no teste e salva as previsões",
           "~50 min"),
+    Etapa("incerteza", ["src/compare/incerteza.py"],
+          "IC de 95% por bootstrap de dias (pareado) dos modelos e da fidelidade; "
+          "reaproveita as previsões, sem retreinar",
+          "~5 min"),
     Etapa("sintese", ["src/compare/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
@@ -96,7 +101,7 @@ ETAPAS = [
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
     "tests/test_comparacao.py", "tests/test_dominio.py", "tests/test_interacao.py",
-    "tests/test_fidelidade.py", "tests/test_sintese.py",
+    "tests/test_fidelidade.py", "tests/test_incerteza.py", "tests/test_sintese.py",
 ]
 
 

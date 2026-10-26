@@ -1,0 +1,10 @@
+modelo_a,modelo_b,metrica,diferenca,ic_inf,ic_sup,ic_contem_zero
+random_forest,xgboost,f1,-0.0102,-0.0183,-0.0025,False
+random_forest,logreg,f1,0.0237,0.0076,0.0412,False
+xgboost,logreg,f1,0.0339,0.0164,0.0528,False
+random_forest,xgboost,pr_auc,0.0093,-0.0026,0.0194,True
+random_forest,logreg,pr_auc,0.0494,0.0384,0.0598,False
+xgboost,logreg,pr_auc,0.0401,0.0248,0.0561,False
+random_forest,xgboost,roc_auc,0.0057,-0.0047,0.0148,True
+random_forest,logreg,roc_auc,0.0377,0.0282,0.0471,False
+xgboost,logreg,roc_auc,0.0321,0.0182,0.0461,False

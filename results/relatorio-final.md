@@ -19,15 +19,19 @@ Principais resultados:
 - **Os métodos concordam sobre o que importa**: aeroporto de origem, empresa e
   hora lideram quase todos os rankings. A concordância é maior entre métodos
   aplicados ao mesmo modelo (Spearman 0,70) do que entre modelos diferentes
-  (0,56–0,60).
+  (0,57–0,60).
 - **Todos apontam atributos que carregam a informação**: só com as 5 features
-  mais importantes de cada método, o modelo retém 87%–98% do PR-AUC do modelo
-  completo no teste, contra 72%–81% de 5 features sorteadas.
+  mais importantes de cada método, o modelo retém 87%–99% do PR-AUC do modelo
+  completo no teste, contra 72%–81% de 5 features sorteadas — vantagem que se
+  mantém com intervalo de confiança de 95% em todos os casos.
+- **Nem toda diferença pequena é real**: com intervalos de confiança por
+  bootstrap de dias do teste, Random Forest e XGBoost empatam no PR-AUC, e no
+  XGBoost os quatro métodos empatam na fidelidade do top-5.
 - **Os métodos discordam sobre o que interage**: PyGAwLLfs e H de Friedman
-  quase não concordam (Spearman ≈ 0,15). Num dataset sintético com gabarito, os
+  quase não concordam (Spearman de 0,13 a 0,21). Num dataset sintético com gabarito, os
   dois encontram a interação verdadeira, mas só o PyGAwLLfs trata **pares
   redundantes** como interação.
-- **O custo difere em duas ordens de grandeza**: 5,4 h e milhares de treinos
+- **O custo difere em duas ordens de grandeza**: 4,9 h e milhares de treinos
   para o PyGAwLLfs, contra segundos a minutos e nenhum treino para os demais.
 - Ao adaptar o PyGAwLLfs, foram corrigidos três problemas metodológicos do
   protocolo original e **dois bugs de implementação** do repositório.
@@ -121,21 +125,40 @@ validação, e cada modelo final foi avaliado **uma única vez** no teste.
 | Random Forest | 100 árvores | profundidade 10 (a do artigo original) | profundidade 10 |
 | XGBoost | 300 árvores, taxa 0,1, GPU | profundidade ∈ {4, 6, 8} | profundidade 8 |
 
-**Desempenho no teste:**
+**Desempenho no teste**, com IC de 95% (bootstrap de dias, pareado; seção 5):
 
 | Modelo | F1 | PR-AUC | ROC-AUC | Acurácia balanceada |
-|---|---:|---:|---:|---:|
+|---|---|---|---|---:|
 | Trivial (sempre "não atrasa") | 0,000 | 0,243 | 0,500 | 0,500 |
-| Regressão logística | 0,417 | 0,354 | 0,644 | 0,602 |
-| Random Forest | 0,440 | **0,403** | **0,682** | 0,602 |
-| XGBoost | **0,452** | 0,394 | 0,676 | **0,624** |
+| Regressão logística | 0,417 [0,393; 0,438] | 0,354 [0,332; 0,377] | 0,644 [0,631; 0,658] | 0,602 |
+| Random Forest | 0,440 [0,408; 0,473] | **0,403** [0,374; 0,434] | **0,682** [0,671; 0,693] | 0,603 |
+| XGBoost | **0,451** [0,417; 0,484] | 0,394 [0,365; 0,427] | 0,676 [0,662; 0,691] | **0,622** |
 
-Os dois modelos de árvores ficam praticamente empatados (diferenças de 0,01 a
-0,02) e à frente da regressão logística. O desempenho é moderado, como
+As duas árvores ficam à frente da regressão logística nas três métricas, e a
+diferença é real: o IC da diferença pareada exclui o zero (PR-AUC +0,04 a
++0,05). Entre elas, **o RF e o XGBoost empatam** no PR-AUC (RF − XGBoost =
++0,009, IC [−0,003; +0,019]) e no ROC-AUC. No F1, o XGBoost fica à frente por
+0,010 (IC [0,002; 0,018]), diferença real, mas pequena. O desempenho é moderado, como
 esperado: clima e propagação de atrasos entre voos, duas causas importantes de
 atraso, ficaram de fora de propósito, porque dependem de informação posterior
 à partida ou de bases externas. O objetivo do trabalho não é o melhor preditor, mas modelos
 razoáveis cujas explicações possam ser comparadas.
+
+![](figures/matriz_confusao.png)
+
+*Figura 2 — Matrizes de confusão no teste, com corte em 0,5. Cor e % = fração da classe real.*
+
+O F1 parecido esconde modelos que erram de jeitos diferentes. O balanceamento
+de classe (`class_weight="balanced"`; no XGBoost, `scale_pos_weight`) faz os
+atrasos, 18% do treino, pesarem tanto quanto os voos pontuais, e com o corte em
+0,5 os três erram mais por alarme falso do que por atraso não detectado. O
+Random Forest detecta 85% dos atrasos, mas marca como atrasados 65% dos voos
+pontuais; a regressão logística fica no outro extremo (53% dos atrasos, 33% de
+alarmes falsos); o XGBoost fica no meio (75% e 51%). Por isso a acurácia dos
+três (47%–64%) fica abaixo da do classificador trivial (76%), e o trabalho usa
+F1 e PR-AUC. O corte não foi ajustado: o objetivo é comparar explicações, e o
+PR-AUC é a leitura que não depende dele. As matrizes vêm das mesmas previsões
+da avaliação final (conferidas contra a tabela acima).
 
 ## 4. Métodos comparados
 
@@ -190,7 +213,7 @@ calculado na escala logit, em que a regressão logística é exatamente aditiva
 (H = 0 por construção; por isso só RF e XGBoost entram). A versão principal é
 a não normalizada (H_abs), mais estável. Por custo, o H foi calculado só para
 a união entre o top-15 de importância por consenso e todos os atributos do
-grafo de interação do PyGAwLLfs: 25 atributos (300 pares) no RF e 27 (351
+grafo de interação do PyGAwLLfs: 23 atributos (253 pares) no RF e 25 (300
 pares) no XGBoost. A união garante que os atributos apontados pelo PyGAwLLfs
 não fiquem de fora da comparação.
 
@@ -235,6 +258,17 @@ não depende de limiar, por isso é mais estável que o F1.
 o **número de treinos de modelo**. Máquina: notebook com Intel Core i7, 14 GB
 de RAM e GPU RTX 4050 (usada só pelo XGBoost).
 
+**Incerteza.** O teste é uma amostra de dias (nov–dez/2025). Para saber se uma
+diferença é maior que a variação entre amostras, os 61 dias do teste foram
+sorteados com reposição 1.000 vezes (bootstrap **por dias**, porque voos do
+mesmo dia não são independentes: a taxa de atraso diária vai de 9% a 62%). Em
+cada repetição, a métrica foi recalculada para todos os modelos e
+configurações com o **mesmo sorteio** (bootstrap pareado). "A é melhor que B"
+exige que o IC de 95% da diferença A − B não contenha zero. Isto não é um novo
+uso do teste: as previsões são as mesmas da avaliação final e da fidelidade, de
+configurações já fixadas, e nada foi escolhido a partir do bootstrap. Detalhes
+e limitações em `docs/incerteza.md`.
+
 **Dataset sintético (P5).** 5.000 exemplos com estrutura conhecida:
 
 > z = 2·x1·x2 + x3 + x4 + 0,5·ruído; y = 1 se z > 0.
@@ -245,7 +279,7 @@ Todos os métodos rodaram com o mesmo código usado nos dados reais, e cada
 resultado foi comparado com esse gabarito.
 
 **Validação de domínio (P6).** Para os pares do topo do PyGAwLLfs (top-10 de
-cada modelo, 26 pares), mais 10 pares do fundo do ranking como controle:
+cada modelo, 23 pares), mais 10 pares do fundo do ranking como controle:
 
 1. cada par foi classificado como **estrutural** (duas codificações da mesma
    variável), **redundante** (uma variável quase determina a outra) ou
@@ -261,8 +295,8 @@ Essa análise usa só treino e validação. Corroborar não é provar causa: um
 fator não observado pode produzir o mesmo padrão.
 
 **Reprodutibilidade.** Todo o pipeline roda com um comando (`python main.py`,
-~7,5 h, quase tudo no PyGAwLLfs), com retomada por checkpoint. Há 8 suítes de
-testes automáticos (41 testes). Entre outras coisas, elas verificam que nenhum
+~6 h, quase tudo no PyGAwLLfs), com retomada por checkpoint. Há 9 suítes de
+testes automáticos (45 testes). Entre outras coisas, elas verificam que nenhum
 método abre o conjunto de teste, que os dois bugs existem no original e foram
 corrigidos, que o H acerta funções com resposta conhecida e que as tabelas
 finais reproduzem as fontes.
@@ -277,15 +311,15 @@ Top-5 de cada ranking:
 |---|---|---|---|---|---|---|
 | LogReg | Intrínseca | dia do ano | mês | dia do mês | origem | empresa |
 | LogReg | Permutation | dia do ano | dia do mês | mês | origem | fim de semana |
-| LogReg | PyGAwLLfs | origem | empresa | período do dia | hora | dia do ano |
+| LogReg | PyGAwLLfs | hora | origem | empresa | período do dia | fim de semana |
 | RF | Intrínseca | empresa | origem | hora | duração prevista | período do dia |
-| RF | Permutation | origem | hora | empresa | dia do ano | período do dia |
-| RF | SHAP | hora | origem | empresa | período do dia | dia do ano |
-| RF | PyGAwLLfs | origem | hora | trimestre | mês | empresa |
-| XGBoost | Intrínseca | empresa | hora | linha C (dom. cargueira) | origem | linha I (intern. mista) |
+| RF | Permutation | origem | hora | empresa | dia do ano | congest. origem |
+| RF | SHAP | origem | hora | empresa | período do dia | dia do ano |
+| RF | PyGAwLLfs | período do dia | trimestre | origem | hora | empresa |
+| XGBoost | Intrínseca | empresa | hora | origem | linha C (dom. cargueira) | dia do ano |
 | XGBoost | Permutation | hora | empresa | origem | congest. origem | duração prevista |
-| XGBoost | SHAP | hora | empresa | dia do ano | origem | dia da semana |
-| XGBoost | PyGAwLLfs | dia do ano | hora | origem | mês | empresa |
+| XGBoost | SHAP | hora | empresa | origem | dia do ano | dia da semana |
+| XGBoost | PyGAwLLfs | dia do ano | origem | mês | empresa | hora |
 
 Aeroporto de origem, empresa e hora aparecem no top-5 de quase todos. Na
 regressão logística, intrínseca e Permutation são dominadas por atributos de
@@ -297,38 +331,39 @@ que retreina o modelo sem cada atributo, não cai nessa armadilha.
 
 ![](figures/concordancia_intra_modelo.png)
 
-*Figura 2 — Concordância entre os métodos dentro de cada modelo: Spearman (em cima) e RBO (embaixo).*
+*Figura 3 — Concordância entre os métodos dentro de cada modelo: Spearman (em cima) e RBO (embaixo).*
 
-| Tipo de comparação | Spearman | RBO | Top-5 em comum |
-|---|---:|---:|---:|
-| Métodos diferentes, mesmo modelo | **0,70** | 0,69 | 67% |
-| Mesmo método, modelos diferentes | 0,60 | 0,61 | 56% |
-| Método e modelo diferentes | 0,56 | 0,60 | 62% |
+| Tipo de comparação | Spearman | Spearman: menor e maior dupla | RBO | Top-5 em comum |
+|---|---:|---:|---:|---:|
+| Métodos diferentes, mesmo modelo | **0,70** | 0,33–0,98 | 0,66 | 68% |
+| Mesmo método, modelos diferentes | 0,60 | 0,11–0,84 | 0,59 | 58% |
+| Método e modelo diferentes | 0,57 | 0,13–0,90 | 0,61 | 60% |
 
 - A concordância é **moderada a alta** e maior dentro do mesmo modelo: o
-  modelo explicado pesa tanto quanto o método.
-- **Cai com a complexidade do modelo**: Spearman médio entre os métodos de 0,83
-  na LogReg, 0,72 no RF e 0,61 no XGBoost.
-- O **PyGAwLLfs é o que menos concorda** com os outros (0,62 nas duplas com
-  ele, contra 0,79 nas duplas sem ele). Exceção: no RF, a Permutation tem o
-  menor Spearman (0,60), mas o maior RBO (0,75, empatada com o SHAP). Ela
-  concorda no topo e diverge na cauda, onde dá valores nulos ou levemente
+  modelo explicado pesa tanto quanto o método. A dispersão entre as duplas,
+  porém, é grande perto da diferença entre as médias.
+- **Cai com a complexidade do modelo**: Spearman médio entre os métodos de 0,87
+  na LogReg, 0,77 no RF e 0,56 no XGBoost.
+- O **PyGAwLLfs é o que menos concorda** com os outros (0,64 nas duplas com
+  ele, contra 0,78 nas duplas sem ele). Exceção: no RF, a Permutation tem o
+  menor Spearman médio (0,69, perto do PyGAwLLfs, 0,70), mas RBO de 0,72, só
+  abaixo do SHAP (0,77). Ela concorda no topo e diverge na cauda, onde dá valores nulos ou levemente
   negativos (sem efeito detectável), e a ordem entre eles é arbitrária.
 
 ### 6.3 Estabilidade
 
 ![](figures/estabilidade_sementes.png)
 
-*Figura 3 — Estabilidade entre sementes: ponto = média nas 10 duplas de sementes; traço até o pior caso.*
+*Figura 4 — Estabilidade entre sementes: ponto = média nas 10 duplas de sementes; traço até o pior caso.*
 
-- **Permutation e SHAP** praticamente não mudam com a semente (Spearman
-  0,99–1,00): sobre um modelo fixo, a semente só muda o embaralhamento ou a
-  amostra.
-- **PyGAwLLfs**: 0,80 na LogReg, 0,56 no RF e 0,57 no XGBoost. Aqui a semente
-  muda a busca inteira. O topo é mais firme que a cauda: 68%–84% do top-5 se
-  repete entre execuções.
+- **Permutation e SHAP** praticamente não mudam com a semente (Spearman médio
+  0,97–1,00; pior dupla de sementes, 0,93): sobre um modelo fixo, a semente só
+  muda o embaralhamento ou a amostra.
+- **PyGAwLLfs**: média de 0,89 na LogReg, 0,68 no RF e 0,66 no XGBoost; na pior
+  dupla de sementes, 0,79, 0,53 e 0,37. Aqui a semente muda a busca inteira. O
+  topo é mais firme que a cauda: 64%–88% do top-5 se repete entre execuções.
 - A **matriz de interação** do PyGAwLLfs quase não se repete entre execuções
-  (Spearman 0,04–0,06), enquanto a do H fica em 0,90–0,98. Com 29 atributos
+  (Spearman 0,08–0,11), enquanto a do H fica em 0,98. Com 29 atributos
   há 406 pares, e cada execução faz 300 sondagens. Cada par é sondado, em
   média, 0,7 vez, e metade fica sem nenhuma medição.
 
@@ -336,38 +371,46 @@ que retreina o modelo sem cada atributo, não cai nessa armadilha.
 
 ![](figures/fidelidade.png)
 
-*Figura 4 — Fidelidade no teste: desempenho do modelo retreinado só com as top-k features de cada método. Faixa cinza = sorteios aleatórios; estrelas = x\* do PyGAwLLfs.*
+*Figura 5 — Fidelidade no teste: desempenho do modelo retreinado só com as top-k features de cada método. Faixa cinza = sorteios aleatórios; estrelas = x\* do PyGAwLLfs.*
 
-Fração do PR-AUC do modelo completo retida no teste:
+Fração do PR-AUC do modelo completo retida no teste, em %, com IC de 95%
+(bootstrap de dias, pareado):
 
 | Modelo | k | Intrínseca | Permutation | SHAP | PyGAwLLfs | Sorteio |
-|---|---:|---:|---:|---:|---:|---:|
-| LogReg | 5 | 89% | 87% | — | **98%** | 81% |
-| LogReg | 10 | 96% | 97% | — | **99%** | 91% |
-| RF | 5 | 94% | **97%** | **97%** | 94% | 72% |
-| RF | 10 | 99% | **100%** | 99% | 98% | 86% |
-| XGBoost | 5 | 96% | **98%** | 96% | 94% | 72% |
-| XGBoost | 10 | 96% | 99% | **100%** | 96% | 85% |
+|---|---:|---|---|---|---|---|
+| LogReg | 5 | 89 [86; 91] | 87 [85; 89] | — | **99 [97; 101]** | 81 [78; 83] |
+| LogReg | 10 | 97 [95; 98] | 97 [96; 98] | — | 97 [96; 99] | 91 [89; 92] |
+| RF | 5 | 94 [91; 97] | **98 [96; 100]** | **97 [95; 99]** | 94 [91; 96] | 72 [70; 74] |
+| RF | 10 | 97 [95; 99] | 100 [99; 101] | 97 [95; 99] | 99 [98; 100] | 86 [85; 87] |
+| XGBoost | 5 | 93 [89; 97] | 97 [93; 101] | 95 [93; 97] | 93 [89; 97] | 72 [70; 74] |
+| XGBoost | 10 | 96 [94; 98] | 98 [96; 100] | 100 [99; 101] | 96 [93; 100] | 85 [83; 87] |
 
 - **Todos os métodos ficam muito acima do acaso** no top-5 (+6 a +26 pontos
-  percentuais). Com k = 15, todos retêm 98%–100%: a maior parte da informação
-  está em poucos atributos.
-- **Permutation** é a mais fiel no RF e no XGBoost; **PyGAwLLfs** é a mais fiel
-  na regressão logística. O top-5 da intrínseca na LogReg retinha 96% do F1 na
+  percentuais), e os 33 ICs da diferença método − sorteio (todos os modelos e
+  k) excluem o zero. Com k = 15, todos retêm 98%–100%: a maior parte da
+  informação está em poucos atributos.
+- **Diferenças entre métodos no top-5, pelo IC da diferença pareada:** na
+  regressão logística, o **PyGAwLLfs** é o mais fiel, 10 a 12 pontos à frente
+  dos outros (real). No RF, **Permutation e SHAP** ficam 3 a 4 pontos à frente
+  da intrínseca e do PyGAwLLfs (real); entre as duas, 0,9 ponto, no limite (IC
+  de +0,1 a +1,7). No XGBoost, **os quatro empatam**: nenhuma diferença exclui o
+  zero, porque o modelo com 5 features varia muito de um dia para outro.
+- O top-5 da intrínseca na LogReg retinha 96% do F1 na
   validação e caiu para 82,5% no teste: efeitos de calendário aprendidos em
   outras estações não se transferem para novembro e dezembro.
-- O **x\* do PyGAwLLfs**, com cerca de um terço dos atributos (9 a 11, em
-  média), retém 99% (LogReg), 95% (RF) e 98% (XGBoost) do PR-AUC.
+- O **x\* do PyGAwLLfs**, com cerca de um terço dos atributos (9 a 10, em
+  média), retém 100% (LogReg), 93% (RF) e 97% (XGBoost) do PR-AUC. No RF, todas
+  as execuções ficam abaixo do modelo completo (ICs de 89% a 97%).
 
 ### 6.5 Custo
 
 | Método | Por execução | Treinos por execução | Total (3 modelos, 5 sementes) |
 |---|---:|---:|---:|
-| Intrínseca | < 2 s | 0 | ~2 s |
-| Permutation (29 atributos × 10 repetições) | 17–28 s | 0 | 5,4 min |
-| TreeSHAP (10 mil linhas) | 2 s (XGBoost) – 2,3 min (RF) | 0 | 11,7 min |
-| H de Friedman (até 351 pares) | 35–49 s | 0 | 7,2 min |
-| **PyGAwLLfs** | 5,4 min (LogReg) – 33 min (XGBoost) | **3.200–4.400** | **5,4 h** |
+| Intrínseca | < 1 s | 0 | < 1 s |
+| Permutation (29 atributos × 10 repetições) | 15–25 s | 0 | 4,8 min |
+| TreeSHAP (10 mil linhas) | 2 s (XGBoost) – 2,2 min (RF) | 0 | 11,3 min |
+| H de Friedman (até 300 pares) | 28–40 s | 0 | 5,7 min |
+| **PyGAwLLfs** | 5,2 min (LogReg) – 30 min (XGBoost) | **3.200–4.100** (média por modelo) | **4,9 h** |
 
 Os quatro primeiros explicam um modelo já treinado. O PyGAwLLfs retreina o
 modelo milhares de vezes, mesmo numa subamostra de 50 mil voos. Em troca,
@@ -377,64 +420,65 @@ entrega também a seleção de atributos (x\*) e a matriz de interação.
 
 | Modelo | Método | Concordância¹ | Estabilidade² | Fidelidade top-5³ | Custo por execução |
 |---|---|---:|---:|---:|---:|
-| LogReg | Intrínseca | 0,88 | determinística | 89% | < 1 s |
-| LogReg | Permutation | 0,84 | 0,99 | 87% | 17 s |
-| LogReg | PyGAwLLfs | 0,77 | 0,80 | **98%** | 5,4 min · 3.216 treinos |
-| RF | Intrínseca | 0,80 | determinística | 94% | < 1 s |
-| RF | Permutation | 0,60 | 0,99 | **97%** | 28 s |
-| RF | SHAP | 0,81 | 1,00 | **97%** | 2,3 min |
-| RF | PyGAwLLfs | 0,67 | 0,56 | 94% | 26 min · 4.041 treinos |
-| XGBoost | Intrínseca | 0,60 | determinística | 96% | 2 s |
-| XGBoost | Permutation | 0,62 | 0,99 | **98%** | 19 s |
-| XGBoost | SHAP | 0,75 | 1,00 | 96% | 2 s |
-| XGBoost | PyGAwLLfs | 0,47 | 0,57 | 94% | 33 min · 4.400 treinos |
+| LogReg | Intrínseca | 0,89 | determinística | 89% | < 1 s |
+| LogReg | Permutation | 0,87 | 0,99 | 87% | 15 s |
+| LogReg | PyGAwLLfs | 0,83 | 0,89 | **99%** | 5,2 min · 3.175 treinos |
+| RF | Intrínseca | 0,83 | determinística | 94% | < 1 s |
+| RF | Permutation | 0,69 | 0,99 | **98%** | 25 s |
+| RF | SHAP | 0,85 | 1,00 | **97%** | 2,2 min |
+| RF | PyGAwLLfs | 0,70 | 0,68 | 94% | 23 min · 4.119 treinos |
+| XGBoost | Intrínseca | 0,57 | determinística | 93% | < 1 s |
+| XGBoost | Permutation | 0,51 | 0,97 | 97% | 17 s |
+| XGBoost | SHAP | 0,70 | 1,00 | 95% | 2 s |
+| XGBoost | PyGAwLLfs | 0,44 | 0,66 | 93% | 30 min · 3.955 treinos |
 
 ¹ Spearman médio com os outros métodos do mesmo modelo.
 ² Spearman médio entre as 10 duplas de sementes.
 ³ Fração do PR-AUC do modelo completo retida no teste; sorteio: 81% (LogReg),
-72% (RF e XGBoost).
+72% (RF e XGBoost). Em negrito, os mais fiéis do modelo pelo IC da diferença
+pareada (seção 6.4); no XGBoost, os quatro empatam.
 
 Comparando os modelos pelas explicações: quanto mais complexo o modelo, menos
-os métodos concordam entre si (0,83 → 0,72 → 0,61), mas maior é o ganho do
+os métodos concordam entre si (0,87 → 0,77 → 0,56), mas maior é o ganho do
 top-5 sobre o acaso. Na LogReg, 5 atributos quaisquer já retêm 81%; no RF e no
-XGBoost, só 72%, e os métodos chegam a 94%–98%.
+XGBoost, só 72%, e os métodos chegam a 93%–98%.
 
 ### 6.7 Interações: PyGAwLLfs × H de Friedman
 
 ![](figures/interacao_gawll_x_h.png)
 
-*Figura 5 — Cada ponto é um par de atributos: posição no ranking de interação do PyGAwLLfs (x) contra a do H (y).*
+*Figura 6 — Cada ponto é um par de atributos: posição no ranking de interação do PyGAwLLfs (x) contra a do H (y).*
 
 | Modelo | Spearman | RBO | Top-10 em comum | Estabilidade PyGAwLLfs | Estabilidade H |
 |---|---:|---:|---:|---:|---:|
-| RF | 0,16 | 0,09 | 2 de 10 | 0,04 | 0,98 |
-| XGBoost | 0,15 | 0,03 | 0 de 10 | 0,06 | 0,90 |
+| RF | 0,21 | 0,07 | 1 de 10 | 0,08 | 0,98 |
+| XGBoost | 0,13 | 0,16 | 2 de 10 | 0,11 | 0,98 |
 
 Os dois métodos praticamente não concordam, por duas causas:
 
 1. **Confiabilidade.** Com o orçamento do artigo e 29 atributos, a matriz do
    PyGAwLLfs é pouco confiável (seção 6.3). A confiabilidade da média das 5
-   sementes é de 0,55 na LogReg, 0,39 no XGBoost e 0,12 no RF; mais 5 sementes
-   a levariam a ~0,71, ~0,56 e ~0,21.
+   sementes é de 0,71 na LogReg, 0,51 no XGBoost e 0,12 no RF; mais 5 sementes
+   a levariam a ~0,83, ~0,68 e ~0,22.
 2. **Conceitos diferentes.** O PyGAwLLfs mede a não aditividade do
    **desempenho**; o H, a da **função** do modelo. Atributos redundantes geram a
    primeira e não a segunda: tirar um só não custa, porque o outro compensa,
-   mas tirar os dois custa. Nos dados reais, 6 das 15 arestas mais fortes do
-   PyGAwLLfs (top-5 de cada modelo) são pares redundantes, como mês × dia do
-   ano e hora × período do dia.
+   mas tirar os dois custa. Nos dados reais, 7 das 15 arestas mais fortes do
+   PyGAwLLfs (top-5 de cada modelo) são pares redundantes, como hora × período
+   do dia e dia da semana × fim de semana.
 
 ![](figures/sensibilidade_agregacao.png)
 
-*Figura 6 — Posição do par no ranking do PyGAwLLfs pelo número de sementes em que ele foi sondado, com o par não sondado contando como zero (laranja) e só com as sementes sondadas (azul, a versão usada).*
+*Figura 7 — Posição do par no ranking do PyGAwLLfs pelo número de sementes em que ele foi sondado, com o par não sondado contando como zero (laranja) e só com as sementes sondadas (azul, a versão usada).*
 
 **Sensibilidade à agregação das sementes.** Se o par não sondado contasse
 como interação zero, a posição do par acompanharia quantas vezes ele foi
-sondado (Spearman de 0,43 a 0,68 entre as duas coisas), e não a força da
+sondado (Spearman de 0,39 a 0,64 entre as duas coisas), e não a força da
 interação; só com as sementes sondadas, essa relação some (≈ 0). Que pares
 foram sondados se reconstrói sem rodar o GA de novo: os três modelos de uma
 mesma semente sorteiam os mesmos pares. Com os zeros na média, o Spearman com
-o H cai para 0,08–0,09, a confiabilidade da média para 0,2 ou menos, e o
-top-10 de cada modelo troca de 3 a 7 pares. As conclusões desta seção valem
+o H cai para 0,06–0,13, a confiabilidade da média para 0,33 ou menos, e o
+top-10 de cada modelo troca de 2 a 6 pares. As conclusões desta seção valem
 nas duas versões.
 
 ### 6.8 Dataset sintético (gabarito conhecido)
@@ -480,30 +524,29 @@ XGBoost acrescentou uma redundante (F1 = 0,89). A LogReg incluiu um ruído (F1 =
 
 ![](figures/grafo_interacao.png)
 
-*Figura 7 — Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes), com cada aresta classificada como operacional, redundante ou estrutural.*
+*Figura 8 — Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes), com cada aresta classificada como operacional, redundante ou estrutural.*
 
 | Grupo | Pares | Estrutural | Redundante | Operacional | Corroborados |
 |---|---:|---:|---:|---:|---:|
-| Candidatos (topo do PyGAwLLfs) | 26 | 0 | 6 | 20 | **4** |
-| Controles (fundo do ranking) | 10 | 0 | 0 | 10 | 0 |
+| Candidatos (topo do PyGAwLLfs) | 23 | 0 | 5 | 18 | **5** |
+| Controles (fundo do ranking) | 10 | 0 | 1 | 9 | 0 |
 
-- **Corroborados descritivamente:** hora × aeroporto de origem, hora ×
-  congestionamento na origem, empresa × aeroporto de origem e hora × tipo de
-  linha.
+- **Corroborados descritivamente:** hora × aeroporto de origem, empresa ×
+  aeroporto de origem, hora × empresa, congestionamento no destino ×
+  aeroporto de destino e período do dia × duração prevista.
 - Os candidatos têm interações descritivas maiores que os controles. Desvio
-  médio dos operacionais: 1,32 e 1,13 ponto percentual (2024 e 2025), contra
-  0,19 e 0,17 nos controles.
-- Mas só 4 dos 20 candidatos operacionais passam no critério completo. Aplicado
-  ao top-10 do H, o mesmo teste corroborou **9 de 20 pares**, contra **2 de 20**
+  médio dos operacionais: 1,48 e 1,27 ponto percentual (2024 e 2025), contra
+  0,22 e 0,14 nos controles.
+- Mas só 5 dos 18 candidatos operacionais passam no critério completo. Aplicado
+  ao top-10 do H, o mesmo teste corroborou **11 de 20 pares**, contra **3 de 20**
   do PyGAwLLfs. Parte dessa vantagem é esperada, porque o H e o teste usam a
   mesma definição de interação.
-- Com o par não sondado contando como zero, seriam 25 candidatos e 2
-  corroborados (hora × origem e hora × tipo de linha), e metade dos controles
-  seriam pares que o PyGAwLLfs nunca mediu.
+- Com o par não sondado contando como zero, seriam 24 candidatos e 4
+  corroborados, e 6 dos 10 controles seriam pares que o PyGAwLLfs nunca mediu.
 
 ![](figures/dominio_hora_x_origem.png)
 
-*Figura 8 — Hora × aeroporto de origem. À esquerda, a taxa de atraso observada; à direita, observado menos o previsto sem interação.*
+*Figura 9 — Hora × aeroporto de origem. À esquerda, a taxa de atraso observada; à direita, observado menos o previsto sem interação.*
 
 Partidas de madrugada em Guarulhos (2h: 41% de atraso, contra 25% previstos
 sem interação) e no Galeão atrasam muito mais do que "ser esse aeroporto" e
@@ -511,26 +554,17 @@ sem interação) e no Galeão atrasam muito mais do que "ser esse aeroporto" e
 de voos internacionais longos. Em Congonhas às 22h ocorre o contrário (−8,6
 p.p.), compatível com a restrição de horário de operação do aeroporto.
 
-Em hora × congestionamento na origem, o efeito do congestionamento depende da
-hora: às 22h, a origem muito movimentada atrasa 7 pontos acima do previsto e
-a pouco movimentada, 8 abaixo; às 7h–8h, são os aeroportos com 1–2 partidas na
-hora que atrasam mais (21% contra 13%–14% previstos). Em empresa × aeroporto,
-algumas empresas estrangeiras atrasam muito mais num aeroporto específico (LAN
-em Confins: 52% contra 23% previstos; TAP em Brasília: 46% contra 22%).
+Em empresa × aeroporto, algumas empresas estrangeiras atrasam muito mais num
+aeroporto específico (LAN em Confins: 52% contra 23% previstos; TAP em
+Brasília: 46% contra 22%). Em hora × empresa, o efeito da hora **muda de
+sinal** conforme a empresa: a TAP atrasa 63% às 6h (contra 20% previstos sem
+interação) e 6% às 15h (contra 43%); a SID, 52% às 5h (contra 13%) e 3% às 22h
+(contra 35%). Em congestionamento no destino × destino, os horários com só 1–2
+chegadas previstas atrasam de 6,5 a 9 pontos acima do previsto no Galeão, em
+Confins e em Viracopos. O par período do dia × duração prevista também passou
+no critério; ele não tem heatmap.
 
-Em hora × tipo de linha, o efeito da hora **muda de sinal** conforme o tipo de
-voo:
-
-- os **cargueiros domésticos** (C) das 2h–3h atrasam 45%–51%, contra 17%–22%
-  previstos sem interação, e os das 22h quase não atrasam (7% contra 28%);
-- os **internacionais de passageiros** (I) das 5h–6h atrasam o dobro do
-  previsto (32% contra ~16%), o mesmo padrão de madrugada do par anterior;
-- os **domésticos de passageiros** (N), que são a maioria dos voos, seguem o
-  padrão aditivo.
-
-O padrão é plausível, porque a programação e as prioridades de um voo de carga
-diferem das de um voo de passageiros. Todas essas leituras são hipóteses de
-domínio, não verificadas aqui.
+Todas essas leituras são hipóteses de domínio, não verificadas aqui.
 
 ## 7. Limitações
 
@@ -538,7 +572,7 @@ domínio, não verificadas aqui.
   penaliza rankings baseados em calendário.
 - **Orçamento do PyGAwLLfs:** os parâmetros do artigo deixam a matriz de
   interação esparsa com 29 atributos. A importância é bem mais estável
-  (0,56–0,80), e o topo dela se mantém. Não se sabe quantas vezes cada par foi
+  (0,66–0,89), e o topo dela se mantém. Não se sabe quantas vezes cada par foi
   sondado dentro de uma execução, só se foi sondado (reconstruído pelo
   sorteio comum aos três modelos).
 - **H de Friedman e atributos dependentes:** a dependência parcial avalia
@@ -547,22 +581,27 @@ domínio, não verificadas aqui.
 - **Validação de domínio observacional:** corroboração não é causalidade, e
   ficou restrita aos 15 maiores aeroportos e às 10 maiores empresas.
 - **Atributos:** o congestionamento conta só voos realizados, não os
-  programados. O impacto medido é de ±0,002 no F1, então ficou como limitação
+  programados. O impacto medido é de 0,0001 a 0,003 no F1, então ficou como limitação
   documentada.
+- **Incerteza:** os ICs medem a variação da amostra de dias do teste, e não a
+  do treino; 61 dias é pouco para o bootstrap, e dias vizinhos também se
+  parecem. São 87 comparações sem correção para multiplicidade: as diferenças
+  no limite (ex.: Permutation × SHAP no RF) podem ser falso positivo.
 - **Fora do escopo por decisão:** clima, propagação de atrasos entre voos e
   fidelidade por remoção (ROAR).
 
 ## 8. Conclusões
 
 1. **Sobre importância, os métodos convergem.** Origem, empresa e hora lideram
-   quase todos os rankings, e o top-5 de qualquer método retém 87%–98% do
+   quase todos os rankings, e o top-5 de qualquer método retém 87%–99% do
    desempenho. A maior fonte de divergência é o **modelo explicado**, não o
    método: compare métodos dentro do mesmo modelo antes de comparar modelos.
 2. **Para ranquear importância num modelo já treinado, Permutation e SHAP são
-   a melhor relação custo-benefício**: estáveis, fiéis e baratos. A intrínseca
+   a melhor relação custo-benefício**: estáveis, fiéis (os mais fiéis no RF;
+   empatados com os demais no XGBoost) e baratos. A intrínseca
    é instantânea, mas sofre com colinearidade na regressão logística.
 3. **O PyGAwLLfs custa duas ordens de grandeza a mais, mas faz outra coisa.**
-   Ele seleciona atributos (x\* com um terço das features retém 95%–99% do
+   Ele seleciona atributos (x\* com um terço das features retém 93%–100% do
    PR-AUC), é robusto à colinearidade (o mais fiel na LogReg) e foi o que
    melhor recuperou a estrutura do sintético no RF e no XGBoost. Sua
    importância é menos estável entre sementes, mas o topo se mantém.
@@ -575,10 +614,11 @@ domínio, não verificadas aqui.
    a cobertura é total e o método funciona bem. Com cobertura parcial, o par
    não sondado não pode entrar na média como interação zero: o ranking passaria
    a medir a cobertura.
-6. **Do grafo de interação saíram quatro padrões operacionais plausíveis**
-   (hora × aeroporto, hora × congestionamento, empresa × aeroporto e hora ×
-   tipo de linha). Para extrair conhecimento de domínio, porém, o topo do grafo
-   precisa ser filtrado: 40% das arestas mais fortes são redundância.
+6. **Do grafo de interação saíram cinco padrões operacionais plausíveis**
+   (hora × aeroporto, empresa × aeroporto, hora × empresa, congestionamento no
+   destino × destino e período do dia × duração prevista). Para extrair
+   conhecimento de domínio, porém, o topo do grafo precisa ser filtrado: quase
+   metade das arestas mais fortes (7 de 15) é redundância.
 7. **Contribuições metodológicas:** a correção do protocolo do PyGAwLLfs
    (fitness na validação, F1, divisão temporal), a identificação e correção de
    dois bugs do código original, e um protocolo que separa redundância de
@@ -596,30 +636,34 @@ modelo?**
 Sim, em grande parte. A concordância é moderada a alta (Spearman 0,70 dentro do
 mesmo modelo), e o núcleo é comum: origem, empresa e hora. Depende **mais do
 modelo do que do método**: o mesmo método em modelos diferentes concorda menos
-(0,60) que métodos diferentes no mesmo modelo (0,70). A concordância também cai
-com a complexidade do modelo (0,83 → 0,72 → 0,61). O PyGAwLLfs é o que mais
-diverge (0,62 contra 0,79 nas duplas sem ele).
+(0,60) que métodos diferentes no mesmo modelo (0,70), embora a dispersão entre
+as duplas seja grande (0,11 a 0,98). A concordância também cai com a
+complexidade do modelo (0,87 → 0,77 → 0,56). O PyGAwLLfs é o que mais diverge
+(0,64 contra 0,78 nas duplas sem ele).
 
 **P2 — Os rankings se repetem com outra semente?**
-Para Permutation e SHAP, sim (0,99–1,00), e a intrínseca é determinística. Para
-o PyGAwLLfs, só em parte: 0,56–0,80 no ranking inteiro, mas 68%–84% do top-5 se
-repete. A matriz de interação do PyGAwLLfs quase não se repete (0,04–0,06) com
-o orçamento do artigo; a do H, sim (0,90–0,98).
+Para Permutation e SHAP, sim (0,97–1,00; pior dupla 0,93), e a intrínseca é
+determinística. Para o PyGAwLLfs, só em parte: 0,66–0,89 no ranking inteiro (0,37
+na pior dupla do XGBoost), mas 64%–88% do top-5 se repete. A matriz de
+interação do PyGAwLLfs quase não se repete (0,08–0,11) com o orçamento do
+artigo; a do H, sim (0,98).
 
 **P3 — Os atributos apontados como importantes carregam a informação?**
-Sim, para todos os métodos. O top-5 retém 87%–98% do PR-AUC no teste, contra
-72%–81% do acaso, e o top-10, 96%–100%. Os mais fiéis são a Permutation no RF e
-no XGBoost (97%–98%) e o PyGAwLLfs na regressão logística (98%). O x\* do
-PyGAwLLfs retém 95%–99% com um terço dos atributos.
+Sim, para todos os métodos. O top-5 retém 87%–99% do PR-AUC no teste, contra
+72%–81% do acaso, e o top-10, 96%–100%; a vantagem sobre o acaso se mantém com
+IC de 95% em todos os casos. Com o IC da diferença pareada, os mais fiéis no
+top-5 são o PyGAwLLfs na regressão logística (99%, +10 a +12 pontos) e a
+Permutation e o SHAP no RF (98% e 97%, +3 a +4 pontos); no XGBoost os quatro
+métodos empatam. O x\* do PyGAwLLfs retém 93%–100% com um terço dos atributos.
 
 **P4 — Quanto custa cada método?**
-Intrínseca: instantânea. Permutation: 17–28 s. TreeSHAP: 2 s a 2,3 min. H de
-Friedman: 35–49 s por amostra. Nenhum deles retreina o modelo. O PyGAwLLfs leva
-5–33 min e 3.200–4.400 treinos por execução (5,4 h no protocolo), duas ordens de
+Intrínseca: instantânea. Permutation: 15–25 s. TreeSHAP: 2 s a 2,2 min. H de
+Friedman: 28–40 s por amostra. Nenhum deles retreina o modelo. O PyGAwLLfs leva
+5–31 min e 2.900–4.500 treinos por execução (4,9 h no protocolo), duas ordens de
 grandeza a mais, em troca de também selecionar atributos e estimar interações.
 
 **P5 — PyGAwLLfs e H concordam sobre as interações? Qual recupera a verdade?**
-Não concordam nos dados reais (Spearman 0,15–0,16). No sintético, **os dois
+Não concordam nos dados reais (Spearman 0,13–0,21). No sintético, **os dois
 recuperam a interação verdadeira** (1º lugar em todas as execuções). A
 diferença está na redundância: o PyGAwLLfs a põe logo abaixo da interação
 verdadeira (2º–3º), e o H não (7º–44º). O PyGAwLLfs mede não aditividade do
@@ -628,21 +672,22 @@ PyGAwLLfs é, além disso, pouco confiável com 29 atributos.
 
 **P6 — As interações do PyGAwLLfs correspondem a padrões reais?**
 Parcialmente. Os pares do topo têm interações descritivas maiores que os do
-fundo, e quatro foram corroborados nos dois anos: hora × aeroporto de origem,
-hora × congestionamento na origem, empresa × aeroporto de origem e hora × tipo
-de linha. Nenhum controle foi corroborado. Mas só 4 de 20 pares operacionais
-passaram, 6 dos 26 pares do topo são redundância, e o top-10 do H teve mais
-pares corroborados (9 de 20, contra 2 de 20).
+fundo, e cinco foram corroborados nos dois anos: hora × aeroporto de origem,
+empresa × aeroporto de origem, hora × empresa, congestionamento no destino ×
+destino e período do dia × duração prevista. Nenhum controle foi corroborado.
+Mas só 5 de 18 pares operacionais passaram, 5 dos 23 pares do topo são
+redundância, e o top-10 do H teve mais pares corroborados (11 de 20, contra 3
+de 20).
 
 **Pergunta principal — como os métodos se comparam nos quatro critérios?**
 
 - **Concordância:** convergem sobre o que importa (Spearman 0,70 no mesmo
   modelo). O modelo explicado pesa mais que o método, e o PyGAwLLfs é o mais
   divergente.
-- **Estabilidade:** Permutation e SHAP ≈ 1; PyGAwLLfs 0,56–0,80, com o topo
+- **Estabilidade:** Permutation e SHAP ≈ 1; PyGAwLLfs 0,66–0,89, com o topo
   firme. Nas interações, o H é estável e a matriz do PyGAwLLfs não.
 - **Fidelidade:** todos ficam muito acima do acaso. Os mais fiéis são a
-  Permutation (RF e XGBoost) e o PyGAwLLfs (LogReg).
+  Permutation e o SHAP (RF) e o PyGAwLLfs (LogReg); no XGBoost, empate.
 - **Custo:** o PyGAwLLfs custa duas ordens de grandeza a mais que os demais.
 
 Em síntese, os métodos **concordam sobre o que importa e discordam sobre o que
@@ -666,6 +711,7 @@ complementar, e não substituto, ao H de Friedman.
 | Dados e atributos | `docs/preparacao-dados.md`, `docs/dicionario-features.md` |
 | PyGAwLLfs e as correções | `docs/metodologia.md` §4, `src/importance/gawll.py` |
 | Decisões em aberto | `docs/decisoes.md` |
+| Intervalos de confiança (bootstrap de dias) | `docs/incerteza.md`, `results/tables/incerteza_*.csv` |
 
 ## Referências
 
