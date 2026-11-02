@@ -88,8 +88,10 @@ ETAPAS = [
           "importância intrínseca, Permutation e TreeSHAP; H de Friedman nos 406 pares; "
           "tudo na validação",
           "~25 min"),
-    Etapa("desempenho", "Avaliação", ["src/avaliacao/matriz_confusao.py"],
-          "matrizes de confusão dos modelos no teste, conferidas com baselines.csv",
+    Etapa("desempenho", "Avaliação", ["src/avaliacao/matriz_confusao.py",
+                                      "src/avaliacao/erros.py"],
+          "matrizes de confusão no teste (conferidas com baselines.csv), acurácia por dia "
+          "e por hora e erro-padrão por dias",
           "< 1 min"),
     Etapa("rankings", "Avaliação", ["src/avaliacao/rankings.py", "src/avaliacao/stability.py",
                                     "src/avaliacao/checagem_subamostra.py"],
