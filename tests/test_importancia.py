@@ -123,7 +123,7 @@ def teste_intrinseca_bate_com_baselines():
 
 
 def teste_consolidacao_gawll():
-    """As tabelas reproduzem exatamente o vimp e a vint dos checkpoints.
+    """As tabelas reproduzem exatamente o vimp, a vint e as sondagens dos checkpoints.
 
     Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
     python main.py --testes).
@@ -146,9 +146,13 @@ def teste_consolidacao_gawll():
         assert len(pares) == n * (n - 1) // 2, arquivo.name
         posicao = {f: i for i, f in enumerate(features)}
         reconstruida = np.zeros((n, n))
-        for a, b, valor in zip(pares["feature_a"], pares["feature_b"], pares["interaction"]):
+        sondada = np.zeros((n, n), dtype=bool)
+        for a, b, valor, foi in zip(pares["feature_a"], pares["feature_b"], pares["interaction"],
+                                    pares["sondada"]):
             reconstruida[posicao[a], posicao[b]] = reconstruida[posicao[b], posicao[a]] = valor
+            sondada[posicao[a], posicao[b]] = sondada[posicao[b], posicao[a]] = foi
         assert np.allclose(reconstruida, execucao["vint"]), arquivo.name
+        assert (sondada == (execucao["sondagens"] > 0)).all(), arquivo.name
 
 
 if __name__ == "__main__":
