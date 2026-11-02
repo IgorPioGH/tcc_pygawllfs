@@ -22,19 +22,15 @@ modelos e, para as interações, com a **estatística H de Friedman**.
   modelo (Spearman médio 0,70) do que entre modelos diferentes (0,57–0,60).
 - **Todos apontam atributos que de fato carregam a informação**: com só as 5
   features mais importantes de cada método, o modelo retém 87%–99% do PR-AUC do
-  modelo completo, contra 72%–81% de 5 features sorteadas — vantagem que se
-  mantém com intervalo de confiança de 95% em todos os casos.
-- **Nem toda diferença pequena é real**: com o bootstrap por dias do teste, RF
-  e XGBoost empatam no PR-AUC, e no XGBoost os quatro métodos empatam na
-  fidelidade do top-5. Sustentam-se a vantagem do PyGAwLLfs na regressão
-  logística e a da Permutation e do SHAP no RF.
+  modelo completo, contra 72%–81% de 5 features sorteadas.
 - **Os métodos discordam sobre o que interage**: PyGAwLLfs e H de Friedman quase
   não concordam (Spearman de 0,13 a 0,21). Num dataset sintético com gabarito, os dois
   acham a interação verdadeira, mas **só o PyGAwLLfs trata pares redundantes
   como interação** — ele mede a não aditividade do *desempenho*, e redundância
   produz exatamente esse sinal.
-- **O custo difere em duas ordens de grandeza**: 4,9 h para o PyGAwLLfs contra
-  segundos a minutos para os demais — em troca, ele também seleciona os atributos.
+- **O custo difere em pelo menos uma ordem de grandeza**: 4,9 h para o PyGAwLLfs
+  contra 5 a 11 min para Permutation, TreeSHAP e H (somadas as 15 execuções) — em
+  troca, ele também seleciona os atributos.
 - Ao adaptar o PyGAwLLfs, foram corrigidas três questões metodológicas (fitness
   calculado no conjunto de teste, acurácia num problema desbalanceado e divisão
   aleatória dos dados) e **dois bugs de implementação** do repositório original.
@@ -55,46 +51,10 @@ em 23/10/2026.
 
 <p align="center"><img src="results/figures/histograma_atraso.png" width="620"></p>
 
-**Modelos.** Regressão logística, Random Forest e XGBoost, com balanceamento de
-classe e hiperparâmetros escolhidos pelo F1 na validação. No teste, F1 de 0,42,
+**Modelos.** Regressão logística, Random Forest e XGBoost. No teste, F1 de 0,42,
 0,44 e 0,45 (o classificador trivial tem 76% de acurácia e F1 = 0). A
 dificuldade é esperada: clima e propagação de atrasos ficaram de fora de
 propósito, para não usar informação posterior à partida.
-
-<p align="center"><img src="results/figures/matriz_confusao.png" width="860"></p>
-
-As matrizes de confusão mostram que o F1 parecido esconde modelos que erram de
-jeitos diferentes. O balanceamento de classe (`class_weight="balanced"`; no
-XGBoost, `scale_pos_weight`) faz os atrasos, 18% do treino, pesarem tanto
-quanto os voos pontuais; com o corte em 0,5, os três erram mais por alarme
-falso do que por atraso não detectado. O Random Forest detecta 85% dos
-atrasos, mas marca como atrasados 65% dos voos pontuais; a regressão logística
-fica no outro extremo (53% dos atrasos, 33% de alarmes falsos); o XGBoost fica
-no meio (75% e 51%). Por isso a acurácia dos três (47%–64%) fica abaixo da do
-classificador trivial, e o projeto usa F1 e PR-AUC, não acurácia. O corte não
-foi ajustado: o objetivo é comparar as explicações de modelos razoáveis, não
-operar o melhor preditor, e o PR-AUC é a leitura que não depende do corte. As
-matrizes saem dos modelos já salvos, sem retreinar
-(`src/models/matriz_confusao.py`), e são conferidas contra `baselines.csv`.
-
-**Incerteza.** Os intervalos de confiança de 95% vêm de um bootstrap **por
-dias** do teste: os 61 dias são sorteados com reposição, 1.000 vezes. Os
-voos são agrupados por dia porque os do mesmo dia não são independentes (a
-taxa de atraso diária vai de 9% a 62%). O bootstrap é **pareado**: o mesmo
-sorteio vale para todos os modelos, e "A é melhor que B" exige que o IC da
-diferença A − B não contenha zero
-([`docs/incerteza.md`](docs/incerteza.md)).
-
-| Modelo | F1 | PR-AUC | ROC-AUC |
-|---|---|---|---|
-| Regressão logística | 0,417 [0,393; 0,438] | 0,354 [0,332; 0,377] | 0,644 [0,631; 0,658] |
-| Random Forest | 0,440 [0,408; 0,473] | 0,403 [0,374; 0,434] | 0,682 [0,671; 0,693] |
-| XGBoost | 0,451 [0,417; 0,484] | 0,394 [0,365; 0,427] | 0,676 [0,662; 0,691] |
-
-RF e XGBoost **empatam** no PR-AUC (diferença +0,009, IC [−0,003; +0,019]) e
-no ROC-AUC. No F1, o XGBoost fica à frente por 0,010 (IC [0,002; 0,018]), uma
-diferença real, mas pequena. As duas árvores superam a regressão logística nas
-três métricas (PR-AUC +0,04 a +0,05).
 
 **Métodos comparados.**
 
@@ -106,10 +66,7 @@ três métricas (PR-AUC +0,04 a +0,05).
 | Intrínseca | coeficiente padronizado (LogReg), MDI (RF), ganho (XGBoost) | o próprio modelo |
 | H de Friedman | não aditividade da função do modelo para cada par (interações) | validação |
 
-O conjunto de teste só é usado na avaliação final dos modelos (métricas e
-matrizes de confusão, que vêm das mesmas previsões) e na fidelidade. Os
-intervalos de confiança reaproveitam essas mesmas previsões: medem a incerteza
-de configurações já fixadas e não escolhem nada.
+O conjunto de teste só é usado na avaliação final dos modelos e na fidelidade.
 
 **Correções feitas no PyGAwLLfs** (por subclasse, sem editar o repositório original):
 
@@ -137,22 +94,19 @@ final, com o método, os resultados e as respostas às perguntas de pesquisa, em
 Cada célula compara os rankings de dois métodos no mesmo modelo — Spearman em
 cima, RBO (que pesa mais o topo do ranking) embaixo. A concordância é
 moderada a alta, e maior dentro do mesmo modelo (0,70) do que entre modelos
-(0,57–0,60): o modelo explicado pesa tanto quanto o método. A dispersão entre
-as duplas, porém, é grande perto dessa diferença: de 0,33 a 0,98 no mesmo
-modelo e de 0,11 a 0,90 entre modelos. O PyGAwLLfs é o que menos concorda com
-os outros (0,64 nas duplas com ele, contra 0,78 nas sem ele).
+(0,57–0,60): o modelo explicado pesa mais que o método. O PyGAwLLfs é o que
+menos concorda com os outros (0,64 nas duplas com ele, contra 0,78 nas sem ele).
 
 ### 2. Estabilidade entre sementes
 
 <p align="center"><img src="results/figures/estabilidade_sementes.png" width="760"></p>
 
 Permutation e SHAP são praticamente idênticos de uma semente para outra
-(Spearman médio de 0,97 a 1,00; pior dupla de sementes, 0,93): sobre um modelo
-fixo, só muda o embaralhamento ou a amostra. No PyGAwLLfs a semente muda a
-busca inteira: a importância varia mais (média de 0,66 a 0,89; na pior dupla de
-sementes, de 0,37 a 0,79), mas o topo do ranking é razoavelmente estável. Já a **matriz de
+(Spearman de 0,97 a 1,00): sobre um modelo fixo, só muda o embaralhamento ou a amostra.
+No PyGAwLLfs a semente muda a busca inteira: a importância varia mais
+(0,66–0,89), mas o topo do ranking é razoavelmente estável. Já a **matriz de
 interação** do PyGAwLLfs não se repete entre execuções: com os parâmetros do
-artigo e 29 atributos, cada par é sondado em média 0,7 vez por execução, e
+código original (população 50, 100 gerações, taxa de cruzamento 0,8) e 29 atributos, cada par é sondado em média 0,7 vez por execução, e
 metade dos pares fica sem sondagem em cada uma. Por isso a média das sementes
 usa só as execuções em que o par foi sondado: contar o par não sondado como
 "interação 0" fazia o ranking acompanhar a cobertura das sondagens
@@ -165,30 +119,12 @@ usa só as execuções em que o par foi sondado: contar o par não sondado como
 O modelo é retreinado só com as top-k features de cada método e avaliado no
 teste. Todos ficam muito acima do acaso (faixa cinza = 10 sorteios de k
 features) e, a partir de 10 features, praticamente igualam o modelo completo.
-Retenção do PR-AUC no top-5, em %, com IC de 95% (bootstrap pareado por dias):
-
-| Modelo | Intrínseca | Permutation | SHAP | PyGAwLLfs | Sorteio |
-|---|---|---|---|---|---|
-| LogReg | 89 [86; 91] | 87 [85; 89] | — | **99 [97; 101]** | 81 [78; 83] |
-| RF | 94 [91; 97] | **98 [96; 100]** | **97 [95; 99]** | 94 [91; 96] | 72 [70; 74] |
-| XGBoost | 93 [89; 97] | 97 [93; 101] | 95 [93; 97] | 93 [89; 97] | 72 [70; 74] |
-
-- **Todo método supera o sorteio** em todos os modelos e valores de k: os 33
-  ICs da diferença método − sorteio excluem o zero.
-- **Na regressão logística, o PyGAwLLfs é o mais fiel**, 10 a 12 pontos à frente
-  dos outros (diferença real). Os coeficientes da LogReg põem no topo atributos
-  de calendário colineares, que funcionavam na validação e não se transferem
-  para o período de teste.
-- **No RF, Permutation e SHAP** ficam 3 a 4 pontos à frente da intrínseca e do
-  PyGAwLLfs (diferença real). Entre as duas, a diferença é de 0,9 ponto, no
-  limite (IC de +0,1 a +1,7).
-- **No XGBoost, os quatro empatam.** A Permutation tem o maior valor, mas
-  nenhuma diferença entre métodos exclui o zero: com 5 features, o XGBoost
-  varia muito de um dia para outro.
-
-O subconjunto selecionado pelo PyGAwLLfs (estrelas), com cerca de um terço das
-features, retém 93%–100% do PR-AUC em média. No RF ele fica abaixo do modelo
-completo: os ICs de todas as execuções ficam entre 89% e 97%.
+No top-5, a Permutation é a mais fiel no RF e no XGBoost (97%–98% do PR-AUC) e
+o **PyGAwLLfs é o mais fiel na regressão logística** (99%): os coeficientes da
+LogReg põem no topo atributos de calendário colineares, que funcionavam na
+validação e não se transferem para o período de teste. O subconjunto
+selecionado pelo PyGAwLLfs (estrelas), com cerca de um terço das features,
+retém 93%–100% do PR-AUC.
 
 ### 4. Custo computacional
 
@@ -197,7 +133,7 @@ completo: os ICs de todas as execuções ficam entre 89% e 97%.
 | Intrínseca | < 1 s | 0 (lê o modelo treinado) |
 | Permutation | 4,8 min | 0 |
 | TreeSHAP | 11,3 min | 0 |
-| H de Friedman | 5,7 min | 0 |
+| H de Friedman | 5,6 min | 0 |
 | **PyGAwLLfs** | **4,9 h** | **3.200–4.100 por execução** |
 
 Os demais métodos explicam um modelo já treinado; o PyGAwLLfs retreina o modelo
@@ -222,7 +158,7 @@ diferença com clareza:
 
 Os dois acham a interação verdadeira; só o PyGAwLLfs põe a redundância no topo.
 Nos dados reais, 7 das 15 arestas mais fortes do PyGAwLLfs (top-5 de cada
-modelo) são pares redundantes, quase todos derivados da data ou da hora (ex.:
+modelo) são pares redundantes, todos derivados da data ou da hora (ex.:
 `hora` × `periodo_dia`, `dia_sem` × `fim_semana`).
 
 ### 6. Validação de domínio das interações
@@ -239,7 +175,7 @@ no cruzamento das duas variáveis difere do que os efeitos isolados preveem,
 
 <p align="center"><img src="results/figures/dominio_hora_x_origem.png" width="860"></p>
 
-Partidas de madrugada em Guarulhos (SBGR) e no Galeão (SBGL) atrasam muito mais
+Partidas de madrugada em Viracopos (SBKP), Guarulhos (SBGR) e no Galeão (SBGL) atrasam muito mais
 do que "ser esse aeroporto" e "ser essa hora" explicariam somados (à direita,
 vermelho = mais atraso que o esperado sem interação). Os outros pares
 corroborados são empresa × origem, hora × empresa, congestionamento no destino ×
@@ -264,13 +200,11 @@ métodos seguem discordando, e o PyGAwLLfs segue promovendo a redundância
 Os métodos **concordam sobre o que importa** e **discordam sobre o que
 interage** — e a discordância se explica por **redundância** (que o PyGAwLLfs lê
 como interação e o H não) e por **estabilidade** (a matriz de interação do
-PyGAwLLfs precisa de mais sondagens do que o orçamento do artigo oferece com 29
-atributos). Para ranquear importância num modelo de árvores já treinado,
-Permutation e SHAP dão fidelidade melhor (RF) ou igual (XGBoost) a uma fração
-do custo. O PyGAwLLfs se justifica quando o objetivo é **selecionar**
-atributos e detectar redundância, e foi o mais robusto à colinearidade na
-regressão logística, onde teve a maior vantagem de fidelidade do trabalho (+10
-a +12 pontos no top-5, com IC longe do zero).
+PyGAwLLfs precisa de mais sondagens do que o orçamento usado, o do código original,
+oferece com 29 atributos). Para ranquear importância num modelo já treinado, Permutation e
+SHAP dão fidelidade igual ou melhor a uma fração do custo; o PyGAwLLfs se
+justifica quando o objetivo é **selecionar** atributos e detectar redundância,
+e foi o mais robusto à colinearidade na regressão logística.
 
 ---
 
@@ -288,12 +222,10 @@ src/
 │   ├── features.py            29 atributos, split temporal, target encoding OOF, subamostra
 │   ├── figuras.py             histograma do atraso
 │   └── auditar_congestionamento.py   mede uma limitação dos atributos
-├── models/                LogReg, RF e XGBoost (baselines.py), métricas (evaluate.py)
-│                          e matrizes de confusão (matriz_confusao.py)
+├── models/                LogReg, RF e XGBoost (baselines.py) e métricas (evaluate.py)
 ├── importance/            PyGAwLLfs corrigido (gawll.py) e os métodos de importância
 ├── interaction/           H de Friedman e grafo de interação reduzido
-├── compare/               concordância, estabilidade, interações, fidelidade, incerteza
-│                          (bootstrap) e síntese
+├── compare/               concordância, estabilidade, interações, fidelidade e síntese
 ├── synthetic/             dataset sintético com gabarito (Diferencial 1)
 └── domain/                validação de domínio das interações (Diferencial 4)
 tests/                     testes (scripts com assert), um por etapa
@@ -318,7 +250,7 @@ PyGAwLLfs/                 clone do repositório original (não versionado; ver 
   (`src/models/baselines.py`); os tempos do XGBoost aumentam.
 - Testado num notebook com Intel Core i7 (16 núcleos lógicos), 14 GB de RAM e
   RTX 4050 (6 GB).
-- ~500 MB de disco para os dados, os checkpoints e as previsões salvas.
+- ~450 MB de disco para os dados e os checkpoints.
 
 ### Instalação
 
@@ -360,9 +292,7 @@ systemd-inhibit --what=idle:sleep python main.py
 As etapas longas **retomam de onde pararam**: o PyGAwLLfs e o sintético pulam as
 execuções que já têm checkpoint em `experiments/runs/`. Se uma etapa falhar, o
 `main.py` para e diz como retomar. O log fica em `experiments/runs/pipeline.log`.
-Cada script também roda sozinho (`python src/<pasta>/<arquivo>.py`); por
-exemplo, `python src/models/matriz_confusao.py` refaz as matrizes de confusão
-em segundos, a partir dos modelos já salvos.
+Cada script também roda sozinho (`python src/<pasta>/<arquivo>.py`).
 
 ### Tempo esperado
 
@@ -372,18 +302,17 @@ Medido na máquina acima, na reprodução de 23/10/2026 a partir de um clone lim
 |---|---|---:|
 | `download` | 24 CSVs mensais do VRA (pula os já baixados) | 5 min (rede) |
 | `dados` | consolidação, limpeza, alvo, atributos, split, subamostra | 14 s |
-| `baselines` | tuning na validação, avaliação única no teste e matrizes de confusão | 41 s + 4 s |
+| `baselines` | tuning na validação, avaliação única no teste | 41 s |
 | `pygawllfs` | 15 execuções (LogReg 5 min, RF 23 min, XGBoost 30 min cada) | **4,9 h** |
 | `importancias` | intrínseca, Permutation, TreeSHAP | 16 min |
 | `rankings` | concordância, estabilidade, figuras | < 1 min |
 | `sintetico` | Diferencial 1 (o GA no sintético leva ~30 min na primeira vez) | 29 min |
 | `dominio` | Diferencial 4 | 40 s |
 | `interacoes` | H de Friedman, comparação e sensibilidade à agregação das sementes | 8 min |
-| `fidelidade` | 138 treinos no treino completo, avaliados no teste; salva as previsões | 12 min + ~1 min |
-| `incerteza` | bootstrap de dias, pareado: IC dos modelos e da fidelidade (sem retreinar) | 4,5 min |
-| `sintese` | quadro-síntese dos quatro critérios (só lê CSV) | < 1 s |
+| `fidelidade` | 138 treinos no treino completo, avaliados no teste | 12 min |
+| `sintese` | quadro-síntese dos quatro critérios (só lê CSV) | 1 s |
 | `extras` | histograma e auditoria do congestionamento | 42 s |
-| `--testes` | 9 suítes, 45 testes | ~6 min |
+| `--testes` | 8 suítes, 41 testes | ~6 min |
 
 ### Testes
 
@@ -413,7 +342,6 @@ reproduz exatamente os baselines.
 | [`docs/validacao-dominio.md`](docs/validacao-dominio.md) | Diferencial 4: validação de domínio das interações |
 | [`docs/interacoes-h.md`](docs/interacoes-h.md) | PyGAwLLfs × H de Friedman |
 | [`docs/fidelidade.md`](docs/fidelidade.md) | fidelidade por retenção |
-| [`docs/incerteza.md`](docs/incerteza.md) | intervalos de confiança por bootstrap de dias, pareado |
 | [`docs/piloto-custo.md`](docs/piloto-custo.md) | custo computacional do PyGAwLLfs |
 | [`docs/decisoes.md`](docs/decisoes.md) | decisões em aberto e como revertê-las |
 | [`docs/aquisicao-vra.md`](docs/aquisicao-vra.md) | origem e download dos dados |
