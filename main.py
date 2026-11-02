@@ -10,7 +10,7 @@ Uso (da raiz, com o ambiente ativado: conda activate tcc_pygawllfs):
     python main.py --listar              # as etapas, o que fazem e o tempo esperado
     python main.py --de importancias     # a partir de uma etapa
     python main.py --ate baselines       # até uma etapa
-    python main.py --so dominio rankings # só as etapas citadas (na ordem do pipeline)
+    python main.py --so rankings sintese # só as etapas citadas (na ordem do pipeline)
     python main.py --testes              # roda também as suítes de teste no fim
     python main.py --simular             # mostra o que rodaria, sem rodar
 
@@ -75,33 +75,24 @@ ETAPAS = [
                         "src/synthetic/recovery.py"],
           "Diferencial 1: dataset com gabarito, todos os métodos e a recuperação da verdade",
           "~30 min (~3 min com os checkpoints do GA)"),
-    Etapa("dominio", ["src/domain/validate_pairs.py"],
-          "Diferencial 4: validação dos pares de interação do PyGAwLLfs nos dados reais",
-          "~1 min"),
-    Etapa("interacoes", ["src/interaction/friedman_h.py", "src/compare/interacoes.py",
-                         "src/compare/sensibilidade_agregacao.py"],
-          "H de Friedman, comparação com as interações do PyGAwLLfs e sensibilidade "
-          "à agregação das sementes",
-          "~10 min"),
+    Etapa("interacoes", ["src/interaction/friedman_h.py", "src/compare/interacoes.py"],
+          "H de Friedman e comparação com as interações do PyGAwLLfs",
+          "~8 min"),
     Etapa("fidelidade", ["src/compare/fidelity.py"],
-          "retenção top-k, subconjuntos do GA e sorteios; avalia no teste e salva as previsões",
-          "~50 min"),
-    Etapa("incerteza", ["src/compare/incerteza.py"],
-          "IC de 95% por bootstrap de dias (pareado) dos modelos e da fidelidade; "
-          "reaproveita as previsões, sem retreinar",
-          "~5 min"),
+          "retenção top-k, subconjuntos do GA e sorteios; avalia no teste",
+          "~13 min"),
     Etapa("sintese", ["src/compare/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
-    Etapa("extras", ["src/data/figuras.py", "src/data/auditar_congestionamento.py"],
-          "histograma do atraso e auditoria do congestionamento (limitação documentada)",
-          "~4 min"),
+    Etapa("extras", ["src/data/figuras.py"],
+          "histograma do atraso",
+          "< 1 min"),
 ]
 
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
-    "tests/test_comparacao.py", "tests/test_dominio.py", "tests/test_interacao.py",
-    "tests/test_fidelidade.py", "tests/test_incerteza.py", "tests/test_sintese.py",
+    "tests/test_comparacao.py", "tests/test_interacao.py", "tests/test_fidelidade.py",
+    "tests/test_sintese.py",
 ]
 
 

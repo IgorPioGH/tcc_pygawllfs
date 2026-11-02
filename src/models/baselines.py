@@ -73,8 +73,7 @@ def carregar(nome: str) -> tuple[pd.DataFrame, pd.Series]:
     """Lê um conjunto congelado (train, val ou test), confere que não há coluna proibida
     e separa os atributos (X) do alvo (y).
 
-    Usada em: main; fidelity, permutation, shap_global, friedman_h,
-    auditar_congestionamento e testes.
+    Usada em: main; fidelity, permutation, shap_global, friedman_h e testes.
     Importância: ponto único de leitura dos dados; todo script vê as mesmas 29
     features, na mesma ordem.
     """
@@ -91,8 +90,7 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
     positivos no treino (o equivalente do class_weight="balanced" no XGBoost); n_jobs
     = 1 no PyGAwLLfs, que já paraleliza entre os indivíduos.
 
-    Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity, aplicar_metodos
-    e auditar_congestionamento.
+    Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity e aplicar_metodos.
     Importância: fonte única dos modelos; o GA, a fidelidade e o sintético treinam
     exatamente o mesmo modelo da Etapa 6 (§4.11).
     """
@@ -150,8 +148,7 @@ def ler_configuracoes_escolhidas() -> dict[str, dict]:
     "parametros" foi salva como texto; ast.literal_eval a converte de volta em
     dicionário sem executar código.
 
-    Usada em: gawll.main, fidelity, aplicar_metodos, auditar_congestionamento e
-    testes.
+    Usada em: gawll.main, fidelity, aplicar_metodos e testes.
     Importância: todas as etapas usam os hiperparâmetros escolhidos uma única vez, na
     validação.
     """
@@ -165,7 +162,7 @@ def ler_configuracoes_escolhidas() -> dict[str, dict]:
 def avaliar_modelo(modelo, x: pd.DataFrame, y: pd.Series) -> dict[str, float]:
     """Gera previsões de classe e de probabilidade e passa para evaluate.avaliar.
 
-    Usada em: main; fidelity.avaliar_configuracoes e auditar_congestionamento.
+    Usada em: main; fidelity.avaliar_configuracoes.
     Importância: o desempenho é medido do mesmo jeito em todo o projeto.
     """
     return avaliar(y, modelo.predict(x), modelo.predict_proba(x)[:, 1])

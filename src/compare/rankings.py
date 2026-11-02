@@ -139,7 +139,7 @@ def comparar(pontuacoes_a: pd.Series, pontuacoes_b: pd.Series) -> dict:
     as listas do RBO e do top-k, os itens com valor em cada um. Sem NaN, nada muda.
 
     Usada em: concordancia_entre_rankings; stability.concordancia_entre_sementes;
-    interacoes.comparar_modelo; sensibilidade_agregacao; testes.
+    interacoes.comparar_modelo; testes.
     Importância: fonte única das métricas; concordância, estabilidade e interações
     usam exatamente o mesmo cálculo.
     """

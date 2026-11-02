@@ -1,7 +1,0 @@
-conjunto,linhas,fracao_linhas_diferentes,fracao_slots_com_cancelamento,taxa_atraso_slot_com_cancelamento,taxa_atraso_slot_sem_cancelamento,parte,modelo,versao,f1,roc_auc,pr_auc
-treino,1539522.0,0.1628570426405079,0.15393414319509563,0.22764731945059813,0.17259394550788193,descricao,,,,,
-validacao,158389.0,0.11449658751554717,0.10671826957680142,0.23327220020114772,0.1531600299676293,descricao,,,,,
-,,,,,,modelos,random_forest,realizada (atual),0.3496723519358964,0.6785243302735338,0.30998181370527916
-,,,,,,modelos,random_forest,programada (correta),0.3497690161460001,0.6796647945700343,0.31092640899312407
-,,,,,,modelos,xgboost,realizada (atual),0.359705261701318,0.689055954020551,0.31924904127024767
-,,,,,,modelos,xgboost,programada (correta),0.3629090492291822,0.6914218516520909,0.320231024209035

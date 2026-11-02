@@ -28,9 +28,7 @@ Produz:
                                          nº de sementes em que o PyGAwLLfs o sondou
     results/tables/interacoes_dominio.csv      top-10 de cada método no teste de domínio
     results/figures/interacao_gawll_x_h.{png,pdf}
-Só lê CSVs e, para o tipo dos pares, treino + validação (nunca o teste). A
-mesma análise com a agregação original (zeros na média) está em
-compare/sensibilidade_agregacao.py.
+Só lê CSVs e, para o tipo dos pares, treino + validação (nunca o teste).
 """
 
 import logging
@@ -84,7 +82,7 @@ def carregar_interacoes() -> pd.DataFrame:
     ordem nas duas) e a coluna "sondada" (graph.marcar_sondagens), marcada antes de
     qualquer filtro por modelo.
 
-    Usada em: main; sensibilidade_agregacao.
+    Usada em: main.
     Importância: a chave comum é o que permite comparar par a par o PyGAwLLfs e o H.
     """
     interacao = pd.concat([pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv"),
@@ -100,7 +98,7 @@ def tipos_dos_pares(pares: pd.DataFrame, dominio: pd.DataFrame) -> dict[str, str
     validate_pairs.tipo_do_par, com cache porque várias dummies caem na mesma
     variável.
 
-    Usada em: main; sensibilidade_agregacao.
+    Usada em: main.
     Importância: separa redundância de interação operacional, a hipótese central
     sobre o que o PyGAwLLfs detecta.
     """
@@ -116,9 +114,9 @@ def comparar_modelo(interacao: pd.DataFrame, modelo: str,
                     agregacao: str = "sondadas") -> tuple[list[dict], pd.DataFrame]:
     """Para um modelo: concordância PyGAwLLfs × H nos pares em que o H existe, e
     estabilidade de cada método entre sementes. agregacao: a de
-    graph.interacao_media ("com_zeros" só na análise de sensibilidade).
+    graph.interacao_media.
 
-    Usada em: main; sensibilidade_agregacao.
+    Usada em: main.
     Importância: produz o resultado principal da Etapa 13 (os dois métodos apontam as
     mesmas interações?).
     """
@@ -168,7 +166,7 @@ def resumo_redundancia(pares: pd.DataFrame) -> pd.DataFrame:
     """Para cada (modelo, método, tipo de par): rank médio em percentil e quantos pares
     do tipo estão no top-10. Só contam os pares com rank naquele método.
 
-    Usada em: main; sensibilidade_agregacao.
+    Usada em: main.
     Importância: testa nos dados reais se o PyGAwLLfs põe pares redundantes no topo,
     como no sintético.
     """
@@ -191,7 +189,7 @@ def teste_de_dominio(feature_a: str, feature_b: str, dominio: pd.DataFrame,
     """Resultado do teste descritivo da Etapa 15 para um par: tipo, desvios, replicação
     e classificação. Usa o cache se o par já foi testado; senão, testa e guarda.
 
-    Usada em: validar_tops_no_dominio; sensibilidade_agregacao.
+    Usada em: validar_tops_no_dominio.
     Importância: um par testado tem um resultado só, em qualquer tabela que o cite
     (o bootstrap depende da ordem em que os pares são testados).
     """
@@ -210,7 +208,7 @@ def cache_da_etapa_15() -> dict:
     """Os pares já testados na Etapa 15 (dominio_pares.csv), no formato do cache de
     teste_de_dominio.
 
-    Usada em: validar_tops_no_dominio; sensibilidade_agregacao.
+    Usada em: validar_tops_no_dominio.
     Importância: os mesmos números de domínio nos dois documentos.
     """
     ja_testados = pd.read_csv(comum.DIR_TABELAS / "dominio_pares.csv")
@@ -222,10 +220,9 @@ def validar_tops_no_dominio(pares: pd.DataFrame, dominio: pd.DataFrame,
                             cache: dict | None = None) -> pd.DataFrame:
     """Top-10 de pares do PyGAwLLfs e do H_abs, por modelo, passados pelo teste
     descritivo da Etapa 15 (validate_pairs.testar_par e classificar). Pares já
-    testados lá têm o resultado reaproveitado; cache permite dividir os testes com
-    outra chamada (a análise de sensibilidade).
+    testados lá têm o resultado reaproveitado.
 
-    Usada em: main; sensibilidade_agregacao.
+    Usada em: main.
     Importância: julga os dois métodos contra os dados, não só um contra o outro.
     """
     if cache is None:

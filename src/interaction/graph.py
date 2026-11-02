@@ -18,8 +18,7 @@ média só das sementes em que o par foi sondado e só ranqueia pares sondados e
 pelo menos MIN_SEMENTES_RANKING sementes. A original ("com_zeros") fica para a
 análise de sensibilidade.
 Quem consome: friedman_h.py (features do grafo entram no conjunto do H, §4.7),
-compare/interacoes.py (PyGAwLLfs × H), compare/sensibilidade_agregacao.py e
-domain/validate_pairs.py (Etapa 15).
+compare/interacoes.py (PyGAwLLfs × H) e domain/validate_pairs.py (Etapa 15).
 """
 
 import pandas as pd
@@ -40,8 +39,7 @@ def marcar_sondagens(interacao: pd.DataFrame) -> pd.DataFrame:
     modelos da mesma semente; nos outros métodos, sempre. Precisa da tabela com
     todos os modelos: filtrar um modelo antes cairia na regra "vint > 0".
 
-    Usada em: marcar_nao_sondadas; interacao_media; interacoes.carregar_interacoes;
-    sensibilidade_agregacao.
+    Usada em: marcar_nao_sondadas; interacao_media; interacoes.carregar_interacoes.
     Importância: separa "não medido" de "medido, efeito nulo" (no XGBoost, ~15 pares
     por execução, como os de periodo_dia, que o modelo não usa).
     """
@@ -74,7 +72,7 @@ def interacao_media(interacao: pd.DataFrame, agregacao: str = "sondadas") -> pd.
                     (a agregação original, mantida para a análise de sensibilidade)
 
     Usada em: validate_pairs, friedman_h.conjunto_de_features,
-    interacoes.comparar_modelo, sensibilidade_agregacao e testes.
+    interacoes.comparar_modelo e testes.
     Importância: o ranking médio de pares é a base do grafo reduzido e das
     comparações de interação; com os zeros, ele acompanha a cobertura das sondagens
     em vez da força da interação (decisão 15).
@@ -99,7 +97,7 @@ def arestas_reduzidas(media: pd.DataFrame, fracao: float = FRACAO_ARESTAS) -> pd
     os sondados em pelo menos MIN_SEMENTES_RANKING sementes).
 
     Usada em: friedman_h.conjunto_de_features; validate_pairs.main;
-    sensibilidade_agregacao; tests/test_interacao.py.
+    tests/test_interacao.py.
     Importância: define o "grafo reduzido" usado no §4.7 e no Diferencial 4.
     """
     grupos = []

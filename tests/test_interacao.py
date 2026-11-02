@@ -24,7 +24,7 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import interacoes, sensibilidade_agregacao  # noqa: E402
+from src.compare import interacoes  # noqa: E402
 from src.domain import validate_pairs  # noqa: E402
 from src.importance import comum  # noqa: E402
 from src.interaction import friedman_h, graph  # noqa: E402
@@ -199,18 +199,13 @@ def teste_scripts_nao_leem_o_teste():
                 mock.patch.object(comum, "SEMENTES", [42, 43]), \
                 mock.patch.object(friedman_h, "AMOSTRA", 30), \
                 mock.patch.object(validate_pairs, "N_BOOTSTRAP", 5), \
-                mock.patch.object(interacoes, "DIR_FIGURAS", pasta / "figuras"), \
-                mock.patch.object(sensibilidade_agregacao, "DIR_FIGURAS", pasta / "figuras"):
+                mock.patch.object(interacoes, "DIR_FIGURAS", pasta / "figuras"):
             friedman_h.main()
             interacoes.main()
-            sensibilidade_agregacao.main()
         for esperado in ["interacao_h.csv", "interacoes.csv", "interacoes_pares.csv",
-                         "interacoes_redundancia.csv", "interacoes_dominio.csv",
-                         "sensibilidade_cobertura.csv", "sensibilidade_agregacao.csv",
-                         "sensibilidade_top10.csv"]:
+                         "interacoes_redundancia.csv", "interacoes_dominio.csv"]:
             assert (pasta / esperado).exists(), esperado
         assert (pasta / "figuras" / "interacao_gawll_x_h.png").exists()
-        assert (pasta / "figuras" / "sensibilidade_agregacao.png").exists()
 
 
 def teste_tabelas_reais():

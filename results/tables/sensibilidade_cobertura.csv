@@ -1,4 +1,0 @@
-model,n_pares,sondagens_por_execucao,pares_sondados_por_execucao,pares_sondados_esperados,desvio_esperado,zeros_por_execucao,zeros_nao_sondados_por_execucao,zeros_medidos_por_execucao,pares_sondados_0_sementes,pares_sondados_1_sementes,pares_sondados_2_sementes,pares_sondados_3_sementes,pares_sondados_4_sementes,pares_sondados_5_sementes,pares_nunca_sondados_esperados
-logreg,406,300,210.0,212.258,5.733,198.8,196.0,2.8,7,59,125,135,64,16,10.046
-random_forest,406,300,210.0,212.258,5.733,196.0,196.0,0.0,7,59,125,135,64,16,10.046
-xgboost,406,300,210.0,212.258,5.733,224.0,196.0,28.0,7,59,125,135,64,16,10.046
