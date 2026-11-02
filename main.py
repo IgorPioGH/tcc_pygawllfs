@@ -72,6 +72,10 @@ ETAPAS = [
           "qualidade da base bruta, funil de descartes, taxas de atraso por atributo, "
           "sazonalidade e correlação entre atributos (só até out/2025)",
           "~1 min"),
+    Etapa("checagens", "Preparação", ["src/preparacao/checagens.py"],
+          "o balanceamento preserva as relações, o target encoding generaliza e a "
+          "divisão temporal tem as contagens dos parquets",
+          "< 1 min"),
     Etapa("baselines", "Modelagem", ["src/modelagem/baselines.py"],
           "LogReg, RF e XGBoost: ajuste na validação e avaliação única no teste",
           "~1 min"),
