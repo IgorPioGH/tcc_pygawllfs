@@ -75,12 +75,14 @@ def carregar(nome: str) -> tuple[pd.DataFrame, pd.Series]:
 
     Usada em: main; fidelity, permutation, shap_global, friedman_h e testes.
     Importância: ponto único de leitura dos dados; todo script vê as mesmas 29
-    features, na mesma ordem.
+    features, na mesma ordem, e um conjunto fora do 50/50 para o pipeline.
     """
     df = pd.read_parquet(DIR_DADOS / f"{nome}.parquet")
     x = df.drop(columns=NAO_ATRIBUTOS)
     y = df["atrasado"]
     assert_sem_vazamento(x)
+    if 2 * y.sum() != len(y):
+        raise ValueError(f"'{nome}' não está balanceado: {y.mean():.4f} de atrasados")
     return x, y
 
 

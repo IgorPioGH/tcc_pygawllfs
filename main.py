@@ -108,7 +108,7 @@ assert all(etapa.fase in FASES for etapa in ETAPAS)
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
     "tests/test_comparacao.py", "tests/test_interacao.py", "tests/test_fidelidade.py",
-    "tests/test_sintese.py",
+    "tests/test_sintese.py", "tests/test_balanceamento.py",
 ]
 
 

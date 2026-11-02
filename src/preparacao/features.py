@@ -305,12 +305,34 @@ def conferir_tudo_numerico(df, permitidas):
         raise ValueError(f"COlunas não numéricas inesperadas: {inesperadas}")
 
 
+def balancear(conjunto: pd.DataFrame, semente: int = SEMENTE) -> pd.DataFrame:
+    """Mantém todos os voos atrasados e sorteia, sem reposição, o mesmo número de voos
+    pontuais; devolve o conjunto em ordem de Partida Prevista. O sorteio é global no
+    conjunto, nunca por grupo (mês, aeroporto, empresa): balancear dentro de um grupo
+    deixaria a taxa de atraso de todos os grupos em 50% e apagaria a informação da
+    variável.
+
+    Usada em: montar_conjuntos, em treino, validação e teste.
+    Importância: descartar pontuais ao acaso multiplica as chances de atraso de todos
+    os grupos pelo mesmo fator, então a ordem entre os grupos se mantém; com 50/50, a
+    acurácia passa a ser uma métrica legível (o trivial acerta 0,5).
+    """
+    atrasados = conjunto[conjunto["atrasado"] == 1]
+    pontuais = conjunto[conjunto["atrasado"] == 0]
+    if len(atrasados) > len(pontuais):
+        raise ValueError(f"Mais atrasados ({len(atrasados)}) que pontuais ({len(pontuais)})")
+    sorteados = pontuais.sample(n=len(atrasados), random_state=semente)
+    return pd.concat([atrasados, sorteados]).sort_values("Partida Prevista", kind="stable")
+
+
 def montar_conjuntos(df: pd.DataFrame, recorte: str = "principal") -> dict[str, pd.DataFrame]:
     """Treino, validação e teste de um recorte, prontos para os modelos: divide no
     tempo, ajusta o porte dos aeroportos no treino e aplica nos três, faz o target
-    encoding fora da dobra (com a checagem de vazamento em cada coluna), remove as
-    colunas cruas e confere que só sobraram colunas numéricas. df já tem de vir de
-    features_sem_alvo.
+    encoding fora da dobra (com a checagem de vazamento em cada coluna), balanceia
+    cada conjunto em 50/50, remove as colunas cruas e confere que só sobraram colunas
+    numéricas. df já tem de vir de features_sem_alvo. O porte e o encoding são
+    ajustados no treino completo, antes do balanceamento: as taxas que o encoding
+    carrega são as reais.
 
     Usada em: bloco __main__ deste script; recortes.py.
     Importância: a mesma preparação serve ao experimento principal e aos recortes
@@ -334,7 +356,7 @@ def montar_conjuntos(df: pd.DataFrame, recorte: str = "principal") -> dict[str, 
 
     conjuntos = {}
     for nome, conjunto in {"train": treino, "val": validacao, "test": teste}.items():
-        conjunto = remover_colunas_cruas(conjunto)
+        conjunto = remover_colunas_cruas(balancear(conjunto))
         conferir_tudo_numerico(conjunto, PERMITIDAS)
         conjuntos[nome] = conjunto
     return conjuntos
