@@ -81,19 +81,17 @@ TAU_RESET = 50
 N_PROCESSOS = max(1, int((os.cpu_count() or 1) * 0.8))
 
 
-def carregar_subamostra() -> tuple[
+def separar_subamostra(df: pd.DataFrame) -> tuple[
     np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]
 ]:
-    """Lê a subamostra de 50 mil linhas, confere que não há coluna proibida e devolve
-    (x_treino, y_treino, x_val, y_val, features), separados pela coluna "origem".
-    Nunca lê test.parquet.
+    """Confere que a subamostra só tem treino e validação e nenhuma coluna proibida, e
+    devolve (x_treino, y_treino, x_val, y_val, features), separados pela coluna
+    "origem".
 
-    Usada em: main; tests/test_gawll.py.
-    Importância: aplica a subamostra só ao GA (§3) e mantém o teste fora da busca
-    (§4.1).
+    Usada em: carregar_subamostra; recortes.importancias_do_recorte.
+    Importância: o mesmo formato serve à subamostra principal e à de cada recorte
+    temporal; o teste nunca entra na busca (§4.1).
     """
-    df = pd.read_parquet(ARQUIVO_SUBAMOSTRA)
-
     origens = set(df["origem"].unique())
     if not origens <= {"treino", "validacao"}:
         raise ValueError(f"Subamostra com origem inesperada: {origens}")
@@ -111,6 +109,18 @@ def carregar_subamostra() -> tuple[
         y_np[~eh_treino],
         x.columns.tolist(),
     )
+
+
+def carregar_subamostra() -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]
+]:
+    """Lê a subamostra de 50 mil linhas do experimento principal e a separa
+    (separar_subamostra). Nunca lê test.parquet.
+
+    Usada em: main; tests/test_gawll.py.
+    Importância: aplica a subamostra só ao GA (§3).
+    """
+    return separar_subamostra(pd.read_parquet(ARQUIVO_SUBAMOSTRA))
 
 
 def treinar_e_medir(

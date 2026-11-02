@@ -100,6 +100,10 @@ ETAPAS = [
     Etapa("fidelidade", "Avaliação", ["src/avaliacao/fidelity.py"],
           "retenção top-k, subconjuntos do GA e sorteios; avalia no teste",
           "~13 min"),
+    Etapa("recortes", "Avaliação", ["src/avaliacao/recortes.py"],
+          "recortes 2024 x 2025 (mesmo calendário): as quatro importâncias em cada ano e a "
+          "concordância entre os anos",
+          "~4 h (retoma do checkpoint)"),
     Etapa("sintese", "Avaliação", ["src/avaliacao/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
@@ -115,7 +119,7 @@ assert all(etapa.fase in FASES for etapa in ETAPAS)
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
     "tests/test_comparacao.py", "tests/test_interacao.py", "tests/test_fidelidade.py",
-    "tests/test_sintese.py", "tests/test_balanceamento.py",
+    "tests/test_sintese.py", "tests/test_balanceamento.py", "tests/test_recortes.py",
 ]
 
 
