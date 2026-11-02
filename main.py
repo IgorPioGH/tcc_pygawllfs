@@ -119,11 +119,12 @@ ETAPAS = [
     Etapa("figuras", "Interpretação", ["src/interpretacao/figura_barras.py",
                                        "src/interpretacao/figuras_concordancia.py",
                                        "src/interpretacao/figura_grafo.py",
-                                       "src/interpretacao/figuras_didaticas.py"],
+                                       "src/interpretacao/figuras_didaticas.py",
+                                       "src/interpretacao/exemplos.py"],
           "figuras que explicam os resultados: barras de importância, concordância, "
-          "dispersão, estabilidade, grafo de interação, ROC, convergência do GA e "
-          "diagnóstico de ajuste",
-          "< 1 min"),
+          "dispersão, estabilidade, grafo de interação, ROC, convergência do GA, "
+          "diagnóstico de ajuste e os exemplos trabalhados (Permutation e linkage learning)",
+          "~2 min"),
 ]
 assert all(etapa.fase in FASES for etapa in ETAPAS)
 
