@@ -8,7 +8,7 @@ critérios da pergunta de pesquisa, para cada método e para cada modelo:
                    (concordancia.csv, pares mesmo_modelo, §4.11)
     estabilidade   Spearman e top-5 médios entre as 10 duplas de sementes
                    (estabilidade.csv; a intrínseca é determinística e fica vazia)
-    fidelidade     fração do PR-AUC do modelo completo retida no TESTE pelo
+    fidelidade     fração da acurácia do modelo completo retida no TESTE pelo
                    top-5 e pelo top-10, e a mesma fração para 5 features sorteadas
                    (fidelidade_resumo.csv e fidelidade.csv)
     custo          tempo e nº de treinos de modelo por execução
@@ -65,7 +65,7 @@ def concordancia_intra(concordancia: pd.DataFrame) -> pd.DataFrame:
 
 
 def fidelidade_por_metodo(resumo: pd.DataFrame, fidelidade: pd.DataFrame) -> pd.DataFrame:
-    """Para cada (método, modelo): fração do PR-AUC retida no teste pelo top-5 e pelo
+    """Para cada (método, modelo): fração da acurácia retida no teste pelo top-5 e pelo
     top-10; o acaso (5 features sorteadas) do mesmo modelo; e, no PyGAwLLfs, a
     média do x* nas 5 execuções e o nº médio de features dele.
 
@@ -78,9 +78,9 @@ def fidelidade_por_metodo(resumo: pd.DataFrame, fidelidade: pd.DataFrame) -> pd.
     for (metodo, modelo), grupo in teste.groupby(["method", "model"]):
         if metodo not in METODOS:
             continue  # "todas", "aleatorio" e "gawll_x*" não são métodos de ranking
-        por_k = grupo.set_index("k")["pr_auc_frac_todas"]
+        por_k = grupo.set_index("k")["acuracia_frac_todas"]
         acaso = teste[(teste["model"] == modelo) & (teste["method"] == "aleatorio")
-                      & (teste["k"] == 5)]["pr_auc_frac_todas"].iloc[0]
+                      & (teste["k"] == 5)]["acuracia_frac_todas"].iloc[0]
         linhas.append({"method": metodo, "model": modelo,
                        "fidelidade_top5": por_k[5], "fidelidade_top10": por_k[10],
                        "acaso_top5": acaso})
@@ -88,9 +88,9 @@ def fidelidade_por_metodo(resumo: pd.DataFrame, fidelidade: pd.DataFrame) -> pd.
 
     # x*: uma linha por execução em fidelidade.csv; a fração é sobre "todas"
     teste_completo = fidelidade[fidelidade["conjunto"] == "test"]
-    todas = teste_completo[teste_completo["method"] == "todas"].set_index("model")["pr_auc"]
+    todas = teste_completo[teste_completo["method"] == "todas"].set_index("model")["acuracia"]
     x_estrela = teste_completo[teste_completo["method"] == "gawll_x*"].copy()
-    x_estrela["fracao"] = x_estrela["pr_auc"] / x_estrela["model"].map(todas)
+    x_estrela["fracao"] = x_estrela["acuracia"] / x_estrela["model"].map(todas)
     x_estrela = (x_estrela.groupby("model", as_index=False)
                  .agg(fidelidade_x_estrela=("fracao", "mean"), n_features_x_estrela=("k", "mean"))
                  .assign(method="gawll"))
@@ -152,7 +152,7 @@ def sintese_modelos(baselines: pd.DataFrame, concordancia: pd.DataFrame,
         linhas.append({
             "model": modelo,
             **{metrica: desempenho.loc[modelo, metrica]
-               for metrica in ["f1", "pr_auc", "roc_auc", "acuracia_balanceada"]},
+               for metrica in ["acuracia", "f1", "pr_auc", "roc_auc", "acuracia_balanceada"]},
             "n_metodos": len(do_modelo),
             "concordancia_spearman_media": intra["spearman"].mean(),
             "concordancia_spearman_min": intra["spearman"].min(),

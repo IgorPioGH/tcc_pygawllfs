@@ -96,7 +96,7 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
             "seed": semente,
             "n_features": len(selecionadas),
             "features": ";".join(selecionadas),
-            "f1_validacao": float(execucao["f1_validacao"]),
+            "acuracia_validacao": float(execucao["acuracia_validacao"]),
             "fitness": float(execucao["fitness"]),
         })
         custos.append({
@@ -131,7 +131,7 @@ def main() -> None:
     salvar_custo(custos)
     logger.info(f"{len(selecao)} execuções consolidadas")
     logger.info("Subconjuntos:\n" + selecao[
-        ["model", "seed", "n_features", "f1_validacao"]].to_string(index=False))
+        ["model", "seed", "n_features", "acuracia_validacao"]].to_string(index=False))
 
 
 if __name__ == "__main__":

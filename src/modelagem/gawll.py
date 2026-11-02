@@ -10,10 +10,10 @@ Etapa 9 e grafo de interação.
 
 Correções em relação ao código original (documentar no Cap. 3):
     1. fitness calculado na VALIDAÇÃO, não no teste (§4.1);
-    2. F1 no lugar da acurácia (§4.2);
-    3. split temporal da Etapa 4, não train_test_split embaralhado (§4.4);
-    4. mutação bit-flip que de fato altera o cromossomo (MutacaoInPlace);
-    5. elitismo gravado na população nova (GAwLLCorrigido._apply_elitism).
+    2. split temporal, não train_test_split embaralhado (§4.4);
+    3. mutação bit-flip que de fato altera o cromossomo (MutacaoInPlace);
+    4. elitismo gravado na população nova (GAwLLCorrigido._apply_elitism).
+A métrica do fitness é a acurácia, como no artigo e no código original.
 
 Nada dentro de PyGAwLLfs/ é editado: o motor do GA é usado por import e
 subclasse. Os dois src/ (projeto e PyGAwLLfs) são namespace packages, sem
@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 # Raiz do projeto: gawll.py -> modelagem/ -> src/ -> raiz
 RAIZ = Path(__file__).resolve().parents[2]
@@ -108,30 +108,29 @@ def carregar_subamostra() -> tuple[
 def treinar_e_medir(
     nome_modelo: str,
     parametros: dict,
-    peso_positivo: float,
     mascara: np.ndarray,
     x_treino: np.ndarray,
     y_treino: np.ndarray,
     x_val: np.ndarray,
     y_val: np.ndarray,
 ) -> float:
-    """Treina o modelo só com as colunas da máscara e devolve o F1 na validação. Fica
-    fora da classe para o joblib conseguir mandá-la aos outros processos.
+    """Treina o modelo só com as colunas da máscara e devolve a acurácia na validação.
+    Fica fora da classe para o joblib conseguir mandá-la aos outros processos.
 
     Usada em: AvaliadorFitness._treinar_lote; tests/test_gawll.py.
-    Importância: é o f1(x) da fitness corrigida: validação em vez de teste e
-    F1 em vez de acurácia
+    Importância: é o f1(x) da fitness do artigo (o desempenho), medido na validação em
+    vez do teste.
     """
-    modelo = criar_modelo(nome_modelo, parametros, peso_positivo, n_jobs=1)
+    modelo = criar_modelo(nome_modelo, parametros, n_jobs=1)
     modelo.fit(x_treino[:, mascara], y_treino)
     y_previsto = modelo.predict(x_val[:, mascara])
-    return float(f1_score(y_val, y_previsto, zero_division=0))
+    return float(accuracy_score(y_val, y_previsto))
 
 
 class AvaliadorFitness:
-    """O perf_batch que o GAwLL recebe: lista de máscaras -> lista de F1. Guarda um
-    cache por máscara; os modelos têm random_state fixo, então a mesma máscara sempre
-    dá o mesmo F1 e o cache é exato. Ele importa porque o linkage learning chama o
+    """O perf_batch que o GAwLL recebe: lista de máscaras -> lista de acurácias. Guarda
+    um cache por máscara; os modelos têm random_state fixo, então a mesma máscara sempre
+    dá a mesma acurácia e o cache é exato. Ele importa porque o linkage learning chama o
     perf_batch por fora do cache do GAwLL, que depois reavalia os mesmos cromossomos.
 
     Usada em: executar; tests/test_gawll.py.
@@ -140,8 +139,7 @@ class AvaliadorFitness:
     """
 
     def __init__(self, nome_modelo, parametros, x_treino, y_treino, x_val, y_val):
-        """Guarda os dados, os hiperparâmetros e o peso da classe positiva; zera o cache
-        e os contadores.
+        """Guarda os dados e os hiperparâmetros; zera o cache e os contadores.
 
         Usada em: executar, ao criar o avaliador de uma execução.
         Importância: n_treinos e n_avaliacoes vão para o checkpoint como medida de
@@ -153,14 +151,13 @@ class AvaliadorFitness:
         self.y_treino = y_treino
         self.x_val = x_val
         self.y_val = y_val
-        self.peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
 
         self.cache: dict[bytes, float] = {}
         self.n_treinos = 0  # treinos de modelo realmente feitos (a "moeda" do §7)
         self.n_avaliacoes = 0  # pedidos recebidos do GA, contando acertos de cache
 
     def __call__(self, mascaras: list[np.ndarray]) -> list[float]:
-        """Recebe um lote de máscaras e devolve o F1 de cada uma: máscara vazia vale 0,
+        """Recebe um lote de máscaras e devolve a acurácia de cada uma: máscara vazia vale 0,
         máscaras ainda não vistas (sem repetir dentro do lote) são treinadas, o resto
         sai do cache.
 
@@ -185,8 +182,8 @@ class AvaliadorFitness:
                 del novas[chave]
 
         if novas:
-            for chave, f1 in zip(novas, self._treinar_lote(list(novas.values()))):
-                self.cache[chave] = f1
+            for chave, acuracia in zip(novas, self._treinar_lote(list(novas.values()))):
+                self.cache[chave] = acuracia
             self.n_treinos += len(novas)
 
         return [self.cache[m.tobytes()] for m in mascaras]
@@ -205,21 +202,13 @@ class AvaliadorFitness:
         # XGBoost: um por vez na GPU (vários processos não cabem nos 6 GB)
         if self.nome_modelo == "xgboost":
             return [
-                treinar_e_medir(
-                    self.nome_modelo,
-                    self.parametros,
-                    self.peso_positivo,
-                    m,
-                    *argumentos,
-                )
+                treinar_e_medir(self.nome_modelo, self.parametros, m, *argumentos)
                 for m in mascaras
             ]
 
         # LogReg e RF: um modelo por processo, cada um com n_jobs=1
         return Parallel(n_jobs=min(N_PROCESSOS, len(mascaras)))(
-            delayed(treinar_e_medir)(
-                self.nome_modelo, self.parametros, self.peso_positivo, m, *argumentos
-            )
+            delayed(treinar_e_medir)(self.nome_modelo, self.parametros, m, *argumentos)
             for m in mascaras
         )
 
@@ -306,7 +295,7 @@ class GAwLLCorrigido(GAwLL):
             fittest = self.population_analyzer.get_fittest_individual(self.population)
             logger.info(
                 f"  geração {generation:3d} | fitness {fittest.fitness:.4f} "
-                f"| F1 {fittest.f_perf:.4f} | {int(fittest.chromosome.sum())} features"
+                f"| acurácia {fittest.f_perf:.4f} | {int(fittest.chromosome.sum())} features"
             )
 
             if fittest.fitness > best_fitness_track + self.EPSILON:
@@ -346,12 +335,12 @@ def executar(
     populacao: int = POPULACAO,
 ) -> None:
     """Roda uma execução (modelo, semente) e salva o checkpoint .npz: cromossomo x*,
-    fitness, F1 de validação, vimp, vint, features, tempo, nº de treinos e cobertura
-    de pares.
+    fitness, acurácia de validação, vimp, vint, features, tempo, nº de treinos e
+    cobertura de pares.
 
     Usada em: main; sintetico_aplicar.rodar_gawll; tests/test_gawll.py.
     Importância: o checkpoint por execução permite retomar após uma queda. O
-    f1_validacao salvo é otimista e nunca é reportado como desempenho (§4.1).
+    acuracia_validacao salva é otimista e nunca é reportada como desempenho (§4.1).
     """
     x_treino, y_treino, x_val, y_val, features = dados
     n = len(features)
@@ -375,7 +364,7 @@ def executar(
     ga.run(semente)
     tempo = time.perf_counter() - inicio
 
-    cromossomo, fitness, f1_validacao = ga.get_feature_selection_results()
+    cromossomo, fitness, acuracia_validacao = ga.get_feature_selection_results()
     vimp = ga.importance.export_importance_vector()
     vint = ga.evig.export_interaction_matrix()
 
@@ -390,7 +379,7 @@ def executar(
             arquivo,
             cromossomo=cromossomo,
             fitness=fitness,
-            f1_validacao=f1_validacao,
+            acuracia_validacao=acuracia_validacao,
             vimp=vimp,
             vint=vint,
             features=np.array(features),
@@ -410,7 +399,7 @@ def executar(
     logger.info(
         f"Fim: {nome_modelo} semente {semente} | {tempo / 60:.1f} min | "
         f"{avaliador.n_treinos} treinos / {avaliador.n_avaliacoes} avaliações | "
-        f"F1 validação {f1_validacao:.4f} | cobertura de pares {cobertura_pares:.2f}"
+        f"acurácia na validação {acuracia_validacao:.4f} | cobertura de pares {cobertura_pares:.2f}"
     )
     logger.info(f"Selecionadas ({len(selecionadas)}): {selecionadas}")
 

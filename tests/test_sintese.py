@@ -103,7 +103,7 @@ def teste_coerencia_com_as_fontes():
             assert np.isnan(linha.estabilidade_spearman)  # determinística
         else:
             assert np.isclose(linha.estabilidade_spearman, estabilidade.loc[chave, "spearman"], atol=1e-4)
-        assert np.isclose(linha.fidelidade_top5, resumo.loc[chave, "pr_auc_frac_todas"], atol=1e-4)
+        assert np.isclose(linha.fidelidade_top5, resumo.loc[chave, "acuracia_frac_todas"], atol=1e-4)
 
     # O x* do PyGAwLLfs: nº médio de features = média do selecao_gawll.csv
     selecao = pd.read_csv(DIR_TABELAS / "selecao_gawll.csv").groupby("model")["n_features"].mean()
@@ -123,7 +123,7 @@ def teste_coerencia_com_as_fontes():
     modelos = pd.read_csv(DIR_TABELAS / "sintese_modelos.csv").set_index("model")
     baselines = pd.read_csv(DIR_TABELAS / "baselines.csv").set_index("modelo")
     for modelo in modelos.index:
-        assert np.isclose(modelos.loc[modelo, "f1"], baselines.loc[modelo, "f1"], atol=1e-4)
+        assert np.isclose(modelos.loc[modelo, "acuracia"], baselines.loc[modelo, "acuracia"], atol=1e-4)
 
 
 if __name__ == "__main__":

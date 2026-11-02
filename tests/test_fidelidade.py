@@ -92,16 +92,18 @@ def teste_resumo():
     Importância: a fração de "todas" é o número que vai para o texto.
     """
     linhas = []
-    for metodo, k, f1 in [("todas", 29, 0.40), ("shap", 5, 0.30), ("aleatorio", 5, 0.10),
-                          ("aleatorio", 5, 0.20)]:
+    for metodo, k, valor in [("todas", 29, 0.40), ("shap", 5, 0.30), ("aleatorio", 5, 0.10),
+                             ("aleatorio", 5, 0.20)]:
         linhas.append({"model": "m", "method": metodo, "k": k, "seed": len(linhas),
-                       "conjunto": "test", "f1": f1, "pr_auc": f1, "roc_auc": 0.5,
-                       "acuracia_balanceada": 0.5})
+                       "conjunto": "test", "acuracia": valor, "f1": valor, "pr_auc": valor,
+                       "roc_auc": 0.5, "acuracia_balanceada": 0.5})
     resumo = fidelity.resumir(pd.DataFrame(linhas)).set_index("method")
-    assert np.isclose(resumo.loc["todas", "f1_frac_todas"], 1.0)
-    assert np.isclose(resumo.loc["shap", "f1_frac_todas"], 0.75)
-    assert np.isclose(resumo.loc["aleatorio", "f1"], 0.15)
-    assert resumo.loc["aleatorio", "f1_min"] == 0.10 and resumo.loc["aleatorio", "f1_max"] == 0.20
+    for metrica in ["acuracia", "f1"]:
+        assert np.isclose(resumo.loc["todas", f"{metrica}_frac_todas"], 1.0)
+        assert np.isclose(resumo.loc["shap", f"{metrica}_frac_todas"], 0.75)
+        assert np.isclose(resumo.loc["aleatorio", metrica], 0.15)
+        assert resumo.loc["aleatorio", f"{metrica}_min"] == 0.10
+        assert resumo.loc["aleatorio", f"{metrica}_max"] == 0.20
 
 
 def teste_execucao_em_miniatura():
@@ -151,7 +153,7 @@ def teste_tabela_real():
     baselines = pd.read_csv(DIR_TABELAS / "baselines.csv").set_index("modelo")
     todas = tabela[(tabela["method"] == "todas") & (tabela["conjunto"] == "test")]
     for linha in todas.itertuples():
-        for metrica in ["f1", "pr_auc"]:
+        for metrica in ["acuracia", "f1", "roc_auc"]:
             assert abs(getattr(linha, metrica) - baselines.loc[linha.model, metrica]) < 1e-3, \
                 (linha.model, metrica)
 

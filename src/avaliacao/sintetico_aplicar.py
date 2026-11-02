@@ -165,13 +165,12 @@ def main() -> None:
     """
     x_treino, y_treino, x_val, y_val = carregar_sintetico()
     configuracoes = ler_configuracoes_escolhidas()
-    peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
     logger.info(f"Sintético: treino {x_treino.shape}, validação {x_val.shape}")
 
     # 1. Modelos fixos (treinados uma vez) + os três métodos que os explicam
     modelos = {}
     for nome in MODELOS:
-        modelos[nome] = criar_modelo(nome, configuracoes[nome], peso_positivo)
+        modelos[nome] = criar_modelo(nome, configuracoes[nome])
         modelos[nome].fit(x_treino, y_treino)
     tabelas, custos = importancias_modelo_fixo(modelos, x_val, y_val)
     tabelas_h, custos_h = interacoes_h(modelos, x_val)

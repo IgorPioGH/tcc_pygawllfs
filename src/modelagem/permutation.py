@@ -2,11 +2,11 @@
 
 Recebe os três modelos treinados na Etapa 6 e o conjunto de VALIDAÇÃO
 (nunca o teste, §4.9). Para cada feature, embaralha a coluna e mede quanto
-o F1 cai; repete n_repeats vezes e tira a média. A métrica é o F1 por
-coerência com o fitness do PyGAwLLfs (§4.2): os dois métodos medem
-"quanto o F1 piora sem essa informação".
+a acurácia cai; repete n_repeats vezes e tira a média. A métrica é a mesma do
+fitness do PyGAwLLfs: os dois métodos medem "quanto a acurácia piora sem essa
+informação".
 
-O valor pode ser negativo (embaralhar pode melhorar o F1 por acaso). Ele é
+O valor pode ser negativo (embaralhar pode melhorar a acurácia por acaso). Ele é
 salvo bruto (§4.8); o rank usa o valor bruto, então negativo vai para o fim.
 
 É estocástica (o embaralhamento), então roda com as 5 sementes. Produz
@@ -40,12 +40,12 @@ logger = logging.getLogger(__name__)
 
 METODO = "permutation"
 N_REPEATS = 10
-METRICA = "f1"
+METRICA = "accuracy"
 
 
 def calcular_permutation(modelo, x: pd.DataFrame, y: pd.Series, semente: int,
                          n_repeats: int = N_REPEATS) -> list[float]:
-    """Queda média de F1 ao embaralhar cada coluna, n_repeats vezes, na ordem de
+    """Queda média de acurácia ao embaralhar cada coluna, n_repeats vezes, na ordem de
     x.columns.
 
     Usada em: main; sintetico_aplicar.importancias_modelo_fixo.

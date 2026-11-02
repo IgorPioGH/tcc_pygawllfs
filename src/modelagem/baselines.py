@@ -48,19 +48,19 @@ DIR_MODELOS = RAIZ / "experiments" / "runs" / "baselines"
 SEMENTE = 42
 NAO_ATRIBUTOS = ["Partida Prevista", "Chegada Prevista", "atrasado", "atraso_min"]
 
-# Métrica que escolhe a melhor configuração na validação. F1, por coerência
-# com o fitness corrigido do PyGAwLLfs (docs/metodologia.md §4.2).
-METRICA_SELECAO = "f1"
+# Métrica que escolhe a melhor configuração na validação: a acurácia, a mesma do
+# fitness do PyGAwLLfs e da Permutation. Com os conjuntos 50/50, o trivial acerta 0,5.
+METRICA_SELECAO = "acuracia"
 
 # Gatilhos de vazamento (docs/metodologia.md §9), checados na validação ANTES do teste.
 LIMITE_ROC_AUC = 0.90
 LIMITE_F1 = 0.85
-LIMITE_PR_AUC_RAZAO = 3.0  # PR-AUC acima de 3x a taxa base de atraso
+LIMITE_ACURACIA = 0.85
 
 # Grade de hiperparâmetros: para cada modelo, a lista de configurações testadas.
 # O RF é fixo, igual ao RF dentro do PyGAwLLfs (n_estimators=100,
 # max_depth=10), para que a comparação de importâncias do §4.11 seja feita
-# sobre o mesmo modelo. No tuning, max_depth=12 ganhou por só 0,006 de F1.
+# sobre o mesmo modelo.
 GRADE = {
     "dummy": [{"strategy": "most_frequent"}],
     "logreg": [{"C": 0.1}, {"C": 1.0}, {"C": 10.0}],
@@ -86,10 +86,9 @@ def carregar(nome: str) -> tuple[pd.DataFrame, pd.Series]:
     return x, y
 
 
-def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int = -1):
+def criar_modelo(nome: str, parametros: dict, n_jobs: int = -1):
     """Monta um estimador novo, não treinado: LogReg (com StandardScaler), RF ou
-    XGBoost, com semente fixa e balanceamento de classe. peso_positivo = negativos /
-    positivos no treino (o equivalente do class_weight="balanced" no XGBoost); n_jobs
+    XGBoost, com semente fixa. Sem peso de classe: os conjuntos já são 50/50. n_jobs
     = 1 no PyGAwLLfs, que já paraleliza entre os indivíduos.
 
     Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity e sintetico_aplicar.
@@ -103,7 +102,6 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
             StandardScaler(),
             LogisticRegression(
                 **parametros,
-                class_weight="balanced",
                 max_iter=1000,
                 random_state=SEMENTE,
             ),
@@ -112,7 +110,6 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
         return RandomForestClassifier(
             n_estimators=100,
             **parametros,
-            class_weight="balanced",
             n_jobs=n_jobs,
             random_state=SEMENTE,
         )
@@ -121,7 +118,6 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
             n_estimators=300,
             **parametros,
             learning_rate=0.1,
-            scale_pos_weight=peso_positivo,
             tree_method="hist",
             device="cuda",
             random_state=SEMENTE,
@@ -129,20 +125,14 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
     raise ValueError(f"Modelo desconhecido: '{nome}'")
 
 
-def montar_configuracoes(y_treino: pd.Series) -> list[tuple[str, dict, object]]:
+def montar_configuracoes() -> list[tuple[str, dict, object]]:
     """Uma tupla (nome do modelo, parâmetros, estimador) por item da GRADE de tuning.
 
     Usada em: main.
     Importância: define o espaço de busca de hiperparâmetros da Etapa 6.
     """
-    peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
-    configs = []
-    for nome, lista_parametros in GRADE.items():
-        for parametros in lista_parametros:
-            configs.append(
-                (nome, parametros, criar_modelo(nome, parametros, peso_positivo))
-            )
-    return configs
+    return [(nome, parametros, criar_modelo(nome, parametros))
+            for nome, lista_parametros in GRADE.items() for parametros in lista_parametros]
 
 
 def ler_configuracoes_escolhidas() -> dict[str, dict]:
@@ -170,9 +160,9 @@ def avaliar_modelo(modelo, x: pd.DataFrame, y: pd.Series) -> dict[str, float]:
     return avaliar(y, modelo.predict(x), modelo.predict_proba(x)[:, 1])
 
 
-def auditar_vazamento(nome: str, metricas: dict[str, float], taxa_base: float) -> None:
+def auditar_vazamento(nome: str, metricas: dict[str, float]) -> None:
     """Interrompe a execução se alguma métrica de validação for boa demais: ROC-AUC, F1
-    ou PR-AUC (relativa à taxa base) acima dos limites do §9 de docs/metodologia.md.
+    ou acurácia acima dos limites do §9 de docs/metodologia.md.
 
     Usada em: main, antes de tocar o teste.
     Importância: alarme automático de vazamento silencioso; nada chega ao teste sem
@@ -183,8 +173,8 @@ def auditar_vazamento(nome: str, metricas: dict[str, float], taxa_base: float) -
         gatilhos.append(f"roc_auc={metricas['roc_auc']:.3f}")
     if metricas["f1"] > LIMITE_F1:
         gatilhos.append(f"f1={metricas['f1']:.3f}")
-    if metricas["pr_auc"] > LIMITE_PR_AUC_RAZAO * taxa_base:
-        gatilhos.append(f"pr_auc={metricas['pr_auc']:.3f} (taxa base {taxa_base:.3f})")
+    if metricas["acuracia"] > LIMITE_ACURACIA:
+        gatilhos.append(f"acuracia={metricas['acuracia']:.3f}")
     if gatilhos:
         raise ValueError(
             f"Possível vazamento em '{nome}': {gatilhos}. "
@@ -230,7 +220,7 @@ def main() -> None:
     # 1. Tuning: toda configuração treina no treino e é medida na validação
     resultados = []
     melhores = {}
-    for nome, parametros, modelo in montar_configuracoes(treino_y):
+    for nome, parametros, modelo in montar_configuracoes():
         inicio = time.perf_counter()
         modelo.fit(treino_x, treino_y)
         tempo = time.perf_counter() - inicio
@@ -245,8 +235,8 @@ def main() -> None:
             }
         )
         logger.info(
-            f"{nome} {parametros} | {tempo:.1f}s | f1={metricas['f1']:.3f} "
-            f"roc_auc={metricas['roc_auc']:.3f} pr_auc={metricas['pr_auc']:.3f}"
+            f"{nome} {parametros} | {tempo:.1f}s | acuracia={metricas['acuracia']:.3f} "
+            f"f1={metricas['f1']:.3f} roc_auc={metricas['roc_auc']:.3f}"
         )
 
         melhor_atual = melhores.get(nome)
@@ -266,7 +256,7 @@ def main() -> None:
 
     # 2. Auditoria de vazamento, na validação, antes de tocar o teste
     for nome, melhor in melhores.items():
-        auditar_vazamento(nome, melhor["metricas"], val_y.mean())
+        auditar_vazamento(nome, melhor["metricas"])
 
     importancias_rf = pd.Series(
         melhores["random_forest"]["modelo"].feature_importances_, index=treino_x.columns

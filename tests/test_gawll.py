@@ -165,7 +165,7 @@ def teste_busca_nao_le_o_teste():
 
 
 def teste_determinismo_e_cache():
-    """A mesma máscara dá o mesmo F1 nos três modelos, e o cache não retreina.
+    """A mesma máscara dá a mesma acurácia nos três modelos, e o cache não retreina.
 
     Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
     python main.py --testes).
@@ -183,21 +183,20 @@ def teste_determinismo_e_cache():
             nome, configuracoes[nome], x_treino, y_treino, x_val, y_val
         )
         # Sem cache: dois treinos independentes
-        f1_a, f1_b = (
+        acuracia_a, acuracia_b = (
             gawll.treinar_e_medir(
-                nome, configuracoes[nome], avaliador.peso_positivo, mascara,
-                x_treino, y_treino, x_val, y_val,
+                nome, configuracoes[nome], mascara, x_treino, y_treino, x_val, y_val,
             )
             for _ in range(2)
         )
-        assert f1_a == f1_b, f"{nome} não é determinístico: {f1_a} != {f1_b}"
+        assert acuracia_a == acuracia_b, f"{nome} não é determinístico: {acuracia_a} != {acuracia_b}"
 
         # Com cache: a máscara repetida e a vazia não geram treino
         vazia = np.zeros(len(features), bool)
         resultado = avaliador([mascara, mascara.copy(), vazia])
-        assert resultado == [f1_a, f1_a, 0.0]
+        assert resultado == [acuracia_a, acuracia_a, 0.0]
         assert avaliador.n_treinos == 1 and avaliador.n_avaliacoes == 3
-        logger.info(f"  {nome}: F1 {f1_a:.4f}, determinístico")
+        logger.info(f"  {nome}: acurácia {acuracia_a:.4f}, determinística")
 
 
 def teste_artificial():

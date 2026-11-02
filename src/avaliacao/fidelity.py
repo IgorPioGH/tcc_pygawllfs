@@ -20,7 +20,7 @@ Produz:
     results/tables/fidelidade.csv         uma linha por configuração × conjunto
     results/tables/fidelidade_resumo.csv  média por (modelo, método, k, conjunto),
                                           e a fração do desempenho de "todas"
-    results/figures/fidelidade.{png,pdf}  curvas no teste (F1 e PR-AUC)
+    results/figures/fidelidade.{png,pdf}  curvas de acurácia no teste
 Quem consome: o Cap. 4 (fidelidade é um dos quatro critérios da pergunta de pesquisa).
 """
 
@@ -63,7 +63,7 @@ DIR_FIGURAS = RAIZ / "results" / "figures"
 TOP_K = [5, 10, 15]
 N_SORTEIOS = 10
 SEMENTE = 42
-METRICAS = ["f1", "pr_auc", "roc_auc", "acuracia_balanceada"]
+METRICAS = ["acuracia", "f1", "pr_auc", "roc_auc", "acuracia_balanceada"]
 CONJUNTOS = ["val", "test"]  # o teste sempre por último
 
 # Cor e marcador por método (cores das figuras da Etapa 11 + o 4º slot da paleta).
@@ -119,14 +119,13 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict],
     """
     x_treino, y_treino = dados["train"]
     parametros = ler_configuracoes_escolhidas()[modelo_nome]
-    peso_positivo = (y_treino == 0).sum() / (y_treino == 1).sum()
 
     cache, linhas = {}, []
     for config in configuracoes:
         chave = frozenset(config["features"])
         if chave not in cache:
             colunas = [c for c in x_treino.columns if c in chave]  # ordem original
-            modelo = criar_modelo(modelo_nome, parametros, peso_positivo)
+            modelo = criar_modelo(modelo_nome, parametros)
             inicio = time.perf_counter()
             modelo.fit(x_treino[colunas], y_treino)
             tempo = time.perf_counter() - inicio
@@ -156,21 +155,22 @@ def resumir(fidelidade: pd.DataFrame) -> pd.DataFrame:
     """
     resumo = (fidelidade.groupby(["model", "method", "k", "conjunto"], as_index=False)
               .agg(**{m: (m, "mean") for m in METRICAS},
+                   acuracia_min=("acuracia", "min"), acuracia_max=("acuracia", "max"),
                    f1_min=("f1", "min"), f1_max=("f1", "max"),
                    pr_auc_min=("pr_auc", "min"), pr_auc_max=("pr_auc", "max"),
                    n_execucoes=("seed", "nunique")))
     todas = (resumo[resumo["method"] == "todas"]
-             .set_index(["model", "conjunto"])[["f1", "pr_auc"]])
-    for metrica in ["f1", "pr_auc"]:
+             .set_index(["model", "conjunto"])[["acuracia", "f1", "pr_auc"]])
+    for metrica in ["acuracia", "f1", "pr_auc"]:
         referencia = resumo.set_index(["model", "conjunto"]).index.map(todas[metrica])
         resumo[f"{metrica}_frac_todas"] = resumo[metrica].to_numpy() / np.asarray(referencia)
     return resumo
 
 
 def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_base: Path) -> None:
-    """Curvas no teste: desempenho × nº de features retidas, uma linha por método, com a
-    faixa dos sorteios aleatórios. As estrelas (x* do PyGAwLLfs) vêm da tabela
-    completa: uma por execução.
+    """Curvas no teste: acurácia × nº de features retidas, uma linha por método, com a
+    faixa dos sorteios aleatórios, o modelo com todas as features e o acaso (0,5). As
+    estrelas (x* do PyGAwLLfs) vêm da tabela completa: uma por execução.
 
     Usada em: main.
     Importância: é a figura do critério de fidelidade.
@@ -178,12 +178,12 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
     teste = resumo[resumo["conjunto"] == "test"]
     selecoes = fidelidade[(fidelidade["conjunto"] == "test") & (fidelidade["method"] == "gawll_x*")]
     # squeeze=False: eixos é sempre 2D, mesmo com um modelo só
-    fig, eixos = plt.subplots(2, len(MODELOS), figsize=(15, 8.4), layout="constrained",
+    fig, eixos = plt.subplots(1, len(MODELOS), figsize=(15, 4.6), layout="constrained",
                               sharex=True, squeeze=False)
     for coluna, modelo in enumerate(MODELOS):
         do_modelo = teste[teste["model"] == modelo]
         todas = do_modelo[do_modelo["method"] == "todas"].iloc[0]
-        for linha_eixo, (metrica, rotulo) in enumerate([("f1", "F1"), ("pr_auc", "PR-AUC")]):
+        for linha_eixo, (metrica, rotulo) in enumerate([("acuracia", "Acurácia")]):
             ax = eixos[linha_eixo, coluna]
 
             # Acaso: faixa entre o pior e o melhor dos sorteios, e a média
@@ -195,10 +195,13 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
                         xytext=(4, -10), textcoords="offset points", fontsize=7.5,
                         color=COR_TEXTO_SECUNDARIO)
 
-            # Todas as features: a referência de cima
+            # Todas as features: a referência de cima; o acaso (0,5): a de baixo
             ax.axhline(todas[metrica], color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle=":")
             ax.annotate(f"todas as {int(todas['k'])}", (5, todas[metrica]), xytext=(0, 3),
                         textcoords="offset points", fontsize=7.5, color=COR_TEXTO_SECUNDARIO)
+            ax.axhline(0.5, color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle="-.")
+            ax.annotate("acaso (0,5)", (5, 0.5), xytext=(0, 3), textcoords="offset points",
+                        fontsize=7.5, color=COR_TEXTO_SECUNDARIO)
 
             for metodo, (cor, marcador) in ESTILO.items():
                 curva = do_modelo[do_modelo["method"] == metodo].sort_values("k")
@@ -227,10 +230,8 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
                 matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:.2f}".replace(".", ",")))
             if coluna == 0:
                 ax.set_ylabel(f"{rotulo} no teste", color=COR_TEXTO_SECUNDARIO, fontsize=9)
-            if linha_eixo == 0:
-                ax.set_title(ROTULO_MODELO[modelo], loc="left", color=COR_TEXTO, fontsize=11)
-            else:
-                ax.set_xlabel("nº de features retidas (k)", color=COR_TEXTO_SECUNDARIO, fontsize=9)
+            ax.set_title(ROTULO_MODELO[modelo], loc="left", color=COR_TEXTO, fontsize=11)
+            ax.set_xlabel("nº de features retidas (k)", color=COR_TEXTO_SECUNDARIO, fontsize=9)
 
     alcas, rotulos = eixos[0, -1].get_legend_handles_labels()  # XGBoost tem os 4 métodos
     fig.legend(alcas, rotulos, loc="outside upper right", ncol=5, frameon=False, fontsize=8.5)
@@ -273,11 +274,11 @@ def main() -> None:
 
     with pd.option_context("display.width", 220, "display.max_rows", 200):
         teste = resumo[(resumo["conjunto"] == "test") & (resumo["method"] != "gawll_x*")]
-        logger.info("Teste — F1 e PR-AUC (média):\n" + teste.pivot_table(
-            index=["model", "method"], columns="k", values=["f1", "pr_auc"]).round(3).to_string())
+        logger.info("Teste — acurácia (média):\n" + teste.pivot_table(
+            index=["model", "method"], columns="k", values="acuracia").round(3).to_string())
         x_estrela = resumo[(resumo["conjunto"] == "test") & (resumo["method"] == "gawll_x*")]
         logger.info("Teste — subconjuntos do PyGAwLLfs:\n"
-                    + x_estrela[["model", "k", "f1", "pr_auc", "f1_frac_todas"]].round(3)
+                    + x_estrela[["model", "k", "acuracia", "acuracia_frac_todas"]].round(3)
                     .to_string(index=False))
 
 
