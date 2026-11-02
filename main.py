@@ -92,10 +92,9 @@ ETAPAS = [
           "matrizes de confusão dos modelos no teste, conferidas com baselines.csv",
           "< 1 min"),
     Etapa("rankings", "Avaliação", ["src/avaliacao/rankings.py", "src/avaliacao/stability.py",
-                                    "src/interpretacao/figuras_concordancia.py",
                                     "src/avaliacao/checagem_subamostra.py"],
-          "concordância entre rankings, estabilidade entre sementes, figuras e a checagem "
-          "da subamostra do PyGAwLLfs",
+          "concordância entre rankings, estabilidade entre sementes e a checagem da "
+          "subamostra do PyGAwLLfs",
           "~2 min"),
     Etapa("sintetico", "Avaliação", ["src/avaliacao/sintetico_gerar.py",
                                      "src/avaliacao/sintetico_aplicar.py",
@@ -115,8 +114,10 @@ ETAPAS = [
     Etapa("sintese", "Avaliação", ["src/avaliacao/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
-    Etapa("figuras", "Interpretação", ["src/interpretacao/figura_grafo.py"],
-          "figuras que explicam os resultados: grafo de interação",
+    Etapa("figuras", "Interpretação", ["src/interpretacao/figuras_concordancia.py",
+                                       "src/interpretacao/figura_grafo.py"],
+          "figuras que explicam os resultados: concordância, dispersão, estabilidade e "
+          "grafo de interação",
           "< 1 min"),
 ]
 assert all(etapa.fase in FASES for etapa in ETAPAS)

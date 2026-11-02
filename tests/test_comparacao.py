@@ -161,7 +161,7 @@ def teste_scripts_so_leem_csv():
         gerados = {p.name for p in pasta.rglob("*") if p.is_file()}
         for esperado in ["ranking_consolidado.csv", "concordancia.csv", "concordancia_resumo.csv",
                          "estabilidade.csv", "estabilidade_features.csv",
-                         "concordancia_intra_modelo.png", "concordancia_geral.png",
+                         "concordancia_intra_modelo.png", "dispersao_gawll_x_rf.png",
                          "estabilidade_sementes.png"]:
             assert esperado in gerados, f"faltou {esperado}"
 
