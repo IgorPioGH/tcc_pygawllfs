@@ -10,13 +10,24 @@ from sklearn.model_selection import KFold, train_test_split
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-CORTE_TREINO_FIM = "2025-09-01"
-CORTE_VAL_FIM = "2025-11-01"
+# Janelas de cada recorte: (início, fim do treino, fim da validação, fim do teste),
+# intervalos [a, b). Os recortes de 2024 e 2025 usam o mesmo calendário do principal
+# (treino jan–ago, validação set–out, teste nov–dez), um ano de cada vez.
+RECORTES = {
+    "principal": ("2024-01-01", "2025-09-01", "2025-11-01", "2026-01-01"),
+    "2024": ("2024-01-01", "2024-09-01", "2024-11-01", "2025-01-01"),
+    "2025": ("2025-01-01", "2025-09-01", "2025-11-01", "2026-01-01"),
+}
 SEMENTE = 42
 K_FOLDS = 5
 SUAVIZACAO = 20
 # Entre o ruído entre folds (0,001)
 TOLERANCIA = 0.01
+
+# Colunas não numéricas que ficam nos conjuntos: os horários previstos, para a
+# divisão temporal e as análises por dia e hora
+PERMITIDAS = ["Partida Prevista", "Chegada Prevista"]
+TAMANHO_SUBAMOSTRA = 50_000
 
 # Faixas de porte de aeroporto, do menor para o maior volume
 PORTES = ["pequeno", "medio", "grande", "hub"]
@@ -45,9 +56,11 @@ def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
     do dia), duração prevista, feriado e véspera, congestionamento na origem e no
     destino e one-hot do tipo de linha.
 
-    Usada em: bloco __main__ deste script (Etapa 5; main.py, etapa "dados").
+    Usada em: bloco __main__ deste script (main.py, etapa "preparacao") e
+    recortes.py, uma vez sobre a base inteira.
     Importância: só usa informação conhecida antes da partida (§4.3) e não usa o
-    alvo, por isso pode rodar antes do split sem vazamento.
+    alvo, por isso pode rodar antes do split sem vazamento. O congestionamento conta
+    os voos da malha inteira, então tem de ser calculado antes de qualquer recorte.
     """
     df["hora"] = df["Partida Prevista"].dt.hour
     df["dia_sem"] = df["Partida Prevista"].dt.dayofweek
@@ -88,22 +101,23 @@ def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def dividir_temporal(
-    df: pd.DataFrame,
+    df: pd.DataFrame, inicio: str, corte_treino: str, corte_val: str, fim: str
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Divide por data absoluta da Partida Prevista: treino até ago/2025, validação
-    set–out/2025, teste nov–dez/2025. Confere que nenhum conjunto ficou vazio, que
-    nenhuma linha se perdeu e que max(treino) ≤ min(validação) e max(validação) ≤
-    min(teste).
+    """Recorta a janela [inicio, fim) da Partida Prevista e a divide por data absoluta:
+    treino antes de corte_treino, validação até corte_val e teste até fim. Confere que
+    nenhum conjunto ficou vazio, que nenhuma linha da janela se perdeu e que
+    max(treino) ≤ min(validação) e max(validação) ≤ min(teste).
 
-    Usada em: bloco __main__ deste script.
+    Usada em: montar_conjuntos.
     Importância: implementa o split temporal do §4.4 (prever o futuro a partir do
-    passado, nada de shuffle).
+    passado, nada de shuffle), para qualquer recorte de RECORTES.
     """
-    data = df["Partida Prevista"]
+    janela = df[(df["Partida Prevista"] >= inicio) & (df["Partida Prevista"] < fim)]
+    data = janela["Partida Prevista"]
 
-    treino = df[data < CORTE_TREINO_FIM]
-    validacao = df[(data >= CORTE_TREINO_FIM) & (data < CORTE_VAL_FIM)]
-    teste = df[data >= CORTE_VAL_FIM]
+    treino = janela[data < corte_treino]
+    validacao = janela[(data >= corte_treino) & (data < corte_val)]
+    teste = janela[data >= corte_val]
 
     # Cópias explícitas, para evitar SettingWithCopyWarning
     treino = treino.copy()
@@ -120,7 +134,7 @@ def dividir_temporal(
             raise ValueError(f"Conjunto '{nome}' ficou vazio, confira os cortes")
 
     total = len(treino) + len(validacao) + len(teste)
-    if total != len(df):
+    if total != len(janela):
         raise ValueError("Partição perdeu ou duplicou linhas")
     if treino["Partida Prevista"].max() > validacao["Partida Prevista"].min():
         raise ValueError("Invariante Violado: Treino invade validação")
@@ -144,7 +158,7 @@ def ajustar_porte_aeroporto(treino: pd.DataFrame) -> dict:
     """Classifica cada aeroporto em pequeno, médio, grande ou hub pelos quartis do
     volume de pousos e decolagens no treino.
 
-    Usada em: bloco __main__ deste script.
+    Usada em: montar_conjuntos.
     Importância: resume a alta cardinalidade dos aeroportos em 4 faixas (N ≤ 40, §3);
     ajustado só no treino, para não vazar volume de validação e teste.
     """
@@ -165,7 +179,7 @@ def aplicar_porte(df: pd.DataFrame, mapa: dict) -> pd.DataFrame:
     """Aplica o mapa de porte à origem e ao destino (aeroporto fora do mapa vira
     "pequeno") e cria as dummies com categorias fixas.
 
-    Usada em: bloco __main__ deste script, nos três conjuntos.
+    Usada em: montar_conjuntos, nos três conjuntos.
     Importância: as categorias fixas garantem as mesmas 4 colunas em treino,
     validação e teste, mesmo que uma faixa falte num deles.
     """
@@ -212,7 +226,7 @@ def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
     nos outros K − 1. No fim, ajusta o mapa final no treino inteiro, para aplicar sem
     refit em validação e teste.
 
-    Usada em: bloco __main__ deste script, para empresa, origem e destino.
+    Usada em: montar_conjuntos, para empresa, origem e destino.
     Importância: é a correção do §4.10; nenhuma linha de treino usa o próprio rótulo
     no seu encoding.
     """
@@ -237,7 +251,7 @@ def verifica_vazamento(df, coluna, codificado, media_global):
     depender do rótulo dela, então a média do encoding com atrasado = 0 e com
     atrasado = 1 tem de ser igual (dentro da TOLERANCIA). Levanta erro se não for.
 
-    Usada em: bloco __main__ deste script, uma vez por coluna codificada.
+    Usada em: montar_conjuntos, uma vez por coluna codificada.
     Importância: prova, a cada execução, que o encoding não vazou o alvo dentro do
     treino.
     """
@@ -270,7 +284,7 @@ def remover_colunas_cruas(df):
     """Remove as colunas já transformadas (códigos ICAO, porte, tipo de linha) e os
     identificadores (número do voo, DI).
 
-    Usada em: bloco __main__ deste script, antes de salvar cada conjunto.
+    Usada em: montar_conjuntos, em cada conjunto.
     Importância: deixa só atributos que os modelos usam e impede que um identificador
     entre como feature.
     """
@@ -281,7 +295,7 @@ def conferir_tudo_numerico(df, permitidas):
     """Levanta erro se sobrar coluna não numérica além das permitidas (Partida Prevista
     e Chegada Prevista, mantidas para o split e para a validação de domínio).
 
-    Usada em: bloco __main__ deste script, antes de salvar cada conjunto.
+    Usada em: montar_conjuntos, em cada conjunto.
     Importância: garante que o dataset congelado entra direto nos modelos e que
     nenhuma coluna crua passou.
     """
@@ -291,11 +305,18 @@ def conferir_tudo_numerico(df, permitidas):
         raise ValueError(f"COlunas não numéricas inesperadas: {inesperadas}")
 
 
-if __name__ == "__main__":
-    df = pd.read_parquet(path=Path("data/interim/vra_target.parquet"))
+def montar_conjuntos(df: pd.DataFrame, recorte: str = "principal") -> dict[str, pd.DataFrame]:
+    """Treino, validação e teste de um recorte, prontos para os modelos: divide no
+    tempo, ajusta o porte dos aeroportos no treino e aplica nos três, faz o target
+    encoding fora da dobra (com a checagem de vazamento em cada coluna), remove as
+    colunas cruas e confere que só sobraram colunas numéricas. df já tem de vir de
+    features_sem_alvo.
 
-    df = features_sem_alvo(df=df)
-    treino, validacao, teste = dividir_temporal(df=df)
+    Usada em: bloco __main__ deste script; recortes.py.
+    Importância: a mesma preparação serve ao experimento principal e aos recortes
+    temporais; o que muda é só a janela de datas.
+    """
+    treino, validacao, teste = dividir_temporal(df, *RECORTES[recorte])
 
     mapa_porte = ajustar_porte_aeroporto(treino=treino)
     treino = aplicar_porte(df=treino, mapa=mapa_porte)
@@ -311,35 +332,43 @@ if __name__ == "__main__":
         teste[nome_novo] = teste[coluna].map(mapa).fillna(media)
         logger.info(f"{nome_novo}: media global do treino = {media:.4f}")
 
-    permitidas = ["Partida Prevista", "Chegada Prevista"]
-    conjuntos = {"train": treino, "val": validacao, "test": teste}
+    conjuntos = {}
+    for nome, conjunto in {"train": treino, "val": validacao, "test": teste}.items():
+        conjunto = remover_colunas_cruas(conjunto)
+        conferir_tudo_numerico(conjunto, PERMITIDAS)
+        conjuntos[nome] = conjunto
+    return conjuntos
+
+
+def criar_subamostra(treino: pd.DataFrame, validacao: pd.DataFrame,
+                     n: int = TAMANHO_SUBAMOSTRA, semente: int = SEMENTE) -> pd.DataFrame:
+    """Sorteia n linhas de treino + validação, estratificadas pela origem (treino ou
+    validação) e pelo alvo; a coluna "origem" diz de onde veio cada linha.
+
+    Usada em: bloco __main__ deste script; recortes.py.
+    Importância: é a base do PyGAwLLfs, que retreina o modelo milhares de vezes e não
+    cabe no treino completo; nunca inclui o teste.
+    """
+    treino = treino.assign(origem="treino")
+    validacao = validacao.assign(origem="validacao")
+    treino_validacao = pd.concat([treino, validacao])
+    chave = treino_validacao["origem"] + " " + treino_validacao["atrasado"].astype(str)
+    amostra, _ = train_test_split(
+        treino_validacao, stratify=chave, train_size=n, random_state=semente
+    )
+    logger.info(f"Linhas por origem: {amostra['origem'].value_counts()}")
+    logger.info(f"Taxa de atraso por origem: {amostra.groupby('origem')['atrasado'].mean()}")
+    return amostra
+
+
+if __name__ == "__main__":
+    df = features_sem_alvo(pd.read_parquet(Path("data/interim/vra_target.parquet")))
+    conjuntos = montar_conjuntos(df, "principal")
 
     Path("data/processed").mkdir(parents=True, exist_ok=True)
     for nome, conjunto in conjuntos.items():
-        conjunto = remover_colunas_cruas(conjunto)
-        conferir_tudo_numerico(conjunto, permitidas)
-        n_features = (
-            len(conjunto.columns) - len(permitidas) - 2
-        )  # menos alvo e atraso_min
+        n_features = len(conjunto.columns) - len(PERMITIDAS) - 2  # menos alvo e atraso_min
         logger.info(f"{nome}: {len(conjunto)} linhas, {n_features} atributos")
         conjunto.to_parquet(f"data/processed/{nome}.parquet")
-    treino = pd.read_parquet(Path("data/processed/train.parquet"))
-    validacao = pd.read_parquet(Path("data/processed/val.parquet"))
-    treino["origem"] = "treino"
-    validacao["origem"] = "validacao"
-    treino_validacao = pd.concat([treino, validacao])
-    treino_validacao["chave"] = (
-        treino_validacao["origem"] + " " + treino_validacao["atrasado"].astype(str)
-    )
-    amostra, _ = train_test_split(
-        treino_validacao,
-        stratify=treino_validacao["chave"],
-        train_size=50_000,
-        random_state=42,
-    )
-    amostra = amostra.drop(columns="chave")
-    logger.info(f"Linhas por origem: {amostra['origem'].value_counts()}")
-    media_validacao = amostra.groupby("origem")["atrasado"].mean()
-    logger.info(f"Taxa de atraso por origem: {media_validacao}")
-    # Salvar em data/processed
-    amostra.to_parquet("data/processed/subamostra.parquet")
+    subamostra = criar_subamostra(conjuntos["train"], conjuntos["val"])
+    subamostra.to_parquet("data/processed/subamostra.parquet")
