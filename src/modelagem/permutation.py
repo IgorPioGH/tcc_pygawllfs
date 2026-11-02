@@ -25,7 +25,7 @@ from sklearn.inspection import permutation_importance
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import (  # noqa: E402
+from src.modelagem.comum import (  # noqa: E402
     MODELOS,
     SEMENTES,
     carregar_modelo,
@@ -33,7 +33,7 @@ from src.importance.comum import (  # noqa: E402
     salvar_tabela,
     tabela_importancia,
 )
-from src.models.baselines import carregar  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def calcular_permutation(modelo, x: pd.DataFrame, y: pd.Series, semente: int,
     """Queda média de F1 ao embaralhar cada coluna, n_repeats vezes, na ordem de
     x.columns.
 
-    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Usada em: main; sintetico_aplicar.importancias_modelo_fixo.
     Importância: método agnóstico ao modelo; mede o quanto o modelo treinado depende
     de cada feature.
     """
@@ -66,7 +66,7 @@ def main() -> None:
     """Roda a Permutation nos três modelos e nas 5 sementes, sempre na validação (§4.9),
     e salva importancia_permutation.csv e o custo.
 
-    Usada em: python src/importance/permutation.py; main.py, etapa "importancias";
+    Usada em: python src/modelagem/permutation.py; main.py, etapa "importancias";
     tests/test_importancia.py.
     Importância: um dos quatro métodos; as sementes permitem medir a estabilidade.
     """

@@ -21,7 +21,7 @@ formato padrão feature,importance,rank,method,model,seed) e faz três coisas:
    → concordancia_resumo.csv, que responde: "os métodos concordam mais entre
      si quando aplicados ao mesmo modelo do que a modelos diferentes?"
 
-Quem consome: src/compare/figuras.py (heatmaps), Etapa 12 (top-k de cada
+Quem consome: src/interpretacao/figuras_concordancia.py (heatmaps), Etapa 12 (top-k de cada
 método, em ranking_consolidado.csv), Etapa 13 (top-15 por consenso) e o Cap. 4.
 """
 
@@ -37,7 +37,7 @@ from scipy.stats import kendalltau, spearmanr
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance import comum  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -257,7 +257,7 @@ def main() -> None:
     duplas e salva ranking_consolidado.csv, concordancia.csv e
     concordancia_resumo.csv.
 
-    Usada em: python src/compare/rankings.py; main.py, etapa "rankings";
+    Usada em: python src/avaliacao/rankings.py; main.py, etapa "rankings";
     tests/test_comparacao.py.
     Importância: responde ao critério de concordância da pergunta de pesquisa.
     """

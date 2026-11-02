@@ -13,11 +13,11 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-# Raiz do projeto: comum.py -> importance/ -> src/ -> raiz
+# Raiz do projeto: comum.py -> modelagem/ -> src/ -> raiz
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.models.baselines import DIR_MODELOS, DIR_TABELAS  # noqa: E402
+from src.modelagem.baselines import DIR_MODELOS, DIR_TABELAS  # noqa: E402
 
 MODELOS = ["logreg", "random_forest", "xgboost"]
 SEMENTES = [42, 43, 44, 45, 46]
@@ -49,7 +49,7 @@ def tabela_importancia(
     sinal, fica em "importance" (§4.8). Na Permutation o rank usa o valor bruto:
     negativo fica no fim.
 
-    Usada em: intrinsic, permutation, shap_global, consolidar_gawll, aplicar_metodos
+    Usada em: intrinsic, permutation, shap_global, consolidar_gawll, sintetico_aplicar
     e testes.
     Importância: impõe um formato e uma regra de rank únicos para todos os métodos,
     pré-requisito para compará-los.

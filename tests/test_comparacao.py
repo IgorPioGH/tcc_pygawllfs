@@ -1,7 +1,7 @@
-"""Testes da Etapa 11 — comparação de rankings (src/compare/).
+"""Testes da Etapa 11 — comparação de rankings (src/avaliacao/).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
-depois de rankings.py, stability.py e figuras.py:
+depois de rankings.py, stability.py e figuras_concordancia.py:
     python tests/test_comparacao.py
 
 Os quatro primeiros conferem as métricas em casos montados à mão; o quinto
@@ -23,8 +23,9 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import figuras, rankings, stability  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.avaliacao import rankings, stability  # noqa: E402
+from src.interpretacao import figuras_concordancia  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -152,10 +153,10 @@ def teste_scripts_so_leem_csv():
             shutil.copy(DIR_TABELAS / f"importancia_{metodo}.csv", pasta)
         with mock.patch("pandas.read_parquet", side_effect=proibir_parquet), \
                 mock.patch.object(comum, "DIR_TABELAS", pasta), \
-                mock.patch.object(figuras, "DIR_FIGURAS", pasta / "figuras"):
+                mock.patch.object(figuras_concordancia, "DIR_FIGURAS", pasta / "figuras"):
             rankings.main()
             stability.main()
-            figuras.main()
+            figuras_concordancia.main()
 
         gerados = {p.name for p in pasta.rglob("*") if p.is_file()}
         for esperado in ["ranking_consolidado.csv", "concordancia.csv", "concordancia_resumo.csv",

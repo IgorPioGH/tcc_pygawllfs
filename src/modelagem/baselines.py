@@ -11,7 +11,7 @@ Saídas:
     results/tables/coeficientes_logreg.csv  importância intrínseca da LogReg
     experiments/runs/baselines/<modelo>.joblib
 
-Também é a fonte única dos modelos do PyGAwLLfs (src/importance/gawll.py):
+Também é a fonte única dos modelos do PyGAwLLfs (src/modelagem/gawll.py):
 criar_modelo() monta o estimador e ler_configuracoes_escolhidas() devolve os
 hiperparâmetros escolhidos aqui, para que o GA explique o mesmo modelo (§4.11).
 """
@@ -35,8 +35,8 @@ from xgboost import XGBClassifier
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.data.clean import assert_sem_vazamento
-from src.models.evaluate import avaliar
+from src.preparacao.clean import assert_sem_vazamento
+from src.modelagem.evaluate import avaliar
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ def criar_modelo(nome: str, parametros: dict, peso_positivo: float, n_jobs: int 
     positivos no treino (o equivalente do class_weight="balanced" no XGBoost); n_jobs
     = 1 no PyGAwLLfs, que já paraleliza entre os indivíduos.
 
-    Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity e aplicar_metodos.
+    Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity e sintetico_aplicar.
     Importância: fonte única dos modelos; o GA, a fidelidade e o sintético treinam
     exatamente o mesmo modelo da Etapa 6 (§4.11).
     """
@@ -148,7 +148,7 @@ def ler_configuracoes_escolhidas() -> dict[str, dict]:
     "parametros" foi salva como texto; ast.literal_eval a converte de volta em
     dicionário sem executar código.
 
-    Usada em: gawll.main, fidelity, aplicar_metodos e testes.
+    Usada em: gawll.main, fidelity, sintetico_aplicar e testes.
     Importância: todas as etapas usam os hiperparâmetros escolhidos uma única vez, na
     validação.
     """
@@ -214,7 +214,7 @@ def main() -> None:
     avaliação única da melhor configuração de cada modelo no teste. Salva
     baselines*.csv, os coeficientes da LogReg e os modelos .joblib.
 
-    Usada em: python src/models/baselines.py; main.py, etapa "baselines".
+    Usada em: python src/modelagem/baselines.py; main.py, etapa "baselines".
     Importância: produz os modelos que todos os métodos de importância explicam e o
     desempenho de referência; é um dos dois únicos usos do teste (§4.9).
     """

@@ -11,6 +11,7 @@ O eixo vai de -40 a 180 min, onde está quase toda a massa; a cauda até
 """
 
 import logging
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -24,6 +25,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 RAIZ = Path(__file__).resolve().parents[2]
+sys.path.append(str(RAIZ))
+
+from src.graficos import porcentagem  # noqa: E402
+
 ARQUIVO_TARGET = RAIZ / "data" / "interim" / "vra_target.parquet"
 DIR_FIGURAS = RAIZ / "results" / "figures"
 
@@ -35,15 +40,6 @@ COR_SERIE = "#2a78d6"
 COR_TEXTO = "#0b0b0b"
 COR_TEXTO_SECUNDARIO = "#52514e"
 COR_GRADE = "#e4e3df"
-
-
-def porcentagem(fracao: float) -> str:
-    """0.1847 -> "18,5%" (vírgula decimal, como no texto do TCC).
-
-    Usada em: histograma_atraso.
-    Importância: só apresentação.
-    """
-    return f"{fracao:.1%}".replace(".", ",")
 
 
 def histograma_atraso(atraso_min: pd.Series, caminho_base: Path) -> None:
@@ -109,7 +105,7 @@ def histograma_atraso(atraso_min: pd.Series, caminho_base: Path) -> None:
 def main() -> None:
     """Lê atraso_min de vra_target.parquet e gera results/figures/histograma_atraso.
 
-    Usada em: python src/data/figuras.py; main.py, etapa "extras".
+    Usada em: python src/dados/figuras.py; main.py, etapa "extras".
     Importância: figura descritiva do texto (Caps. 3 e 4).
     """
     atraso = pd.read_parquet(ARQUIVO_TARGET, columns=["atraso_min"])["atraso_min"]

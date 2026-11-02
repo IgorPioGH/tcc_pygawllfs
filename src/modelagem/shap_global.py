@@ -32,14 +32,14 @@ import shap
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import (  # noqa: E402
+from src.modelagem.comum import (  # noqa: E402
     SEMENTES,
     carregar_modelo,
     salvar_custo,
     salvar_tabela,
     tabela_importancia,
 )
-from src.models.baselines import carregar  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ def calcular_shap(modelo, amostra: pd.DataFrame) -> list[float]:
     """mean(|SHAP|) de cada coluna da amostra, para a classe positiva, com o
     TreeExplainer.
 
-    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Usada em: main; sintetico_aplicar.importancias_modelo_fixo.
     Importância: importância global a partir de explicações locais; TreeSHAP é exato
     em árvores, e KernelSHAP seria inviável nesta escala (§4.6).
     """
@@ -71,7 +71,7 @@ def main() -> None:
     """Roda o TreeSHAP no RF e no XGBoost, numa amostra de 10 mil linhas da validação
     por semente, e salva importancia_shap.csv e o custo.
 
-    Usada em: python src/importance/shap_global.py; main.py, etapa "importancias";
+    Usada em: python src/modelagem/shap_global.py; main.py, etapa "importancias";
     tests/test_importancia.py.
     Importância: um dos quatro métodos; a LogReg fica de fora porque os coeficientes
     padronizados já cumprem esse papel (§4.6).

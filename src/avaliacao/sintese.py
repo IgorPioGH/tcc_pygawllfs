@@ -34,8 +34,8 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.rankings import METODOS, MODELOS, ordenar  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.avaliacao.rankings import METODOS, MODELOS, ordenar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ def top_features(ranking: pd.DataFrame, n: int = N_TOP) -> pd.DataFrame:
 def main() -> None:
     """Lê as tabelas finais, monta as três sínteses e salva em results/tables/.
 
-    Usada em: python src/compare/sintese.py; main.py, etapa "sintese";
+    Usada em: python src/avaliacao/sintese.py; main.py, etapa "sintese";
     tests/test_sintese.py.
     Importância: é a última etapa do pipeline; junta tudo o que o relatório final
     precisa sem recalcular nada.

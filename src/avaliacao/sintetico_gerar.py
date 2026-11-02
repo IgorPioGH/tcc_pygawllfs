@@ -20,7 +20,7 @@ presente (é a redundância).
 
 Produz data/processed/sintetico.parquet (x1..x10, y, conjunto), com a
 divisão treino/validação estratificada por y. Quem consome:
-aplicar_metodos.py (roda os métodos) e recovery.py (usa o GABARITO).
+sintetico_aplicar.py (roda os métodos) e sintetico_recuperar.py (usa o GABARITO).
 """
 
 import logging
@@ -111,7 +111,7 @@ def main() -> None:
     """Etapa 10a: gera e divide o sintético, registra as checagens (corr(x1, y) ≈ 0,
     corr(x3, x5) ≈ rho) e salva sintetico.parquet.
 
-    Usada em: python src/synthetic/generate.py; main.py, etapa "sintetico".
+    Usada em: python src/avaliacao/sintetico_gerar.py; main.py, etapa "sintetico".
     Importância: ponto de partida do Diferencial 1.
     """
     df = dividir(gerar())

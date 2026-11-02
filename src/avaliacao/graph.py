@@ -18,7 +18,7 @@ média só das sementes em que o par foi sondado e só ranqueia pares sondados e
 pelo menos MIN_SEMENTES_RANKING sementes. A original ("com_zeros") fica para a
 análise de sensibilidade.
 Quem consome: friedman_h.py (features do grafo entram no conjunto do H, §4.7),
-compare/interacoes.py (PyGAwLLfs × H) e domain/validate_pairs.py (Etapa 15).
+avaliacao/interacoes.py (PyGAwLLfs × H) e domain/validate_pairs.py (Etapa 15).
 """
 
 import pandas as pd

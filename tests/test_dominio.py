@@ -25,7 +25,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
 from src.domain import validate_pairs as v  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

@@ -46,9 +46,9 @@ import pandas as pd  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.figuras import COR_GRADE, COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
-from src.compare.rankings import comparar  # noqa: E402
-from src.compare.stability import concordancia_entre_sementes  # noqa: E402
+from src.graficos import COR_GRADE, COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
+from src.avaliacao.rankings import comparar  # noqa: E402
+from src.avaliacao.stability import concordancia_entre_sementes  # noqa: E402
 from src.domain.validate_pairs import (  # noqa: E402
     COR_TIPO,
     SEMENTE,
@@ -58,13 +58,13 @@ from src.domain.validate_pairs import (  # noqa: E402
     tipo_do_par,
     variavel,
 )
-from src.importance import comum  # noqa: E402
-from src.interaction.graph import (  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.avaliacao.graph import (  # noqa: E402
     interacao_media,
     marcar_nao_sondadas,
     marcar_sondagens,
 )
-from src.interaction.friedman_h import MODELOS_H  # noqa: E402
+from src.modelagem.friedman_h import MODELOS_H  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -310,7 +310,7 @@ def main() -> None:
     valida os tops no domínio e salva interacoes*.csv e a figura. Roda depois da
     Etapa 15.
 
-    Usada em: python src/compare/interacoes.py; main.py, etapa "interacoes";
+    Usada em: python src/avaliacao/interacoes.py; main.py, etapa "interacoes";
     tests/test_interacao.py.
     Importância: responde se o PyGAwLLfs e o H de Friedman apontam as mesmas
     interações.

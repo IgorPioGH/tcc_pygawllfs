@@ -25,55 +25,33 @@ matplotlib.use("Agg")  # só gera arquivo, sem abrir janela
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
-from matplotlib.colors import LinearSegmentedColormap, to_rgb  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.rankings import METODOS, MODELOS  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.avaliacao.rankings import METODOS, MODELOS  # noqa: E402
+from src.graficos import (  # noqa: E402
+    COR_GRADE,
+    COR_TEXTO,
+    COR_TEXTO_SECUNDARIO,
+    ESCALA_RBO,
+    ESCALA_SPEARMAN,
+    ROTULO_METODO,
+    ROTULO_MODELO,
+    cor_do_texto,
+    decimal,
+    formatar_barra,
+    salvar,
+)
+from src.modelagem import comum  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 DIR_FIGURAS = RAIZ / "results" / "figures"
 
-ROTULO_METODO = {"intrinseca": "Intrínseca", "permutation": "Permutation",
-                 "shap": "SHAP", "gawll": "PyGAwLLfs"}
-ROTULO_MODELO = {"logreg": "LogReg", "random_forest": "Random Forest", "xgboost": "XGBoost"}
-
-COR_TEXTO = "#0b0b0b"
-COR_TEXTO_SECUNDARIO = "#52514e"
-COR_GRADE = "#e1e0d9"
-# Divergente: vermelho (discordância) – cinza neutro (zero) – azul (concordância)
-ESCALA_SPEARMAN = LinearSegmentedColormap.from_list(
-    "spearman", ["#e34948", "#f0efec", "#256abf"])
-# Sequencial: rampa azul, do passo 100 ao 700
-ESCALA_RBO = LinearSegmentedColormap.from_list(
-    "rbo", ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"])
 # Uma cor por método na figura de estabilidade (slots 1–3 da paleta categórica)
 COR_METODO = {"permutation": "#2a78d6", "shap": "#eb6834", "gawll": "#1baf7a"}
-
-
-def decimal(valor: float) -> str:
-    """0.94 -> "0,94" (vírgula decimal, como no texto do TCC).
-
-    Usada em: desenhar_triangulo e figura_estabilidade.
-    Importância: só apresentação.
-    """
-    return f"{valor:.2f}".replace(".", ",")
-
-
-def cor_do_texto(cor_fundo) -> str:
-    """Texto branco em célula escura e tinta escura em célula clara, pela luminância da
-    cor de fundo.
-
-    Usada em: desenhar_triangulo.
-    Importância: legibilidade dos números escritos nos heatmaps.
-    """
-    r, g, b = to_rgb(cor_fundo)
-    luminancia = 0.2126 * r + 0.7152 * g + 0.0722 * b
-    return "white" if luminancia < 0.5 else COR_TEXTO
 
 
 def matriz_simetrica(concordancia: pd.DataFrame, chaves: list, metrica: str) -> np.ndarray:
@@ -117,19 +95,6 @@ def desenhar_triangulo(ax, matriz, rotulos, escala, vmin, vmax, tamanho_fonte=9)
     for lado in ax.spines.values():
         lado.set_visible(False)
     return imagem
-
-
-def formatar_barra(barra, rotulo: str) -> None:
-    """Barra de cor discreta, com vírgula decimal.
-
-    Usada em: figura_intra_modelo e figura_geral.
-    Importância: só apresentação.
-    """
-    barra.set_label(rotulo, color=COR_TEXTO_SECUNDARIO, fontsize=9)
-    barra.outline.set_visible(False)
-    barra.ax.tick_params(labelsize=8, colors=COR_TEXTO_SECUNDARIO)
-    barra.ax.yaxis.set_major_formatter(
-        matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}".replace(".", ",")))
 
 
 def figura_intra_modelo(concordancia: pd.DataFrame, caminho_base: Path) -> None:
@@ -252,32 +217,10 @@ def figura_estabilidade(estabilidade: pd.DataFrame, caminho_base: Path) -> None:
     salvar(fig, caminho_base)
 
 
-# O PDF guarda a data de criação; sem ela, a mesma figura gera o mesmo arquivo,
-# e rodar o pipeline de novo não altera o que já está versionado no git
-METADADOS_PDF = {"CreationDate": None}
-
-
-def salvar(fig, caminho_base: Path) -> None:
-    """Salva em .png e .pdf (caminho_base sem extensão) e fecha a figura. O PDF sai sem
-    data de criação, então a mesma figura gera sempre o mesmo arquivo.
-
-    Usada em: todas as figuras de src/compare/ e src/domain/.
-    Importância: rodar o pipeline de novo não altera arquivos versionados se os
-    resultados não mudaram.
-    """
-    caminho_base.parent.mkdir(parents=True, exist_ok=True)
-    for extensao in ["png", "pdf"]:
-        fig.savefig(caminho_base.with_suffix(f".{extensao}"), dpi=200,
-                    facecolor="white", bbox_inches="tight",
-                    metadata=METADADOS_PDF if extensao == "pdf" else None)
-    plt.close(fig)
-    logger.info(f"Salvo: {caminho_base.name}.png e .pdf")
-
-
 def main() -> None:
     """Etapa 11c: lê concordancia.csv e estabilidade.csv e gera as três figuras.
 
-    Usada em: python src/compare/figuras.py; main.py, etapa "rankings";
+    Usada em: python src/interpretacao/figuras_concordancia.py; main.py, etapa "rankings";
     tests/test_comparacao.py.
     Importância: separa desenho de cálculo: as figuras só leem CSV.
     """

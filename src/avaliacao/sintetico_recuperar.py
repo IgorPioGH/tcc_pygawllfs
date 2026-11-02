@@ -1,7 +1,7 @@
 """Etapa 10 — Diferencial 1: mede o quanto cada método recupera o gabarito.
 
-Recebe as tabelas de aplicar_metodos.py (results/tables/sintetico_*.csv) e
-o GABARITO de generate.py. Responde "qual método recupera a verdade?" em
+Recebe as tabelas de sintetico_aplicar.py (results/tables/sintetico_*.csv) e
+o GABARITO de sintetico_gerar.py. Responde "qual método recupera a verdade?" em
 três partes, sempre por (método, modelo) — a comparação é intra-modelo
 primeiro (§4.11): a LogReg, linear, não consegue usar x1*x2 em nenhum método.
 
@@ -43,9 +43,9 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import salvar_tabela  # noqa: E402
-from src.models.baselines import DIR_TABELAS  # noqa: E402
-from src.synthetic.generate import GABARITO, PAR_INTERACAO, PARES_REDUNDANCIA  # noqa: E402
+from src.modelagem.comum import salvar_tabela  # noqa: E402
+from src.modelagem.baselines import DIR_TABELAS  # noqa: E402
+from src.avaliacao.sintetico_gerar import GABARITO, PAR_INTERACAO, PARES_REDUNDANCIA  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -156,7 +156,7 @@ def main() -> None:
     """Etapa 10c: lê as tabelas do sintético, calcula as métricas de importância,
     interação e seleção e salva recuperacao_sintetico*.csv.
 
-    Usada em: python src/synthetic/recovery.py; main.py, etapa "sintetico".
+    Usada em: python src/avaliacao/sintetico_recuperar.py; main.py, etapa "sintetico".
     Importância: gera a tabela método × recuperação da verdade do Diferencial 1.
     """
     importancia = pd.read_csv(DIR_TABELAS / "sintetico_importancia.csv")

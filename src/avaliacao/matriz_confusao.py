@@ -15,7 +15,7 @@ Produz:
     results/figures/matriz_confusao.{png,pdf}   as três matrizes lado a lado
 Quem consome: a seção de modelos do texto do TCC.
 
-Roda em segundos, sem retreinar: python src/models/matriz_confusao.py (depois
+Roda em segundos, sem retreinar: python src/avaliacao/matriz_confusao.py (depois
 da Etapa 6; no pipeline, logo depois de baselines.py).
 """
 
@@ -34,7 +34,7 @@ from sklearn.metrics import confusion_matrix  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.figuras import (  # noqa: E402
+from src.graficos import (  # noqa: E402
     COR_TEXTO,
     COR_TEXTO_SECUNDARIO,
     ESCALA_RBO,
@@ -42,11 +42,11 @@ from src.compare.figuras import (  # noqa: E402
     cor_do_texto,
     decimal,
     formatar_barra,
+    porcentagem,
     salvar,
 )
-from src.data.figuras import porcentagem  # noqa: E402
-from src.importance import comum  # noqa: E402
-from src.models.baselines import carregar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ def main() -> None:
     """Etapa 6b: matriz de confusão de cada modelo da Etapa 6 no teste, conferida
     contra baselines.csv; salva matriz_confusao.csv e a figura.
 
-    Usada em: python src/models/matriz_confusao.py; main.py, etapa "baselines".
+    Usada em: python src/avaliacao/matriz_confusao.py; main.py, etapa "baselines".
     Importância: complementa a avaliação final da Etapa 6 sem retreinar nada.
     """
     teste_x, teste_y = carregar("test")

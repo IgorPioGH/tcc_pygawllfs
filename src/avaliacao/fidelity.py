@@ -39,7 +39,7 @@ import pandas as pd  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.figuras import (  # noqa: E402
+from src.graficos import (  # noqa: E402
     COR_GRADE,
     COR_TEXTO,
     COR_TEXTO_SECUNDARIO,
@@ -47,9 +47,9 @@ from src.compare.figuras import (  # noqa: E402
     ROTULO_MODELO,
     salvar,
 )
-from src.compare.rankings import MODELOS, ordenar  # noqa: E402
-from src.importance import comum  # noqa: E402
-from src.models.baselines import (  # noqa: E402
+from src.avaliacao.rankings import MODELOS, ordenar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.modelagem.baselines import (  # noqa: E402
     avaliar_modelo,
     carregar,
     criar_modelo,
@@ -248,7 +248,7 @@ def main() -> None:
     configurações dos três modelos e salva fidelidade.csv, fidelidade_resumo.csv e a
     figura.
 
-    Usada em: python src/compare/fidelity.py; main.py, etapa "fidelidade";
+    Usada em: python src/avaliacao/fidelity.py; main.py, etapa "fidelidade";
     tests/test_fidelidade.py.
     Importância: mede se o top-k de cada método preserva o desempenho, o critério de
     fidelidade da pergunta de pesquisa.

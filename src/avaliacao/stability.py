@@ -16,7 +16,7 @@ Produz:
     estabilidade_features.csv  por feature: rank médio, desvio-padrão do rank e
                                frequência no top-5 e no top-10 entre as sementes
 Quem consome: o Cap. 4 (estabilidade é um dos quatro critérios da pergunta de
-pesquisa) e a figura de estabilidade em src/compare/figuras.py.
+pesquisa) e a figura de estabilidade em src/interpretacao/figuras_concordancia.py.
 """
 
 import logging
@@ -29,8 +29,8 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.rankings import METODOS, MODELOS, TOP_K, carregar_importancias, comparar  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.avaliacao.rankings import METODOS, MODELOS, TOP_K, carregar_importancias, comparar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ def main() -> None:
     """Etapa 11b: mede a estabilidade de cada (método, modelo) com mais de uma semente e
     salva estabilidade.csv e estabilidade_features.csv.
 
-    Usada em: python src/compare/stability.py; main.py, etapa "rankings";
+    Usada em: python src/avaliacao/stability.py; main.py, etapa "rankings";
     tests/test_comparacao.py.
     Importância: responde ao critério de estabilidade; a intrínseca é determinística
     e fica de fora.

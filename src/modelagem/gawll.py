@@ -20,7 +20,7 @@ subclasse. Os dois src/ (projeto e PyGAwLLfs) são namespace packages, sem
 __init__.py, e se fundem no sys.path. Nunca criar __init__.py em nenhum deles.
 
 Uso (da raiz do repositório):
-    python src/importance/gawll.py --modelos random_forest --sementes 42 43
+    python src/modelagem/gawll.py --modelos random_forest --sementes 42 43
 """
 
 import argparse
@@ -36,7 +36,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from sklearn.metrics import f1_score
 
-# Raiz do projeto: gawll.py -> importance/ -> src/ -> raiz
+# Raiz do projeto: gawll.py -> modelagem/ -> src/ -> raiz
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 sys.path.append(str(RAIZ / "PyGAwLLfs"))
@@ -47,8 +47,8 @@ from src.core.gawll import GAwLL, Individual  # noqa: E402
 from src.core.importance import Importance  # noqa: E402
 from src.core.linkage_learning_mutation import LinkageLearning  # noqa: E402
 from src.utils.statistic import PopulationAnalyzer  # noqa: E402
-from src.data.clean import assert_sem_vazamento  # noqa: E402  (projeto)
-from src.models.baselines import (  # noqa: E402
+from src.preparacao.clean import assert_sem_vazamento  # noqa: E402  (projeto)
+from src.modelagem.baselines import (  # noqa: E402
     NAO_ATRIBUTOS,
     criar_modelo,
     ler_configuracoes_escolhidas,
@@ -349,7 +349,7 @@ def executar(
     fitness, F1 de validação, vimp, vint, features, tempo, nº de treinos e cobertura
     de pares.
 
-    Usada em: main; aplicar_metodos.rodar_gawll; tests/test_gawll.py.
+    Usada em: main; sintetico_aplicar.rodar_gawll; tests/test_gawll.py.
     Importância: o checkpoint por execução permite retomar após uma queda. O
     f1_validacao salvo é otimista e nunca é reportado como desempenho (§4.1).
     """
@@ -419,7 +419,7 @@ def main() -> None:
     """Etapas 7 e 8: roda as execuções pedidas (--modelos, --sementes, --geracoes,
     --pop, --saida), com log em arquivo, e pula as que já têm checkpoint.
 
-    Usada em: python src/importance/gawll.py; main.py, etapa "pygawllfs".
+    Usada em: python src/modelagem/gawll.py; main.py, etapa "pygawllfs".
     Importância: é a execução mais cara do projeto (~5,4 h); a retomada torna segura
     uma queda no meio.
     """

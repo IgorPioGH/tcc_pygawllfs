@@ -2,12 +2,13 @@
 
 Cada etapa é um ou mais scripts de src/, executados como processos separados
 (python src/.../arquivo.py) a partir da raiz do repositório — exatamente como
-rodar cada um à mão. Este arquivo só cuida da ordem, do tempo de cada etapa e
+rodar cada um à mão. As etapas e as pastas de src/ seguem as fases do CRISP-DM:
+dados, preparação, modelagem, avaliação e interpretação. Este arquivo só cuida da ordem, do tempo de cada etapa e
 de parar no primeiro erro, dizendo de onde retomar.
 
 Uso (da raiz, com o ambiente ativado: conda activate tcc_pygawllfs):
-    python main.py                       # o pipeline inteiro, do download à fidelidade
-    python main.py --listar              # as etapas, o que fazem e o tempo esperado
+    python main.py                       # o pipeline inteiro
+    python main.py --listar              # as etapas por fase, o que fazem e o tempo
     python main.py --de importancias     # a partir de uma etapa
     python main.py --ate baselines       # até uma etapa
     python main.py --so rankings sintese # só as etapas citadas (na ordem do pipeline)
@@ -33,15 +34,23 @@ ARQUIVO_LOG = RAIZ / "experiments" / "runs" / "pipeline.log"
 logger = logging.getLogger("pipeline")
 
 
+# Fases do CRISP-DM (Chapman et al., 2000), na ordem em que o trabalho as percorre.
+# O entendimento do problema (fase 1) não tem código: está em docs/01-problema.md.
+FASES = ["Dados", "Preparação", "Modelagem", "Avaliação", "Interpretação"]
+
+
 @dataclass
 class Etapa:
-    """Uma etapa do pipeline: nome, scripts em ordem, descrição e tempo esperado.
+    """Uma etapa do pipeline: nome, fase do CRISP-DM, scripts em ordem, descrição e
+    tempo esperado.
 
     Usada em: lista ETAPAS, escolher_etapas e main deste arquivo.
     Importância: a ordem de ETAPAS é a ordem de dependência dos dados; é o mapa do
-    pipeline num lugar só.
+    pipeline num lugar só. A fase diz a que parte do CRISP-DM cada etapa pertence (a
+    mesma pasta de src/ onde estão os seus scripts).
     """
     nome: str
+    fase: str
     scripts: list[str]
     descricao: str
     tempo_esperado: str
@@ -49,45 +58,52 @@ class Etapa:
 
 # Ordem obrigatória: cada etapa lê o que as anteriores produziram.
 ETAPAS = [
-    Etapa("download", ["src/data/download.py"],
+    Etapa("download", "Dados", ["src/dados/download.py"],
           "baixa os 24 CSVs mensais do VRA (ANAC) para data/raw/; pula os já baixados",
           "~5 min (depende da rede)"),
-    Etapa("dados", ["src/data/ler_dados.py", "src/data/clean.py",
-                    "src/data/target.py", "src/data/features.py"],
-          "consolida, limpa, cria o alvo, as 29 features, o split temporal e a subamostra",
-          "~3 min"),
-    Etapa("baselines", ["src/models/baselines.py", "src/models/matriz_confusao.py"],
-          "LogReg, RF e XGBoost: tuning na validação, avaliação única no teste "
-          "e matrizes de confusão",
-          "~3 min"),
-    Etapa("pygawllfs", ["src/importance/gawll.py", "src/importance/consolidar_gawll.py"],
+    Etapa("dados", "Dados", ["src/dados/ler_dados.py"],
+          "consolida os 24 CSVs numa base bruta única",
+          "< 1 min"),
+    Etapa("preparacao", "Preparação", ["src/preparacao/clean.py", "src/preparacao/target.py",
+                                       "src/preparacao/features.py"],
+          "limpa, cria o alvo, as 29 features, a divisão temporal e a subamostra",
+          "< 1 min"),
+    Etapa("baselines", "Modelagem", ["src/modelagem/baselines.py"],
+          "LogReg, RF e XGBoost: ajuste na validação e avaliação única no teste",
+          "~1 min"),
+    Etapa("pygawllfs", "Modelagem", ["src/modelagem/gawll.py", "src/modelagem/consolidar_gawll.py"],
           "15 execuções do PyGAwLLfs corrigido (3 modelos x 5 sementes) e suas tabelas",
-          "~5,4 h (retoma do checkpoint)"),
-    Etapa("importancias", ["src/importance/intrinsic.py", "src/importance/permutation.py",
-                           "src/importance/shap_global.py"],
+          "~5 h (retoma do checkpoint)"),
+    Etapa("importancias", "Modelagem", ["src/modelagem/intrinsic.py", "src/modelagem/permutation.py",
+                                        "src/modelagem/shap_global.py"],
           "importância intrínseca, Permutation e TreeSHAP, na validação",
-          "~18 min"),
-    Etapa("rankings", ["src/compare/rankings.py", "src/compare/stability.py",
-                       "src/compare/figuras.py"],
+          "~16 min"),
+    Etapa("desempenho", "Avaliação", ["src/avaliacao/matriz_confusao.py"],
+          "matrizes de confusão dos modelos no teste, conferidas com baselines.csv",
+          "< 1 min"),
+    Etapa("rankings", "Avaliação", ["src/avaliacao/rankings.py", "src/avaliacao/stability.py",
+                                    "src/interpretacao/figuras_concordancia.py"],
           "concordância entre rankings, estabilidade entre sementes e figuras",
           "< 1 min"),
-    Etapa("sintetico", ["src/synthetic/generate.py", "src/synthetic/aplicar_metodos.py",
-                        "src/synthetic/recovery.py"],
-          "Diferencial 1: dataset com gabarito, todos os métodos e a recuperação da verdade",
+    Etapa("sintetico", "Avaliação", ["src/avaliacao/sintetico_gerar.py",
+                                     "src/avaliacao/sintetico_aplicar.py",
+                                     "src/avaliacao/sintetico_recuperar.py"],
+          "dataset com gabarito, todos os métodos e a recuperação da verdade",
           "~30 min (~3 min com os checkpoints do GA)"),
-    Etapa("interacoes", ["src/interaction/friedman_h.py", "src/compare/interacoes.py"],
+    Etapa("interacoes", "Avaliação", ["src/modelagem/friedman_h.py", "src/avaliacao/interacoes.py"],
           "H de Friedman e comparação com as interações do PyGAwLLfs",
           "~8 min"),
-    Etapa("fidelidade", ["src/compare/fidelity.py"],
+    Etapa("fidelidade", "Avaliação", ["src/avaliacao/fidelity.py"],
           "retenção top-k, subconjuntos do GA e sorteios; avalia no teste",
           "~13 min"),
-    Etapa("sintese", ["src/compare/sintese.py"],
+    Etapa("sintese", "Avaliação", ["src/avaliacao/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
-    Etapa("extras", ["src/data/figuras.py"],
+    Etapa("extras", "Dados", ["src/dados/figuras.py"],
           "histograma do atraso",
           "< 1 min"),
 ]
+assert all(etapa.fase in FASES for etapa in ETAPAS)
 
 TESTES = [
     "tests/test_gawll.py", "tests/test_importancia.py", "tests/test_sintetico.py",
@@ -175,15 +191,17 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.listar:
-        for etapa in ETAPAS:
-            print(f"{etapa.nome:13s} {etapa.tempo_esperado:42s} {etapa.descricao}")
-        print(f"{'(--testes)':13s} {'~6 min':42s} as {len(TESTES)} suítes de teste")
+        for fase in FASES:
+            print(f"\n[{fase}]")
+            for etapa in (e for e in ETAPAS if e.fase == fase):
+                print(f"  {etapa.nome:13s} {etapa.tempo_esperado:30s} {etapa.descricao}")
+        print(f"\n  {'(--testes)':13s} {'~6 min':30s} as {len(TESTES)} suítes de teste")
         return
 
     etapas = escolher_etapas(args.de, args.ate, args.so)
     if args.simular:
         for etapa in etapas:
-            print(f"[{etapa.nome}] ({etapa.tempo_esperado})")
+            print(f"[{etapa.nome}] {etapa.fase} ({etapa.tempo_esperado})")
             for script in etapa.scripts:
                 print(f"    {Path(sys.executable).name} {script}")
         if args.testes:
@@ -195,7 +213,8 @@ def main() -> None:
 
     duracoes = []
     for etapa in etapas:
-        logger.info(f"=== {etapa.nome}: {etapa.descricao} (esperado: {etapa.tempo_esperado})")
+        logger.info(f"=== {etapa.nome} ({etapa.fase}): {etapa.descricao} "
+                    f"(esperado: {etapa.tempo_esperado})")
         inicio = time.perf_counter()
         try:
             for script in etapa.scripts:

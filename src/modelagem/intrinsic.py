@@ -25,14 +25,14 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import (  # noqa: E402
+from src.modelagem.comum import (  # noqa: E402
     MODELOS,
     carregar_modelo,
     salvar_custo,
     salvar_tabela,
     tabela_importancia,
 )
-from src.models.baselines import SEMENTE  # noqa: E402
+from src.modelagem.baselines import SEMENTE  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def importancia_intrinseca(nome: str, modelo) -> tuple[list[str], list[float]]:
     """Devolve (features, valores) da importância embutida no modelo: coeficientes
     padronizados da LogReg (com sinal), MDI do RF ou gain do XGBoost.
 
-    Usada em: main; aplicar_metodos.importancias_modelo_fixo.
+    Usada em: main; sintetico_aplicar.importancias_modelo_fixo.
     Importância: o método mais barato (não treina nada); referência para os outros.
     """
     if nome == "logreg":
@@ -58,7 +58,7 @@ def main() -> None:
     """Calcula a importância intrínseca dos três modelos (determinística, uma semente
     só) e salva importancia_intrinseca.csv e o custo.
 
-    Usada em: python src/importance/intrinsic.py; main.py, etapa "importancias";
+    Usada em: python src/modelagem/intrinsic.py; main.py, etapa "importancias";
     tests/test_importancia.py.
     Importância: um dos quatro métodos comparados na Etapa 11.
     """

@@ -1,4 +1,4 @@
-"""Testes da Etapa 10 — Diferencial 1 (src/synthetic/).
+"""Testes da Etapa 10 — Diferencial 1 (src/avaliacao/sintetico_*.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz:
     python tests/test_sintetico.py
@@ -6,7 +6,7 @@ Script simples com assert (o pytest não está instalado). Rodar da raiz:
 Os três primeiros não dependem de nada rodado antes: conferem que o gerador
 produz a estrutura prometida no gabarito e que as métricas de recuperação dão
 o valor certo em casos montados à mão. O último confere as tabelas geradas
-por aplicar_metodos.py (rodar antes).
+por sintetico_aplicar.py (rodar antes).
 """
 
 import logging
@@ -20,9 +20,9 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import COLUNAS_PADRAO, tabela_importancia  # noqa: E402
-from src.importance.consolidar_gawll import tabela_interacao  # noqa: E402
-from src.synthetic import generate, recovery  # noqa: E402
+from src.modelagem.comum import COLUNAS_PADRAO, tabela_importancia  # noqa: E402
+from src.modelagem.consolidar_gawll import tabela_interacao  # noqa: E402
+from src.avaliacao import sintetico_gerar, sintetico_recuperar  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +37,10 @@ def teste_gerador():
     Importância: se o gerador errar, todo o Diferencial 1 mede contra uma verdade
     falsa.
     """
-    a = generate.gerar(n=20_000)
-    b = generate.gerar(n=20_000)
+    a = sintetico_gerar.gerar(n=20_000)
+    b = sintetico_gerar.gerar(n=20_000)
     assert a.equals(b), "mesma semente deveria gerar o mesmo dataset"
-    assert set(generate.GABARITO) == set(generate.FEATURES)
+    assert set(sintetico_gerar.GABARITO) == set(sintetico_gerar.FEATURES)
 
     # Interação pura: x1 e x2 sozinhas não carregam informação sobre y
     for nome in ["x1", "x2"]:
@@ -52,13 +52,13 @@ def teste_gerador():
     produto_negativo = a.loc[a["x1"] * a["x2"] <= 0, "y"].mean()
     assert produto_positivo - produto_negativo > 0.4, "a interação deveria ser forte"
 
-    assert abs(a["x3"].corr(a["x5"]) - generate.RHO_REDUNDANCIA) < 0.02
-    assert abs(a["x4"].corr(a["x6"]) - generate.RHO_REDUNDANCIA) < 0.02
+    assert abs(a["x3"].corr(a["x5"]) - sintetico_gerar.RHO_REDUNDANCIA) < 0.02
+    assert abs(a["x4"].corr(a["x6"]) - sintetico_gerar.RHO_REDUNDANCIA) < 0.02
     for nome in ["x7", "x8", "x9", "x10"]:
         assert abs(a[nome].corr(a["y"])) < 0.03, f"{nome} deveria ser ruído"
     assert 0.45 < a["y"].mean() < 0.55
 
-    dividido = generate.dividir(generate.gerar())
+    dividido = sintetico_gerar.dividir(sintetico_gerar.gerar())
     contagem = dividido["conjunto"].value_counts()
     assert contagem["treino"] == 3500 and contagem["validacao"] == 1500
     taxas = dividido.groupby("conjunto")["y"].mean()
@@ -75,13 +75,13 @@ def teste_metricas_de_importancia():
     ordem_perfeita = ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10"]
     valores = list(range(10, 0, -1))  # o primeiro da lista é o mais importante
 
-    perfeito = recovery.metricas_importancia(
+    perfeito = sintetico_recuperar.metricas_importancia(
         tabela_importancia(ordem_perfeita, valores, "m", "modelo", 42))
     assert perfeito["auc_relevante_ruido"] == 1.0
     assert perfeito["precisao_top6"] == 1.0 and perfeito["precisao_top4_diretas"] == 1.0
     assert perfeito["rank_x3x4"] < perfeito["rank_x5x6"]
 
-    invertido = recovery.metricas_importancia(
+    invertido = sintetico_recuperar.metricas_importancia(
         tabela_importancia(ordem_perfeita[::-1], valores, "m", "modelo", 42))
     # Invertido, o top-6 é x10..x5: as 4 de ruído e as 2 redundantes
     assert invertido["auc_relevante_ruido"] == 0.0
@@ -89,14 +89,14 @@ def teste_metricas_de_importancia():
 
     # Proxies à frente das diretas: relevantes continuam no topo, diretas não
     proxies_primeiro = ["x5", "x6", "x1", "x2", "x3", "x4", "x7", "x8", "x9", "x10"]
-    trocado = recovery.metricas_importancia(
+    trocado = sintetico_recuperar.metricas_importancia(
         tabela_importancia(proxies_primeiro, valores, "m", "modelo", 42))
     assert trocado["auc_relevante_ruido"] == 1.0 and trocado["precisao_top6"] == 1.0
     assert trocado["precisao_top4_diretas"] == 0.5
     assert trocado["rank_x5x6"] < trocado["rank_x3x4"]
 
     # Coeficiente com sinal: o rank pelo absoluto tem de valer aqui também
-    sinal = recovery.metricas_importancia(tabela_importancia(
+    sinal = sintetico_recuperar.metricas_importancia(tabela_importancia(
         ordem_perfeita, [-v for v in valores], "m", "modelo", 42, rank_por_absoluto=True))
     assert sinal["auc_relevante_ruido"] == 1.0
 
@@ -109,7 +109,7 @@ def teste_metricas_de_interacao_e_selecao():
     Importância: valida as métricas de interação e seleção em casos de resposta
     conhecida.
     """
-    features = generate.FEATURES
+    features = sintetico_gerar.FEATURES
     matriz = np.zeros((10, 10))
     for (a, b), valor in [(("x1", "x2"), 0.9), (("x3", "x5"), 0.5), (("x4", "x6"), 0.4),
                           (("x7", "x8"), 0.1)]:
@@ -117,31 +117,31 @@ def teste_metricas_de_interacao_e_selecao():
         matriz[i, j] = matriz[j, i] = valor
     interacao = pd.concat([tabela_interacao(features, matriz, "m", "modelo", s) for s in [42, 43]])
 
-    resultado = recovery.metricas_interacao(interacao)
+    resultado = sintetico_recuperar.metricas_interacao(interacao)
     assert resultado["rank_par_interacao"] == 1
     assert resultado["rank_pares_redundancia"] == 2.5
     assert resultado["precisao_top3"] == 1.0 and resultado["acerto_por_semente"] == 1.0
     assert resultado["n_pares"] == 45
 
-    assert recovery.metricas_selecao("x1;x2;x3;x4")["f1"] == 1.0
-    parcial = recovery.metricas_selecao("x1;x3;x5;x7")
+    assert sintetico_recuperar.metricas_selecao("x1;x2;x3;x4")["f1"] == 1.0
+    parcial = sintetico_recuperar.metricas_selecao("x1;x3;x5;x7")
     assert parcial["precisao"] == 0.5 and parcial["recall"] == 0.5
     assert parcial["n_redundantes"] == 1 and parcial["n_ruido"] == 1
-    assert recovery.metricas_selecao("")["f1"] == 0.0
+    assert sintetico_recuperar.metricas_selecao("")["f1"] == 0.0
 
 
 def teste_tabelas_geradas():
-    """As saídas de aplicar_metodos.py estão completas e no formato padrão.
+    """As saídas de sintetico_aplicar.py estão completas e no formato padrão.
 
     Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
     python main.py --testes).
-    Importância: recovery.py depende delas.
+    Importância: sintetico_recuperar.py depende delas.
     """
     importancia = pd.read_csv(DIR_TABELAS / "sintetico_importancia.csv")
     assert list(importancia.columns) == COLUNAS_PADRAO
     assert not importancia.isna().any().any()
     for chave, grupo in importancia.groupby(["method", "model", "seed"]):
-        assert sorted(grupo["feature"]) == sorted(generate.FEATURES), chave
+        assert sorted(grupo["feature"]) == sorted(sintetico_gerar.FEATURES), chave
 
     esperado = {  # (método, modelo) -> nº de sementes
         **{("intrinseca", m): 1 for m in ["logreg", "random_forest", "xgboost"]},

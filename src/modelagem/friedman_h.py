@@ -33,8 +33,8 @@ Escolhas (docs/decisoes.md §12):
 
 Produz results/tables/interacao_h.csv (formato longo, como interacao_gawll.csv,
 com method = "friedman_h_abs" e "friedman_h"), mais o custo em
-custo_importancia.csv. Quem consome: compare/interacoes.py e o Diferencial 1
-(src/synthetic/aplicar_metodos.py usa calcular_h).
+custo_importancia.csv. Quem consome: avaliacao/interacoes.py e o Diferencial 1
+(src/avaliacao/sintetico_aplicar.py usa calcular_h).
 """
 
 import logging
@@ -49,14 +49,14 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance import comum  # noqa: E402
-from src.interaction.graph import (  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.avaliacao.graph import (  # noqa: E402
     AGREGACOES,
     arestas_reduzidas,
     features_do_grafo,
     interacao_media,
 )
-from src.models.baselines import carregar  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ def prever_logit(modelo):
     """Devolve uma função x -> log-odds da classe 1, a partir do predict_proba do modelo
     (probabilidade cortada em LIMITE_PROBABILIDADE para não dar log de 0).
 
-    Usada em: main; aplicar_metodos.interacoes_h; tests/test_interacao.py.
+    Usada em: main; sintetico_aplicar.interacoes_h; tests/test_interacao.py.
     Importância: no logit a LogReg é exatamente aditiva (H = 0); medir nessa escala
     evita interações criadas só pela sigmoide.
     """
@@ -109,7 +109,7 @@ def calcular_h(prever, amostra: pd.DataFrame, features: list[str]) -> pd.DataFra
     PD_a − PD_b; h_abs = raiz da média do resíduo²; h_normalizado = soma do resíduo²
     / soma de PD_ab².
 
-    Usada em: main; aplicar_metodos.interacoes_h; tests/test_interacao.py.
+    Usada em: main; sintetico_aplicar.interacoes_h; tests/test_interacao.py.
     Importância: método de referência para interação, comparado ao PyGAwLLfs. O
     normalizado passa de 1 quando PD_ab é quase nulo, por isso o h_abs é o principal.
     """
@@ -132,7 +132,7 @@ def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) 
     """Duas linhas por par (uma por versão do H), no formato de interacao_gawll.csv. O
     par é escrito na ordem das colunas do dataset, como no PyGAwLLfs.
 
-    Usada em: main; aplicar_metodos.interacoes_h.
+    Usada em: main; sintetico_aplicar.interacoes_h.
     Importância: deixa o H no mesmo formato da interação do PyGAwLLfs, para a Etapa
     13b comparar direto.
     """
@@ -174,7 +174,7 @@ def main() -> None:
     """Etapa 13a: para RF e XGBoost, calcula o H na união do §4.7 em 5 amostras de 500
     linhas da validação e salva interacao_h.csv e o custo.
 
-    Usada em: python src/interaction/friedman_h.py; main.py, etapa "interacoes";
+    Usada em: python src/modelagem/friedman_h.py; main.py, etapa "interacoes";
     tests/test_interacao.py.
     Importância: gera a referência de interação contra a qual o PyGAwLLfs é
     comparado.

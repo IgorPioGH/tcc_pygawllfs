@@ -1,7 +1,7 @@
 """Testes da Etapa 13 — H de Friedman e comparação com o PyGAwLLfs.
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
-depois de friedman_h.py, compare/interacoes.py e synthetic/aplicar_metodos.py:
+depois de friedman_h.py, avaliacao/interacoes.py e avaliacao/sintetico_aplicar.py:
     python tests/test_interacao.py
 
 Os cinco primeiros conferem o H, o grafo e a agregação das sementes em casos
@@ -24,11 +24,12 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import interacoes  # noqa: E402
+from src.avaliacao import interacoes  # noqa: E402
 from src.domain import validate_pairs  # noqa: E402
-from src.importance import comum  # noqa: E402
-from src.interaction import friedman_h, graph  # noqa: E402
-from src.models.baselines import carregar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.avaliacao import graph  # noqa: E402
+from src.modelagem import friedman_h  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

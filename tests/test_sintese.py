@@ -1,4 +1,4 @@
-"""Testes da consolidação final (src/compare/sintese.py).
+"""Testes da consolidação final (src/avaliacao/sintese.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de sintese.py:
@@ -22,8 +22,8 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import sintese  # noqa: E402
-from src.importance import comum  # noqa: E402
+from src.avaliacao import sintese  # noqa: E402
+from src.modelagem import comum  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

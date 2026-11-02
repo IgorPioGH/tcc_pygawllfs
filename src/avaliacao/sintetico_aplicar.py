@@ -1,6 +1,6 @@
 """Etapa 10 — Diferencial 1: aplica os quatro métodos ao dataset sintético.
 
-Recebe data/processed/sintetico.parquet (generate.py) e os hiperparâmetros
+Recebe data/processed/sintetico.parquet (sintetico_gerar.py) e os hiperparâmetros
 escolhidos na Etapa 6 (baselines.csv). Treina os três modelos com
 criar_modelo() — os mesmos do VRA — e roda exatamente o mesmo código das
 Etapas 7 e 9 (docs/metodologia.md §5: "usa exatamente o mesmo código de comparação"):
@@ -11,7 +11,7 @@ Etapas 7 e 9 (docs/metodologia.md §5: "usa exatamente o mesmo código de compar
                  (1.500 linhas < 10k) entra toda, então é determinístico: seed 42
     gawll        gawll.executar, 3 modelos x 5 sementes, 100 gerações,
                  checkpoints em experiments/runs/sintetico/ (retomada igual à Etapa 8)
-    H Friedman   interaction/friedman_h.calcular_h (Etapa 13), RF e XGBoost, todos os
+    H Friedman   modelagem/friedman_h.calcular_h (Etapa 13), RF e XGBoost, todos os
                  45 pares, 5 amostras de 500 linhas da validação
 
 Produz, em results/tables/:
@@ -19,7 +19,7 @@ Produz, em results/tables/:
     sintetico_interacao.csv    vint do PyGAwLLfs e H de Friedman, em formato longo
     sintetico_selecao.csv      o x* de cada execução
     sintetico_custo.csv        tempo e nº de treinos
-Quem consome: recovery.py (compara tudo com o gabarito, inclusive o H:
+Quem consome: sintetico_recuperar.py (compara tudo com o gabarito, inclusive o H:
 method = "friedman_h_abs" e "friedman_h").
 """
 
@@ -34,21 +34,21 @@ RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 sys.path.append(str(RAIZ / "PyGAwLLfs"))
 
-from src.importance import gawll  # noqa: E402
-from src.importance.comum import SEMENTES, salvar_tabela, tabela_importancia  # noqa: E402
-from src.importance.consolidar_gawll import consolidar  # noqa: E402
-from src.importance.intrinsic import importancia_intrinseca  # noqa: E402
-from src.importance.permutation import calcular_permutation  # noqa: E402
-from src.importance.shap_global import calcular_shap  # noqa: E402
-from src.interaction.friedman_h import (  # noqa: E402
+from src.modelagem import gawll  # noqa: E402
+from src.modelagem.comum import SEMENTES, salvar_tabela, tabela_importancia  # noqa: E402
+from src.modelagem.consolidar_gawll import consolidar  # noqa: E402
+from src.modelagem.intrinsic import importancia_intrinseca  # noqa: E402
+from src.modelagem.permutation import calcular_permutation  # noqa: E402
+from src.modelagem.shap_global import calcular_shap  # noqa: E402
+from src.modelagem.friedman_h import (  # noqa: E402
     AMOSTRA,
     MODELOS_H,
     calcular_h,
     formato_longo,
     prever_logit,
 )
-from src.models.baselines import SEMENTE, criar_modelo, ler_configuracoes_escolhidas  # noqa: E402
-from src.synthetic.generate import ARQUIVO_SINTETICO, FEATURES  # noqa: E402
+from src.modelagem.baselines import SEMENTE, criar_modelo, ler_configuracoes_escolhidas  # noqa: E402
+from src.avaliacao.sintetico_gerar import ARQUIVO_SINTETICO, FEATURES  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ def main() -> None:
     """Etapa 10b: treina os três modelos no sintético, roda os quatro métodos e o H e
     salva sintetico_{importancia,interacao,selecao,custo}.csv.
 
-    Usada em: python src/synthetic/aplicar_metodos.py; main.py, etapa "sintetico".
+    Usada em: python src/avaliacao/sintetico_aplicar.py; main.py, etapa "sintetico".
     Importância: produz o material do Diferencial 1 (qual método recupera a verdade).
     """
     x_treino, y_treino, x_val, y_val = carregar_sintetico()

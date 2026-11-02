@@ -13,7 +13,7 @@ fica para quem consome: Etapa 11 (rankings e estabilidade), Etapa 12
 (fidelidade do x*), Etapa 13 e Diferencial 4 (interações).
 
 A função consolidar() também é usada pelo Diferencial 1
-(src/synthetic/aplicar_metodos.py), sobre os checkpoints do dataset sintético.
+(src/avaliacao/sintetico_aplicar.py), sobre os checkpoints do dataset sintético.
 """
 
 import logging
@@ -26,7 +26,7 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.importance.comum import (  # noqa: E402
+from src.modelagem.comum import (  # noqa: E402
     salvar_custo,
     salvar_tabela,
     tabela_importancia,
@@ -65,7 +65,7 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
     """Lê todos os .npz de dir_execucoes e devolve (importância, interação, seleção,
     custos).
 
-    Usada em: main; aplicar_metodos.main (sintético).
+    Usada em: main; sintetico_aplicar.main (sintético).
     Importância: transforma os checkpoints do GA em tabelas comparáveis com as dos
     outros métodos; o mesmo código serve aos dados reais e ao sintético.
     """
@@ -119,7 +119,7 @@ def main() -> None:
     """Etapa 8: consolida experiments/runs/gawll/ em importancia_gawll.csv,
     interacao_gawll.csv, selecao_gawll.csv e no custo.
 
-    Usada em: python src/importance/consolidar_gawll.py; main.py, etapa "pygawllfs";
+    Usada em: python src/modelagem/consolidar_gawll.py; main.py, etapa "pygawllfs";
     tests/test_importancia.py.
     Importância: a partir daqui o PyGAwLLfs entra nas comparações como qualquer outro
     método.

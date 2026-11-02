@@ -69,10 +69,10 @@ from sklearn.linear_model import LogisticRegression  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.compare.figuras import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
-from src.compare.rankings import MODELOS  # noqa: E402
-from src.importance import comum  # noqa: E402
-from src.interaction import graph  # noqa: E402
+from src.graficos import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
+from src.avaliacao.rankings import MODELOS  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.avaliacao import graph  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)

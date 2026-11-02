@@ -1,4 +1,4 @@
-"""Testes da Etapa 12 — fidelidade por retenção (src/compare/fidelity.py).
+"""Testes da Etapa 12 — fidelidade por retenção (src/avaliacao/fidelity.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de fidelity.py:
@@ -22,10 +22,10 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.compare import fidelity  # noqa: E402
-from src.compare.rankings import ordenar  # noqa: E402
-from src.importance import comum  # noqa: E402
-from src.models.baselines import carregar  # noqa: E402
+from src.avaliacao import fidelity  # noqa: E402
+from src.avaliacao.rankings import ordenar  # noqa: E402
+from src.modelagem import comum  # noqa: E402
+from src.modelagem.baselines import carregar  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

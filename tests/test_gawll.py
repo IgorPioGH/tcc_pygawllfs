@@ -1,4 +1,4 @@
-"""Testes da Etapa 7 — PyGAwLLfs corrigido (src/importance/gawll.py).
+"""Testes da Etapa 7 — PyGAwLLfs corrigido (src/modelagem/gawll.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz:
     python tests/test_gawll.py
@@ -25,7 +25,7 @@ sys.path.append(str(RAIZ / "PyGAwLLfs"))
 
 from src.core.ga_operators import Mutation  # noqa: E402  (PyGAwLLfs)
 from src.core.gawll import GAwLL, Individual  # noqa: E402
-from src.importance import gawll  # noqa: E402  (projeto)
+from src.modelagem import gawll  # noqa: E402  (projeto)
 
 logger = logging.getLogger(__name__)
 

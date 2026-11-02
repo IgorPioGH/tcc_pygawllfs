@@ -1,4 +1,4 @@
-"""Testes da Etapa 9 — métodos de importância (src/importance/).
+"""Testes da Etapa 9 — métodos de importância (src/modelagem/).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de rodar os scripts da Etapa 9:
@@ -22,7 +22,7 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
-from src.importance import comum, consolidar_gawll, intrinsic, permutation, shap_global  # noqa: E402
+from src.modelagem import comum, consolidar_gawll, intrinsic, permutation, shap_global  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
