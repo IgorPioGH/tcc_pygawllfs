@@ -6,7 +6,9 @@ configuração de cada modelo na VALIDAÇÃO e avalia a escolhida UMA única vez
 no TESTE.
 
 Saídas:
-    results/tables/baselines_tuning.csv     todas as configurações, na validação
+    results/tables/baselines_tuning.csv     todas as configurações, na validação e no
+                                            treino (colunas *_treino: diagnóstico de
+                                            sobreajuste)
     results/tables/baselines.csv            melhor de cada modelo, no teste
     results/tables/coeficientes_logreg.csv  importância intrínseca da LogReg
     experiments/runs/baselines/<modelo>.joblib
@@ -202,9 +204,10 @@ def salvar_coeficientes_logreg(pipeline, colunas: pd.Index, caminho: Path) -> No
 
 
 def main() -> None:
-    """Etapa 6: tuning no treino com escolha na validação, auditoria de vazamento e
-    avaliação única da melhor configuração de cada modelo no teste. Salva
-    baselines*.csv, os coeficientes da LogReg e os modelos .joblib.
+    """Etapa 6: tuning no treino com escolha na validação (com as métricas também no
+    treino, para o diagnóstico de ajuste), auditoria de vazamento e avaliação única da
+    melhor configuração de cada modelo no teste. Salva baselines*.csv, os coeficientes
+    da LogReg e os modelos .joblib.
 
     Usada em: python src/modelagem/baselines.py; main.py, etapa "baselines".
     Importância: produz os modelos que todos os métodos de importância explicam e o
@@ -226,12 +229,14 @@ def main() -> None:
         tempo = time.perf_counter() - inicio
 
         metricas = avaliar_modelo(modelo, val_x, val_y)
+        no_treino = avaliar_modelo(modelo, treino_x, treino_y)
         resultados.append(
             {
                 "modelo": nome,
                 "parametros": str(parametros),
                 "tempo_treino_s": round(tempo, 1),
                 **metricas,
+                **{f"{metrica}_treino": valor for metrica, valor in no_treino.items()},
             }
         )
         logger.info(
