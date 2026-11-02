@@ -10,6 +10,11 @@ nenhum conjunto de dados, nem o teste.
     RF:     MDI (redução média de impureza), feature_importances_ do sklearn.
     XGBoost: ganho médio por divisão ("gain"), o padrão do feature_importances_.
 
+São os mesmos atributos usados no tutorial de importância de atributos do
+Machine Learning Mastery (coef_[0] da regressão logística com dados padronizados;
+feature_importances_ do RF, por impureza, e do XGBoost, por ganho), desenhados em
+barras por src/interpretacao/figura_barras.py.
+
 É determinística: um valor por modelo, com seed = 42 (o random_state do
 modelo). Produz results/tables/importancia_intrinseca.csv no formato padrão.
 Quem consome: Etapa 11 (comparação de rankings).

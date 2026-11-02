@@ -114,10 +114,11 @@ ETAPAS = [
     Etapa("sintese", "Avaliação", ["src/avaliacao/sintese.py"],
           "quadro-síntese: os quatro critérios por método e por modelo (só lê CSV)",
           "< 1 min"),
-    Etapa("figuras", "Interpretação", ["src/interpretacao/figuras_concordancia.py",
+    Etapa("figuras", "Interpretação", ["src/interpretacao/figura_barras.py",
+                                       "src/interpretacao/figuras_concordancia.py",
                                        "src/interpretacao/figura_grafo.py"],
-          "figuras que explicam os resultados: concordância, dispersão, estabilidade e "
-          "grafo de interação",
+          "figuras que explicam os resultados: barras de importância, concordância, "
+          "dispersão, estabilidade e grafo de interação",
           "< 1 min"),
 ]
 assert all(etapa.fase in FASES for etapa in ETAPAS)
