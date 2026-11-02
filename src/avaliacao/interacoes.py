@@ -40,7 +40,14 @@ import pandas as pd  # noqa: E402
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
-from src.graficos import COR_GRADE, COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
+from src.graficos import (  # noqa: E402
+    COR_GRADE,
+    COR_TEXTO,
+    COR_TEXTO_SECUNDARIO,
+    LARGURA_CHEIA,
+    ROTULO_MODELO,
+    salvar,
+)
 from src.avaliacao.rankings import comparar  # noqa: E402
 from src.avaliacao.stability import concordancia_entre_sementes  # noqa: E402
 from src.modelagem import comum  # noqa: E402
@@ -169,7 +176,7 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
     Usada em: main.
     Importância: mostra a falta de concordância e onde ficam os pares redundantes.
     """
-    fig, eixos = plt.subplots(1, len(MODELOS_H), figsize=(12, 5.6), layout="constrained")
+    fig, eixos = plt.subplots(1, len(MODELOS_H), figsize=(LARGURA_CHEIA, 3.4), layout="constrained")
     for ax, modelo in zip(eixos, MODELOS_H):
         grupo = pares[pares["model"] == modelo]
         n = len(grupo)
@@ -179,9 +186,9 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
         for tipo in ["operacional", "estrutural", "redundante"]:
             do_tipo = grupo[grupo["tipo"] == tipo]
             ax.scatter(do_tipo["rank_gawll"], do_tipo["rank_friedman_h_abs"],
-                       s=22 if tipo == "operacional" else 60, color=COR_TIPO[tipo],
+                       s=10 if tipo == "operacional" else 30, color=COR_TIPO[tipo],
                        alpha=0.55 if tipo == "operacional" else 0.95,
-                       edgecolors="white", linewidths=0.8, label=tipo, zorder=2)
+                       edgecolors="white", linewidths=0.5, label=tipo, zorder=2)
         # Rótulo só nos redundantes do top-30 de algum dos dois (os que importam)
         redundantes = grupo[(grupo["tipo"] == "redundante")
                             & ((grupo["rank_gawll"] <= 30) | (grupo["rank_friedman_h_abs"] <= 30))]
@@ -189,37 +196,34 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
         colocados = []
         for linha in redundantes.sort_values(["rank_friedman_h_abs", "rank_gawll"]).itertuples():
             x, y = linha.rank_gawll, linha.rank_friedman_h_abs
-            vizinhos = sum(abs(x - xc) < 0.25 * n and abs(y - yc) < 0.03 * n
+            vizinhos = sum(abs(x - xc) < 0.25 * n and abs(y - yc) < 0.05 * n
                            for xc, yc in colocados)
             colocados.append((x, y))
             ax.annotate(f"{linha.feature_a} × {linha.feature_b}", (x, y),
-                        xytext=(6, -3 - 9 * vizinhos), textcoords="offset points",
-                        fontsize=7, color=COR_TEXTO_SECUNDARIO)
+                        xytext=(4, -3 - 10 * vizinhos), textcoords="offset points",
+                        fontsize=8, color=COR_TEXTO_SECUNDARIO)
         ax.set_xlim(0, n + 5)
         ax.set_ylim(0, n + 5)
         ax.invert_xaxis()
         ax.invert_yaxis()  # rank 1 (mais forte) no canto superior direito
-        ax.set_xlabel("rank no PyGAwLLfs (vint)", color=COR_TEXTO_SECUNDARIO, fontsize=9)
-        ax.set_ylabel("rank no H de Friedman (não normalizado)", color=COR_TEXTO_SECUNDARIO,
-                      fontsize=9)
-        ax.set_title(f"{ROTULO_MODELO[modelo]} — {len(grupo)} de {n} pares", loc="left",
-                     color=COR_TEXTO, fontsize=11)
+        ax.set_xlabel("rank no PyGAwLLfs", color=COR_TEXTO_SECUNDARIO)
+        ax.set_ylabel("rank no H (não normalizado)", color=COR_TEXTO_SECUNDARIO)
+        ax.set_title(f"{ROTULO_MODELO[modelo]} ({len(grupo)} de {n} pares)", loc="left",
+                     color=COR_TEXTO)
         ax.grid(color=COR_GRADE, linewidth=0.6)
         ax.set_axisbelow(True)
         for lado in ["top", "right"]:
             ax.spines[lado].set_visible(False)
-        ax.tick_params(colors=COR_TEXTO_SECUNDARIO, labelsize=8)
+        ax.tick_params(colors=COR_TEXTO_SECUNDARIO)
     alcas, rotulos = eixos[-1].get_legend_handles_labels()
-    fig.legend(alcas, rotulos, frameon=False, fontsize=8.5, title="tipo do par",
-               title_fontsize=8.5, loc="outside upper right", ncol=3)
-    fig.suptitle("Pares de features: interação segundo o PyGAwLLfs × segundo o H de Friedman",
-                 x=0.01, ha="left", color=COR_TEXTO, fontsize=12)
-    fig.supxlabel("Canto superior direito = forte nos dois; a diagonal é a concordância perfeita. "
-                  "Rotulados: pares redundantes no top-30 de algum dos dois métodos.\n"
-                  "PyGAwLLfs: média das sementes em que o par foi sondado; só pares sondados em "
-                  "pelo menos 2 das 5 sementes. H: média das 5 amostras.",
-                  x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
-    salvar(fig, caminho_base)
+    fig.legend(alcas, rotulos, frameon=False, title="tipo do par", loc="outside lower center",
+               ncol=3)
+    salvar(fig, caminho_base, legenda=(
+        "Pares de atributos: rank da interação segundo o PyGAwLLfs (média das sementes em que o "
+        "par foi sondado; só pares sondados em pelo menos 2 das 5 sementes) e segundo o H de "
+        "Friedman não normalizado (média das 5 amostras). Canto superior direito: forte nos "
+        "dois; a diagonal é a concordância perfeita. Rotulados: pares redundantes no top-30 de "
+        "algum dos dois métodos."))
 
 
 def main() -> None:

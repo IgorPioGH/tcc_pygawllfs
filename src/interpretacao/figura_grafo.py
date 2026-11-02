@@ -27,7 +27,13 @@ sys.path.append(str(RAIZ))
 from src.avaliacao import graph  # noqa: E402
 from src.avaliacao.graph import COR_TIPO  # noqa: E402
 from src.avaliacao.rankings import MODELOS  # noqa: E402
-from src.graficos import COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
+from src.graficos import (  # noqa: E402
+    COR_TEXTO,
+    COR_TEXTO_SECUNDARIO,
+    LARGURA_CHEIA,
+    ROTULO_MODELO,
+    salvar,
+)
 from src.modelagem import comum  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -71,9 +77,9 @@ def figura_grafo(arestas: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
     nó pela importância.
 
     Usada em: main.
-    Importância: é a figura análoga ao grafo do Boson no artigo.
+    Importância: é a figura análoga ao grafo do artigo do PyGAwLLfs.
     """
-    fig, eixos = plt.subplots(1, 3, figsize=(18, 7), layout="constrained")
+    fig, eixos = plt.subplots(3, 1, figsize=(LARGURA_CHEIA, 9.0), layout="constrained")
     for ax, modelo in zip(eixos, MODELOS):
         fortes = arestas[arestas["model"] == modelo]
         n_arestas = len(fortes)
@@ -85,40 +91,39 @@ def figura_grafo(arestas: pd.DataFrame, tipos: dict, importancia: pd.DataFrame,
         posicao = afastar_nos(nx.kamada_kawai_layout(grafo))
 
         pesos = np.array([d["peso"] for *_, d in grafo.edges(data=True)])
-        larguras = 1 + 5 * (pesos - pesos.min()) / (np.ptp(pesos) or 1)
+        larguras = 0.8 + 3.5 * (pesos - pesos.min()) / (np.ptp(pesos) or 1)
         cores = [COR_TIPO[d["tipo"]] for *_, d in grafo.edges(data=True)]
         nx.draw_networkx_edges(grafo, posicao, ax=ax, width=larguras, edge_color=cores, alpha=0.85)
 
         imp = (importancia[importancia["model"] == modelo]
                .set_index("feature")["importance_norm"])
-        tamanhos = [150 + 900 * imp.get(no, 0) for no in grafo.nodes]
+        tamanhos = [60 + 400 * imp.get(no, 0) for no in grafo.nodes]
         nx.draw_networkx_nodes(grafo, posicao, ax=ax, node_size=tamanhos,
-                               node_color="#f0efec", edgecolors=COR_TEXTO_SECUNDARIO, linewidths=1)
+                               node_color="#f0efec", edgecolors=COR_TEXTO_SECUNDARIO,
+                               linewidths=0.8)
         # Rótulos longos em duas linhas (quebra no último "_"), com fundo branco:
         # ficam legíveis mesmo com nós vizinhos ou uma aresta passando por trás
         rotulos = {no: (no[:no.rindex("_")] + "\n" + no[no.rindex("_") + 1:]
                         if len(no) > 14 and "_" in no else no) for no in grafo.nodes}
-        nx.draw_networkx_labels(grafo, posicao, labels=rotulos, ax=ax, font_size=7.5,
+        nx.draw_networkx_labels(grafo, posicao, labels=rotulos, ax=ax, font_size=8,
                                 font_color=COR_TEXTO,
                                 bbox={"facecolor": "white", "edgecolor": "none",
                                       "alpha": 0.75, "pad": 0.5})
-        ax.set_title(f"{ROTULO_MODELO[modelo]} — {n_arestas} arestas", loc="left",
-                     color=COR_TEXTO, fontsize=11)
+        ax.set_title(f"{ROTULO_MODELO[modelo]} ({n_arestas} arestas)", loc="left",
+                     color=COR_TEXTO)
         ax.margins(0.12)  # espaço para os rótulos dos nós da borda
         ax.axis("off")
 
     legenda = [Line2D([0], [0], color=cor, linewidth=3, label=tipo)
                for tipo, cor in COR_TIPO.items()]
-    fig.legend(handles=legenda, loc="outside upper right", ncol=3, frameon=False,
-               fontsize=9, title="tipo do par", title_fontsize=9)
-    fig.suptitle("Grafo de interação reduzido do PyGAwLLfs (5% das arestas mais fortes, "
-                 "média das sementes em que o par foi sondado)", x=0.01, ha="left",
-                 color=COR_TEXTO, fontsize=12)
-    fig.supxlabel("Espessura = força da interação (vint); tamanho do nó = importância (vimp, "
-                  "normalizada). Estrutural = mesma variável; redundante = uma variável quase "
-                  "determina a outra. Só pares sondados em pelo menos 2 das 5 sementes.",
-                  x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
-    salvar(fig, caminho_base)
+    fig.legend(handles=legenda, loc="outside lower center", ncol=3, frameon=False,
+               title="tipo do par")
+    salvar(fig, caminho_base, legenda=(
+        "Grafo de interação reduzido do PyGAwLLfs: as 5% arestas mais fortes de cada modelo, na "
+        "média das sementes em que o par foi sondado (só pares sondados em pelo menos 2 das 5 "
+        "sementes). Espessura: força da interação (v_int); tamanho do nó: importância (v_imp, "
+        "normalizada). Estrutural: as duas features codificam a mesma coluna do VRA; "
+        "redundante: uma é função da outra pela definição dos atributos."))
 
 
 def main() -> None:

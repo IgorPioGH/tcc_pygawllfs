@@ -216,8 +216,12 @@ def figura_recortes(concordancia: pd.DataFrame, caminho_base: Path) -> None:
     ax.scatter([], [], s=45, color=COR_TEXTO, label="2024 × 2025")
     ax.scatter([], [], s=45, facecolors="white", edgecolors=COR_TEXTO, linewidths=1.5,
                label="entre sementes (principal)")
-    ax.legend(frameon=False, fontsize=8, loc="lower left")
-    salvar(fig, caminho_base)
+    ax.legend(frameon=False, loc="lower left")
+    salvar(fig, caminho_base, legenda=(
+        "Estabilidade entre recortes temporais: correlação de Spearman entre o ranking de "
+        "importância de 2024 e o de 2025 (mesmo calendário: treino jan–ago, validação set–out), "
+        "por método e modelo. O marcador vazado é o Spearman entre sementes do experimento "
+        "principal; a intrínseca é determinística e não tem esse marcador."))
 
 
 def main() -> None:

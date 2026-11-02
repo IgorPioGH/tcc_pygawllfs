@@ -43,6 +43,7 @@ from src.graficos import (  # noqa: E402
     COR_GRADE,
     COR_TEXTO,
     COR_TEXTO_SECUNDARIO,
+    LARGURA_CHEIA,
     ROTULO_METODO,
     ROTULO_MODELO,
     salvar,
@@ -178,70 +179,62 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
     teste = resumo[resumo["conjunto"] == "test"]
     selecoes = fidelidade[(fidelidade["conjunto"] == "test") & (fidelidade["method"] == "gawll_x*")]
     # squeeze=False: eixos é sempre 2D, mesmo com um modelo só
-    fig, eixos = plt.subplots(1, len(MODELOS), figsize=(15, 4.6), layout="constrained",
-                              sharex=True, squeeze=False)
+    fig, eixos = plt.subplots(1, len(MODELOS), figsize=(LARGURA_CHEIA, 2.9), layout="constrained",
+                              sharex=True, sharey=True, squeeze=False)
     for coluna, modelo in enumerate(MODELOS):
+        ax = eixos[0, coluna]
         do_modelo = teste[teste["model"] == modelo]
         todas = do_modelo[do_modelo["method"] == "todas"].iloc[0]
-        for linha_eixo, (metrica, rotulo) in enumerate([("acuracia", "Acurácia")]):
-            ax = eixos[linha_eixo, coluna]
 
-            # Acaso: faixa entre o pior e o melhor dos sorteios, e a média
-            acaso = do_modelo[do_modelo["method"] == "aleatorio"].sort_values("k")
-            ax.fill_between(acaso["k"], acaso[f"{metrica}_min"], acaso[f"{metrica}_max"],
-                            color="#d9d8d3", alpha=0.6, linewidth=0)
-            ax.plot(acaso["k"], acaso[metrica], color="#8c8b85", linestyle="--", linewidth=1.5)
-            ax.annotate("sorteio", (acaso["k"].iloc[-1], acaso[metrica].iloc[-1]),
-                        xytext=(4, -10), textcoords="offset points", fontsize=7.5,
-                        color=COR_TEXTO_SECUNDARIO)
+        # Acaso: faixa entre o pior e o melhor dos sorteios, e a média
+        acaso = do_modelo[do_modelo["method"] == "aleatorio"].sort_values("k")
+        ax.fill_between(acaso["k"], acaso["acuracia_min"], acaso["acuracia_max"],
+                        color="#d9d8d3", alpha=0.6, linewidth=0)
+        ax.plot(acaso["k"], acaso["acuracia"], color="#8c8b85", linestyle="--", linewidth=1.2,
+                label=f"sorteio de k features (média e faixa de {N_SORTEIOS})")
 
-            # Todas as features: a referência de cima; o acaso (0,5): a de baixo
-            ax.axhline(todas[metrica], color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle=":")
-            ax.annotate(f"todas as {int(todas['k'])}", (5, todas[metrica]), xytext=(0, 3),
-                        textcoords="offset points", fontsize=7.5, color=COR_TEXTO_SECUNDARIO)
-            ax.axhline(0.5, color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle="-.")
-            ax.annotate("acaso (0,5)", (5, 0.5), xytext=(0, 3), textcoords="offset points",
-                        fontsize=7.5, color=COR_TEXTO_SECUNDARIO)
+        # Referências: todas as features em cima, o acaso (0,5) embaixo
+        ax.axhline(todas["acuracia"], color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle=":",
+                   label=f"todas as {int(todas['k'])} features")
+        ax.axhline(0.5, color=COR_TEXTO_SECUNDARIO, linewidth=1, linestyle="-.",
+                   label="acaso (0,5)")
 
-            for metodo, (cor, marcador) in ESTILO.items():
-                curva = do_modelo[do_modelo["method"] == metodo].sort_values("k")
-                if curva.empty:
-                    continue
-                # Identidade pela legenda + marcador próprio (sem rótulo na ponta:
-                # as curvas convergem em k = 15 e os rótulos se sobreporiam)
-                ax.plot(curva["k"], curva[metrica], color=cor, marker=marcador, linewidth=2,
-                        markersize=7, markeredgecolor="white", markeredgewidth=1,
-                        label=ROTULO_METODO[metodo])
+        for metodo, (cor, marcador) in ESTILO.items():
+            curva = do_modelo[do_modelo["method"] == metodo].sort_values("k")
+            if curva.empty:
+                continue
+            ax.plot(curva["k"], curva["acuracia"], color=cor, marker=marcador, linewidth=1.5,
+                    markersize=5, markeredgecolor="white", markeredgewidth=0.8,
+                    label=ROTULO_METODO[metodo])
 
-            # x* do PyGAwLLfs: um ponto por execução, no seu nº de features
-            selecao = selecoes[selecoes["model"] == modelo]
-            ax.scatter(selecao["k"], selecao[metrica], marker="*", s=140,
-                       color=ESTILO["gawll"][0], edgecolors=COR_TEXTO, linewidths=0.6,
-                       zorder=4, label="PyGAwLLfs: subconjunto selecionado (x*)")
+        # x* do PyGAwLLfs: um ponto por execução, no seu nº de features
+        selecao = selecoes[selecoes["model"] == modelo]
+        ax.scatter(selecao["k"], selecao["acuracia"], marker="*", s=70,
+                   color=ESTILO["gawll"][0], edgecolors=COR_TEXTO, linewidths=0.5,
+                   zorder=4, label="PyGAwLLfs: subconjunto selecionado (x*)")
 
-            ax.set_xticks(TOP_K + [15])
-            ax.set_xlim(4, 18.5)
-            ax.grid(color=COR_GRADE, linewidth=0.6)
-            ax.set_axisbelow(True)
-            for lado in ["top", "right"]:
-                ax.spines[lado].set_visible(False)
-            ax.tick_params(colors=COR_TEXTO_SECUNDARIO, labelsize=8)
-            ax.yaxis.set_major_formatter(
-                matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:.2f}".replace(".", ",")))
-            if coluna == 0:
-                ax.set_ylabel(f"{rotulo} no teste", color=COR_TEXTO_SECUNDARIO, fontsize=9)
-            ax.set_title(ROTULO_MODELO[modelo], loc="left", color=COR_TEXTO, fontsize=11)
-            ax.set_xlabel("nº de features retidas (k)", color=COR_TEXTO_SECUNDARIO, fontsize=9)
+        ax.set_xticks(TOP_K)
+        ax.set_xlim(3, 18.5)
+        ax.grid(color=COR_GRADE, linewidth=0.6)
+        ax.set_axisbelow(True)
+        for lado in ["top", "right"]:
+            ax.spines[lado].set_visible(False)
+        ax.tick_params(colors=COR_TEXTO_SECUNDARIO)
+        ax.yaxis.set_major_formatter(
+            matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:.2f}".replace(".", ",")))
+        if coluna == 0:
+            ax.set_ylabel("acurácia no teste", color=COR_TEXTO_SECUNDARIO)
+        ax.set_title(ROTULO_MODELO[modelo], loc="left", color=COR_TEXTO)
+        ax.set_xlabel("features retidas (k)", color=COR_TEXTO_SECUNDARIO)
 
     alcas, rotulos = eixos[0, -1].get_legend_handles_labels()  # XGBoost tem os 4 métodos
-    fig.legend(alcas, rotulos, loc="outside upper right", ncol=5, frameon=False, fontsize=8.5)
-    fig.suptitle("Fidelidade por retenção: o modelo treinado só com as top-k features de cada método",
-                 x=0.01, ha="left", color=COR_TEXTO, fontsize=12)
-    fig.supxlabel("Teste (nov–dez/2025), avaliado uma única vez. Faixa cinza: pior e melhor de "
-                  f"{N_SORTEIOS} sorteios de k features; tracejado: a média. Pontilhado: modelo com "
-                  "todas as features. Estrelas: as 5 seleções do PyGAwLLfs (seleções iguais se sobrepõem).",
-                  x=0.01, ha="left", color=COR_TEXTO_SECUNDARIO, fontsize=8.5)
-    salvar(fig, caminho_base)
+    fig.legend(alcas, rotulos, loc="outside lower center", ncol=3, frameon=False)
+    salvar(fig, caminho_base, legenda=(
+        "Fidelidade por retenção: acurácia no teste (nov–dez/2025, avaliado uma única vez) do "
+        "modelo treinado só com as k features mais importantes de cada método. Faixa cinza: "
+        f"pior e melhor de {N_SORTEIOS} sorteios de k features; tracejado: a média dos sorteios. "
+        "Pontilhado: modelo com todas as features; traço-ponto: acaso (0,5). Estrelas: os "
+        "subconjuntos selecionados pelo PyGAwLLfs nas 5 execuções (seleções iguais se sobrepõem)."))
 
 
 def main() -> None:
