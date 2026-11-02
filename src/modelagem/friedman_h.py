@@ -1,12 +1,8 @@
 """Etapa 13 — estatística H de Friedman e Popescu (2008) para pares de features.
 
-Recebe o RF e o XGBoost treinados na Etapa 6, a VALIDAÇÃO (nunca o teste,
-§4.9), o ranking_consolidado.csv (Etapa 11) e o interacao_gawll.csv (Etapa 9).
-Para cada modelo, calcula o H em todos os pares do conjunto do §4.7:
-    união de (a) as 15 features de melhor rank médio entre os métodos de
-    importância e (b) as features do grafo reduzido do PyGAwLLfs (5% das
-    arestas), nas duas agregações das sementes (decisão 15). Só (a) excluiria,
-    por construção, as features que o PyGAwLLfs aponta como mais interativas.
+Recebe o RF e o XGBoost treinados na Etapa 6 e a VALIDAÇÃO (nunca o teste,
+§4.9). Para cada modelo, calcula o H nos 406 pares das 29 features: o mesmo
+universo de pares que o PyGAwLLfs pode sondar.
 
 Como o H é calculado (dependência parcial, PD):
     PD_j(x)   = média, sobre a amostra, da previsão com a feature j fixada em x
@@ -19,20 +15,19 @@ Todas as PDs são centradas e avaliadas nos próprios pontos da amostra
 previsões.
 
 Escolhas (docs/decisoes.md §12):
-    - Escala logit (log-odds), a mesma da validação de domínio (Etapa 15):
-      "sem interação" = efeitos que se somam no logit.
+    - Escala logit (log-odds): "sem interação" = efeitos que se somam no logit.
     - H_abs é a versão principal para ordenar os pares (como em Inglis et al.,
       2022): o H normalizado fica instável quando o efeito conjunto do par é
       pequeno (denominador perto de zero) e pode até passar de 1 — aconteceu
       com duas dummies da mesma variável, cuja combinação "as duas ligadas"
-      não existe nos dados. As duas versões são salvas.
+      não existe nos dados (pares estruturais). As duas versões são salvas.
     - LogReg fora: o modelo é aditivo no logit, então H = 0 por construção
       (conferido em tests/test_interacao.py).
     - 5 sementes de amostra: o H também varia com a amostra; a média das
       sementes é o valor final, e a variação vira medida de estabilidade.
 
 Produz results/tables/interacao_h.csv (formato longo, como interacao_gawll.csv,
-com method = "friedman_h_abs" e "friedman_h"), mais o custo em
+com method = "friedman_h_abs" e "friedman_h" e sondada = True), mais o custo em
 custo_importancia.csv. Quem consome: avaliacao/interacoes.py e o Diferencial 1
 (src/avaliacao/sintetico_aplicar.py usa calcular_h).
 """
@@ -50,12 +45,6 @@ RAIZ = Path(__file__).resolve().parents[2]
 sys.path.append(str(RAIZ))
 
 from src.modelagem import comum  # noqa: E402
-from src.avaliacao.graph import (  # noqa: E402
-    AGREGACOES,
-    arestas_reduzidas,
-    features_do_grafo,
-    interacao_media,
-)
 from src.modelagem.baselines import carregar  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -63,7 +52,6 @@ logger = logging.getLogger(__name__)
 
 MODELOS_H = ["random_forest", "xgboost"]
 AMOSTRA = 500             # pontos (e fundo) das dependências parciais (§4.7)
-TOP_CONSENSO = 15         # parte (a) do conjunto do §4.7
 LIMITE_PROBABILIDADE = 1e-6
 
 
@@ -130,7 +118,9 @@ def calcular_h(prever, amostra: pd.DataFrame, features: list[str]) -> pd.DataFra
 
 def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) -> pd.DataFrame:
     """Duas linhas por par (uma por versão do H), no formato de interacao_gawll.csv. O
-    par é escrito na ordem das colunas do dataset, como no PyGAwLLfs.
+    par é escrito na ordem das colunas do dataset, como no PyGAwLLfs; sondada = True,
+    porque o H mede todo par (sem a coluna, a concatenação com o PyGAwLLfs deixaria
+    o H com valores vazios).
 
     Usada em: main; sintetico_aplicar.interacoes_h.
     Importância: deixa o H no mesmo formato da interação do PyGAwLLfs, para a Etapa
@@ -145,47 +135,26 @@ def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) 
         tabelas.append(pd.DataFrame({
             "feature_a": h["feature_a"], "feature_b": h["feature_b"],
             "interaction": h[coluna], "method": metodo, "model": modelo, "seed": semente,
+            "sondada": True,
         }))
     return pd.concat(tabelas, ignore_index=True)
 
 
-def conjunto_de_features(modelo: str) -> list[str]:
-    """União do §4.7: top-15 por consenso entre os métodos + todas as features do grafo
-    reduzido do PyGAwLLfs daquele modelo.
-
-    Usada em: main; tests/test_interacao.py.
-    Importância: limita o custo O(N²) sem excluir por construção as features que o
-    PyGAwLLfs aponta como interativas.
-    """
-    ranking = pd.read_csv(comum.DIR_TABELAS / "ranking_consolidado.csv")
-    consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"].mean()
-                .nsmallest(TOP_CONSENSO).index)
-    # Grafo das duas agregações das sementes (decisão 15): o H cobre o grafo da
-    # principal e as duas são comparadas com o H nos mesmos pares
-    interacao = pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv")
-    grafo = set()
-    for agregacao in AGREGACOES:
-        gawll = interacao_media(interacao, agregacao=agregacao)
-        grafo |= features_do_grafo(arestas_reduzidas(gawll[gawll["model"] == modelo]))
-    return sorted(set(consenso) | grafo)
-
-
 def main() -> None:
-    """Etapa 13a: para RF e XGBoost, calcula o H na união do §4.7 em 5 amostras de 500
+    """Etapa 13a: para RF e XGBoost, calcula o H nos 406 pares em 5 amostras de 500
     linhas da validação e salva interacao_h.csv e o custo.
 
-    Usada em: python src/modelagem/friedman_h.py; main.py, etapa "interacoes";
+    Usada em: python src/modelagem/friedman_h.py; main.py, etapa "importancias";
     tests/test_interacao.py.
     Importância: gera a referência de interação contra a qual o PyGAwLLfs é
     comparado.
     """
     x_val, _ = carregar("val")
-    ordem = list(x_val.columns)
+    features = list(x_val.columns)
     tabelas, custos = [], []
     for modelo_nome in MODELOS_H:
         modelo = comum.carregar_modelo(modelo_nome)
         prever = prever_logit(modelo)
-        features = [f for f in ordem if f in conjunto_de_features(modelo_nome)]
         logger.info(f"{modelo_nome}: {len(features)} features, "
                     f"{len(features) * (len(features) - 1) // 2} pares")
         for semente in comum.SEMENTES:
@@ -193,7 +162,7 @@ def main() -> None:
             inicio = time.perf_counter()
             h = calcular_h(prever, amostra, features)
             tempo = time.perf_counter() - inicio
-            tabelas.append(formato_longo(h, modelo_nome, semente, ordem))
+            tabelas.append(formato_longo(h, modelo_nome, semente, features))
             custos.append({"method": "friedman_h", "model": modelo_nome, "seed": semente,
                            "tempo_s": tempo, "n_treinos": 0})
             mais_fortes = h.nlargest(3, "h_abs")

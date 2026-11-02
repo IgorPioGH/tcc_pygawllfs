@@ -4,10 +4,10 @@ Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de friedman_h.py, avaliacao/interacoes.py e avaliacao/sintetico_aplicar.py:
     python tests/test_interacao.py
 
-Os cinco primeiros conferem o H, o grafo e a agregação das sementes em casos
-com resposta conhecida (inclusive a justificativa de deixar a LogReg de fora);
-o sexto roda os scripts inteiros em miniatura com o test.parquet bloqueado
-(§4.9); o último confere as tabelas reais.
+Os primeiros conferem o H, o tipo dos pares e a agregação das sementes em
+casos com resposta conhecida (inclusive a justificativa de deixar a LogReg de
+fora); o penúltimo roda os scripts inteiros em miniatura com o test.parquet
+bloqueado (§4.9); o último confere as tabelas reais.
 """
 
 import logging
@@ -25,7 +25,6 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.append(str(RAIZ))
 
 from src.avaliacao import interacoes  # noqa: E402
-from src.domain import validate_pairs  # noqa: E402
 from src.modelagem import comum  # noqa: E402
 from src.avaliacao import graph  # noqa: E402
 from src.modelagem import friedman_h  # noqa: E402
@@ -88,80 +87,74 @@ def teste_logreg_tem_h_zero():
     assert h["h_abs"].max() < 1e-6, h["h_abs"].max()
 
 
-def teste_grafo_e_conjunto_do_h():
-    """O grafo reduzido tem 5% dos 406 pares por modelo, e o conjunto do H contém o
-    grafo inteiro e o top-15 por consenso (§4.7).
+def teste_tipo_por_construcao():
+    """Casos conhecidos: duas dummies da mesma coluna (e o porte com o target encoding
+    do mesmo aeroporto) são estruturais; hora e período do dia são redundantes; hora e
+    empresa são operacionais.
 
     Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
     python main.py --testes).
-    Importância: garante que a restrição do H não exclui as features do PyGAwLLfs.
+    Importância: o tipo do par é a régua da hipótese da redundância.
     """
-    interacao = pd.read_csv(DIR_TABELAS / "interacao_gawll.csv")
-    ranking = pd.read_csv(DIR_TABELAS / "ranking_consolidado.csv")
-    conjuntos = {m: set(friedman_h.conjunto_de_features(m)) for m in friedman_h.MODELOS_H}
-    for agregacao in graph.AGREGACOES:
-        media = graph.interacao_media(interacao, agregacao=agregacao)
-        assert media.groupby(["method", "model"])["rank"].min().eq(1).all()
-        arestas = graph.arestas_reduzidas(media)
-        assert arestas.groupby("model").size().eq(round(406 * graph.FRACAO_ARESTAS)).all()
-
-        # §4.7: o conjunto do H contém o grafo do PyGAwLLfs inteiro (nas duas
-        # agregações) e o top-15 por consenso
-        for modelo, conjunto in conjuntos.items():
-            assert graph.features_do_grafo(arestas[arestas["model"] == modelo]) <= conjunto
-            consenso = (ranking[ranking["model"] == modelo].groupby("feature")["rank"]
-                        .mean().nsmallest(friedman_h.TOP_CONSENSO).index)
-            assert set(consenso) <= conjunto
+    assert graph.tipo_por_construcao("tipo_linha_C", "tipo_linha_I") == "estrutural"
+    assert graph.tipo_por_construcao("porte_origem_hub", "origem_te") == "estrutural"
+    assert graph.tipo_por_construcao("porte_origem_hub", "porte_destino_hub") == "operacional"
+    assert graph.tipo_por_construcao("hora", "periodo_dia") == "redundante"
+    assert graph.tipo_por_construcao("dia_ano", "mes") == "redundante"
+    assert graph.tipo_por_construcao("hora", "empresa_te") == "operacional"
 
 
 def teste_agregacao_das_sementes():
-    """Decisão 15: na agregação "sondadas", o zero do PyGAwLLfs fica fora da média se o
-    par não foi sondado naquela semente (vint 0 em todos os modelos) e entra se foi
-    (vint > 0 em outro modelo da mesma semente); par nunca sondado não tem média e
-    par sondado numa semente só tem média mas não tem rank; no H, o zero é medida.
-    "com_zeros" é a média simples.
+    """Decisão 15: o zero do PyGAwLLfs fica fora da média se o par não foi sondado
+    naquela semente e entra se foi (coluna "sondada"); par nunca sondado não tem média
+    e par sondado numa semente só tem média mas não tem rank; no H, o zero é medida.
+    Sem a coluna "sondada", a agregação recusa a tabela.
 
     Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
     python main.py --testes).
     Importância: é a regra que decide quais pares entram no ranking, no top-k e no grafo.
     """
-    valores = {("a", "b"): [0.2, 0, 0, 0.4, 0],   # sondado em 2 sementes
-               ("a", "c"): [0.9, 0, 0, 0, 0],     # sondado em 1 semente
-               ("b", "c"): [0, 0, 0, 0, 0]}       # nunca sondado
-    linhas = [{"feature_a": a, "feature_b": b, "interaction": x, "method": metodo,
-               "model": "rf", "seed": semente}
-              for metodo in ["gawll", "friedman_h_abs"]
-              for (a, b), serie in valores.items() for semente, x in enumerate(serie)]
-    # Outro modelo, nas mesmas sementes: em (a, b), o zero da semente 0 é medida
-    # (o rf sondou o par nessa semente), não falta de sondagem
+    # (valores por semente, sementes em que o par foi sondado)
+    casos = {("a", "b"): ([0.2, 0, 0, 0.4, 0], [1, 0, 0, 1, 0]),   # sondado em 2 sementes
+             ("a", "c"): ([0.9, 0, 0, 0, 0], [1, 0, 0, 0, 0]),     # sondado em 1 semente
+             ("b", "c"): ([0, 0, 0, 0, 0], [0, 0, 0, 0, 0])}       # nunca sondado
+    linhas = [{"feature_a": a, "feature_b": b, "interaction": x, "method": "gawll",
+               "model": "rf", "seed": semente, "sondada": bool(sondada)}
+              for (a, b), (serie, sondadas) in casos.items()
+              for semente, (x, sondada) in enumerate(zip(serie, sondadas))]
+    linhas += [{"feature_a": a, "feature_b": b, "interaction": x, "method": "friedman_h_abs",
+                "model": "rf", "seed": semente, "sondada": True}
+               for (a, b), (serie, _) in casos.items() for semente, x in enumerate(serie)]
+    # Outro modelo: em (a, b), o zero da semente 0 foi sondado e entra na média
     linhas += [{"feature_a": "a", "feature_b": "b", "interaction": x, "method": "gawll",
-                "model": "xgb", "seed": semente} for semente, x in enumerate([0, 0, 0, 0.4, 0])]
+                "model": "xgb", "seed": semente, "sondada": bool(sondada)}
+               for semente, (x, sondada) in enumerate(zip([0, 0, 0, 0.4, 0], [1, 0, 0, 1, 0]))]
     interacao = pd.DataFrame(linhas)
 
-    sondadas = graph.interacao_media(interacao)
-    xgb = sondadas[sondadas["model"] == "xgb"].iloc[0]
+    media = graph.interacao_media(interacao)
+    xgb = media[media["model"] == "xgb"].iloc[0]
     assert np.isclose(xgb["interaction"], 0.2) and xgb["n_sementes"] == 2
-    sondadas = sondadas[sondadas["model"] == "rf"].set_index(["method", "feature_a", "feature_b"])
-    gawll = sondadas.loc["gawll"]
+    media = media[media["model"] == "rf"].set_index(["method", "feature_a", "feature_b"])
+    gawll = media.loc["gawll"]
     assert np.isclose(gawll.loc[("a", "b"), "interaction"], 0.3)
     assert gawll.loc[("a", "b"), "n_sementes"] == 2 and gawll.loc[("a", "b"), "rank"] == 1
     assert np.isclose(gawll.loc[("a", "c"), "interaction"], 0.9)
     assert gawll.loc[("a", "c"), "n_sementes"] == 1 and np.isnan(gawll.loc[("a", "c"), "rank"])
     assert np.isnan(gawll.loc[("b", "c"), "interaction"]) and gawll.loc[("b", "c"), "n_sementes"] == 0
-    h = sondadas.loc["friedman_h_abs"]  # no H, todo par é medido nas 5 amostras
+    h = media.loc["friedman_h_abs"]  # no H, todo par é medido nas 5 amostras
     assert h["n_sementes"].eq(5).all() and h.loc[("b", "c"), "interaction"] == 0
     assert h["rank"].notna().all()
 
-    com_zeros = graph.interacao_media(interacao, agregacao="com_zeros")
-    com_zeros = (com_zeros[com_zeros["model"] == "rf"]
-                 .set_index(["method", "feature_a", "feature_b"]).loc["gawll"])
-    assert np.allclose(com_zeros["interaction"], [0.12, 0.18, 0.0])
-    assert list(com_zeros["rank"]) == [2, 1, 3]
-
-    # O grafo só usa pares com rank: (a, c), o mais forte, fica de fora na "sondadas"
+    # O grafo só usa pares com rank: (a, c), o mais forte, fica de fora
     arestas = graph.arestas_reduzidas(graph.interacao_media(interacao), fracao=1.0)
     arestas = arestas[(arestas["method"] == "gawll") & (arestas["model"] == "rf")]
     assert set(zip(arestas["feature_a"], arestas["feature_b"])) == {("a", "b")}
+
+    try:
+        graph.interacao_media(interacao.drop(columns="sondada"))
+        raise AssertionError("a agregação aceitou uma tabela sem 'sondada'")
+    except ValueError:
+        pass
 
     # rankings.comparar ignora NaN: correlação nos itens comuns, listas em cada um
     a = pd.Series([3.0, 2.0, np.nan, 1.0], index=list("wxyz"))
@@ -193,25 +186,24 @@ def teste_scripts_nao_leem_o_teste():
 
     with tempfile.TemporaryDirectory() as pasta:
         pasta = Path(pasta)
-        for nome in ["interacao_gawll.csv", "ranking_consolidado.csv", "dominio_pares.csv"]:
-            shutil.copy(DIR_TABELAS / nome, pasta)
+        shutil.copy(DIR_TABELAS / "interacao_gawll.csv", pasta)
         with mock.patch("pandas.read_parquet", side_effect=ler_parquet_vigiado), \
                 mock.patch.object(comum, "DIR_TABELAS", pasta), \
                 mock.patch.object(comum, "SEMENTES", [42, 43]), \
                 mock.patch.object(friedman_h, "AMOSTRA", 30), \
-                mock.patch.object(validate_pairs, "N_BOOTSTRAP", 5), \
                 mock.patch.object(interacoes, "DIR_FIGURAS", pasta / "figuras"):
             friedman_h.main()
             interacoes.main()
         for esperado in ["interacao_h.csv", "interacoes.csv", "interacoes_pares.csv",
-                         "interacoes_redundancia.csv", "interacoes_dominio.csv"]:
+                         "interacoes_redundancia.csv"]:
             assert (pasta / esperado).exists(), esperado
         assert (pasta / "figuras" / "interacao_gawll_x_h.png").exists()
 
 
 def teste_tabelas_reais():
-    """Saídas reais da Etapa 13: todos os pares por (método, modelo, semente), H ≥ 0, H
-    normalizado acima de 1 em menos de 1% dos pares e Spearman em [-1, 1].
+    """Saídas reais da Etapa 13: os 406 pares por (método, modelo, semente), H ≥ 0, H
+    normalizado acima de 1 em menos de 1% dos pares não estruturais, Spearman em
+    [-1, 1] e "sondada" preenchida no PyGAwLLfs.
 
     Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
     python main.py --testes).
@@ -221,26 +213,22 @@ def teste_tabelas_reais():
     assert set(h["method"]) == {"friedman_h_abs", "friedman_h"}
     assert set(h["model"]) == set(friedman_h.MODELOS_H)
     for (metodo, modelo, semente), grupo in h.groupby(["method", "model", "seed"]):
-        n = len(friedman_h.conjunto_de_features(modelo))
-        assert len(grupo) == n * (n - 1) // 2, (metodo, modelo, semente)
-        assert (grupo["interaction"] >= 0).all()
+        assert len(grupo) == 406, (metodo, modelo, semente)
+        assert (grupo["interaction"] >= 0).all() and grupo["sondada"].all()
     # O H² normalizado NÃO é limitado a 1: quando o efeito conjunto é quase nulo,
-    # o denominador some. Aconteceu 1 vez (porte_origem_grande × porte_origem_hub,
-    # duas dummies da mesma variável, H_abs minúsculo). Por isso o H_abs é o principal.
-    normalizado = h.loc[h["method"] == "friedman_h", "interaction"]
-    assert (normalizado > 1).mean() < 0.01
+    # o denominador some. Acontece com duas dummies da mesma variável (pares
+    # estruturais), cuja combinação "as duas ligadas" não existe nos dados. Por isso
+    # o H_abs é o principal, e a checagem vale só nos pares não estruturais.
+    normalizado = h[h["method"] == "friedman_h"]
+    estrutural = [graph.tipo_por_construcao(a, b) == "estrutural"
+                  for a, b in zip(normalizado["feature_a"], normalizado["feature_b"])]
+    assert (normalizado.loc[~np.array(estrutural), "interaction"] > 1).mean() < 0.01
+
+    gawll = pd.read_csv(DIR_TABELAS / "interacao_gawll.csv")
+    assert gawll["sondada"].notna().all()
 
     comparacao = pd.read_csv(DIR_TABELAS / "interacoes.csv")
     assert comparacao["spearman"].between(-1, 1).all()
-
-    # Top-10 de cada método × modelo no teste de domínio, e números iguais aos da Etapa 15
-    dominio_tops = pd.read_csv(DIR_TABELAS / "interacoes_dominio.csv")
-    assert dominio_tops.groupby(["model", "method"]).size().eq(10).all()
-    etapa15 = pd.read_csv(DIR_TABELAS / "dominio_pares.csv").set_index(["feature_a", "feature_b"])
-    for linha in dominio_tops.itertuples():
-        if (linha.feature_a, linha.feature_b) in etapa15.index:
-            assert linha.classificacao == etapa15.loc[(linha.feature_a, linha.feature_b),
-                                                      "classificacao"]
 
     # Diferencial 1: o H acha o par verdadeiro em 1º, e não põe a redundância no topo
     recuperacao = pd.read_csv(DIR_TABELAS / "recuperacao_sintetico_interacao.csv")
@@ -254,7 +242,7 @@ if __name__ == "__main__":
         teste_h_em_funcoes_conhecidas,
         teste_dependencia_parcial,
         teste_logreg_tem_h_zero,
-        teste_grafo_e_conjunto_do_h,
+        teste_tipo_por_construcao,
         teste_agregacao_das_sementes,
         teste_scripts_nao_leem_o_teste,
         teste_tabelas_reais,

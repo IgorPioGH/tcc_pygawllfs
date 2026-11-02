@@ -1,13 +1,12 @@
 """Etapa 13 — PyGAwLLfs × H de Friedman: os dois concordam sobre quais pares interagem?
 
 Recebe interacao_gawll.csv (vint, 5 execuções) e interacao_h.csv (H, 5
-amostras), e classifica cada par com a mesma função da Etapa 15
-(domain/validate_pairs.tipo_do_par: estrutural, redundante ou operacional).
+amostras), e classifica cada par pela definição dos atributos
+(graph.tipo_por_construcao: estrutural, redundante ou operacional).
 Para o RF e o XGBoost (a LogReg tem H = 0 por construção):
 
-1. Média das sementes de cada método, restrita aos pares em que o H foi
-   calculado (o conjunto do §4.7). No PyGAwLLfs, a média usa só as sementes em
-   que o par foi sondado (graph.interacao_media, decisão 15).
+1. Média das sementes de cada método, nos 406 pares. No PyGAwLLfs, a média usa
+   só as sementes em que o par foi sondado (graph.interacao_media, decisão 15).
 2. Concordância entre os rankings de pares: PyGAwLLfs × H_abs (a comparação
    principal), PyGAwLLfs × H normalizado e H_abs × H normalizado. Spearman e
    Kendall tau-b em todos os pares com média; RBO e top-5/10/15 só nos pares
@@ -17,18 +16,14 @@ Para o RF e o XGBoost (a LogReg tem H = 0 por construção):
 4. Hipótese da redundância (docs/sintetico.md §3): onde os pares
    redundantes caem em cada ranking — rank médio (em percentil) e quantos
    entram no top-10.
-5. Validação de domínio dos dois tops: o top-10 de cada método passa pelo
-   mesmo teste descritivo da Etapa 15. Pares já testados lá têm o resultado
-   reaproveitado de dominio_pares.csv (mesmos números nos dois documentos).
 
 Produz:
     results/tables/interacoes.csv        concordância e estabilidade, por modelo
     results/tables/interacoes_redundancia.csv  posição dos pares de cada tipo
     results/tables/interacoes_pares.csv  cada par: valor e rank em cada método, tipo e
                                          nº de sementes em que o PyGAwLLfs o sondou
-    results/tables/interacoes_dominio.csv      top-10 de cada método no teste de domínio
     results/figures/interacao_gawll_x_h.{png,pdf}
-Só lê CSVs e, para o tipo dos pares, treino + validação (nunca o teste).
+Só lê CSVs.
 """
 
 import logging
@@ -40,7 +35,6 @@ import matplotlib
 
 matplotlib.use("Agg")  # só gera arquivo, sem abrir janela
 import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -49,20 +43,12 @@ sys.path.append(str(RAIZ))
 from src.graficos import COR_GRADE, COR_TEXTO, COR_TEXTO_SECUNDARIO, ROTULO_MODELO, salvar  # noqa: E402
 from src.avaliacao.rankings import comparar  # noqa: E402
 from src.avaliacao.stability import concordancia_entre_sementes  # noqa: E402
-from src.domain.validate_pairs import (  # noqa: E402
-    COR_TIPO,
-    SEMENTE,
-    carregar_base,
-    classificar,
-    testar_par,
-    tipo_do_par,
-    variavel,
-)
 from src.modelagem import comum  # noqa: E402
 from src.avaliacao.graph import (  # noqa: E402
+    COR_TIPO,
     interacao_media,
     marcar_nao_sondadas,
-    marcar_sondagens,
+    tipo_por_construcao,
 )
 from src.modelagem.friedman_h import MODELOS_H  # noqa: E402
 
@@ -74,13 +60,11 @@ METODOS = ["gawll", "friedman_h_abs", "friedman_h"]
 ROTULO = {"gawll": "PyGAwLLfs", "friedman_h_abs": "H não normalizado",
           "friedman_h": "H normalizado"}
 TOP_K_REDUNDANCIA = 10
-TOP_K_DOMINIO = 10
 
 
 def carregar_interacoes() -> pd.DataFrame:
     """Junta interacao_gawll.csv e interacao_h.csv, com a chave do par ("a|b", na mesma
-    ordem nas duas) e a coluna "sondada" (graph.marcar_sondagens), marcada antes de
-    qualquer filtro por modelo.
+    ordem nas duas) e a coluna "sondada" que cada produtor gravou.
 
     Usada em: main.
     Importância: a chave comum é o que permite comparar par a par o PyGAwLLfs e o H.
@@ -88,33 +72,28 @@ def carregar_interacoes() -> pd.DataFrame:
     interacao = pd.concat([pd.read_csv(comum.DIR_TABELAS / "interacao_gawll.csv"),
                            pd.read_csv(comum.DIR_TABELAS / "interacao_h.csv")],
                           ignore_index=True)
-    interacao = marcar_sondagens(interacao)
+    if interacao["sondada"].isna().any():
+        raise ValueError("tabela de interação sem 'sondada' em alguma linha")
+    interacao["sondada"] = interacao["sondada"].astype(bool)
     interacao["par"] = interacao["feature_a"] + "|" + interacao["feature_b"]
     return interacao
 
 
-def tipos_dos_pares(pares: pd.DataFrame, dominio: pd.DataFrame) -> dict[str, str]:
+def tipos_dos_pares(pares: pd.DataFrame) -> dict[str, str]:
     """Tipo de cada par (estrutural, redundante ou operacional), via
-    validate_pairs.tipo_do_par, com cache porque várias dummies caem na mesma
-    variável.
+    graph.tipo_por_construcao.
 
     Usada em: main.
     Importância: separa redundância de interação operacional, a hipótese central
     sobre o que o PyGAwLLfs detecta.
     """
-    cache, tipos = {}, {}
-    for a, b, par in zip(pares["feature_a"], pares["feature_b"], pares["par"]):
-        if (a, b) not in cache:
-            cache[(a, b)] = tipo_do_par(a, b, dominio)[0]
-        tipos[par] = cache[(a, b)]
-    return tipos
+    return {par: tipo_por_construcao(a, b)
+            for a, b, par in zip(pares["feature_a"], pares["feature_b"], pares["par"])}
 
 
-def comparar_modelo(interacao: pd.DataFrame, modelo: str,
-                    agregacao: str = "sondadas") -> tuple[list[dict], pd.DataFrame]:
+def comparar_modelo(interacao: pd.DataFrame, modelo: str) -> tuple[list[dict], pd.DataFrame]:
     """Para um modelo: concordância PyGAwLLfs × H nos pares em que o H existe, e
-    estabilidade de cada método entre sementes. agregacao: a de
-    graph.interacao_media.
+    estabilidade de cada método entre sementes.
 
     Usada em: main.
     Importância: produz o resultado principal da Etapa 13 (os dois métodos apontam as
@@ -124,7 +103,7 @@ def comparar_modelo(interacao: pd.DataFrame, modelo: str,
     pares_h = set(do_modelo.loc[do_modelo["method"] == "friedman_h_abs", "par"])
     do_modelo = do_modelo[do_modelo["par"].isin(pares_h)]
 
-    media = interacao_media(do_modelo.drop(columns="par"), agregacao=agregacao)
+    media = interacao_media(do_modelo.drop(columns="par"))
     media["par"] = media["feature_a"] + "|" + media["feature_b"]
     por_metodo = {m: media[media["method"] == m].set_index("par") for m in METODOS}
     # Correlações em todos os pares com média; RBO e top-k só nos que têm rank
@@ -144,7 +123,7 @@ def comparar_modelo(interacao: pd.DataFrame, modelo: str,
             "spearman": correlacoes["spearman"], "kendall_tau_b": correlacoes["kendall_tau_b"],
             **{k: v for k, v in topos.items() if k == "rbo" or k.startswith("top")},
         })
-    sementes = marcar_nao_sondadas(do_modelo) if agregacao == "sondadas" else do_modelo
+    sementes = marcar_nao_sondadas(do_modelo)
     for metodo in METODOS:
         grupo = (sementes[sementes["method"] == metodo]
                  .rename(columns={"par": "feature", "interaction": "pontuacao"}))
@@ -180,68 +159,6 @@ def resumo_redundancia(pares: pd.DataFrame) -> pd.DataFrame:
                     "model": modelo, "method": metodo, "tipo": tipo, "n_pares_tipo": len(ranks),
                     "rank_medio_percentil": float((ranks / n).mean() * 100),
                     f"no_top{TOP_K_REDUNDANCIA}": int((ranks <= TOP_K_REDUNDANCIA).sum()),
-                })
-    return pd.DataFrame(linhas)
-
-
-def teste_de_dominio(feature_a: str, feature_b: str, dominio: pd.DataFrame,
-                     cache: dict, rng: np.random.Generator) -> dict:
-    """Resultado do teste descritivo da Etapa 15 para um par: tipo, desvios, replicação
-    e classificação. Usa o cache se o par já foi testado; senão, testa e guarda.
-
-    Usada em: validar_tops_no_dominio.
-    Importância: um par testado tem um resultado só, em qualquer tabela que o cite
-    (o bootstrap depende da ordem em que os pares são testados).
-    """
-    chave = (feature_a, feature_b)
-    if chave not in cache:
-        tipo, incerteza = tipo_do_par(feature_a, feature_b, dominio)
-        resultado = {"tipo": tipo, "coef_incerteza": incerteza}
-        if tipo != "estrutural":
-            resultado.update(testar_par(dominio, variavel(feature_a), variavel(feature_b), rng)[0])
-        resultado["classificacao"] = classificar(tipo, resultado)
-        cache[chave] = resultado
-    return cache[chave]
-
-
-def cache_da_etapa_15() -> dict:
-    """Os pares já testados na Etapa 15 (dominio_pares.csv), no formato do cache de
-    teste_de_dominio.
-
-    Usada em: validar_tops_no_dominio.
-    Importância: os mesmos números de domínio nos dois documentos.
-    """
-    ja_testados = pd.read_csv(comum.DIR_TABELAS / "dominio_pares.csv")
-    return {chave: linha.to_dict()
-            for chave, linha in ja_testados.set_index(["feature_a", "feature_b"]).iterrows()}
-
-
-def validar_tops_no_dominio(pares: pd.DataFrame, dominio: pd.DataFrame,
-                            cache: dict | None = None) -> pd.DataFrame:
-    """Top-10 de pares do PyGAwLLfs e do H_abs, por modelo, passados pelo teste
-    descritivo da Etapa 15 (validate_pairs.testar_par e classificar). Pares já
-    testados lá têm o resultado reaproveitado.
-
-    Usada em: main.
-    Importância: julga os dois métodos contra os dados, não só um contra o outro.
-    """
-    if cache is None:
-        cache = cache_da_etapa_15()
-    rng = np.random.default_rng(SEMENTE)
-    linhas = []
-    for modelo, grupo in pares.groupby("model"):
-        for metodo in ["gawll", "friedman_h_abs"]:
-            com_rank = grupo.dropna(subset=[f"rank_{metodo}"])
-            for par in com_rank.nsmallest(TOP_K_DOMINIO, f"rank_{metodo}").itertuples():
-                teste = teste_de_dominio(par.feature_a, par.feature_b, dominio, cache, rng)
-                linhas.append({
-                    "model": modelo, "method": metodo, "rank": getattr(par, f"rank_{metodo}"),
-                    "feature_a": par.feature_a, "feature_b": par.feature_b,
-                    "n_sementes_gawll": par.n_sementes_gawll,
-                    "tipo": teste["tipo"], "desvio_2024_pp": teste.get("desvio_2024_pp"),
-                    "desvio_2025_pp": teste.get("desvio_2025_pp"),
-                    "replicacao_anos": teste.get("replicacao_anos"),
-                    "classificacao": teste["classificacao"],
                 })
     return pd.DataFrame(linhas)
 
@@ -306,9 +223,8 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
 
 
 def main() -> None:
-    """Etapa 13b: carrega as interações, compara por modelo, resume a redundância,
-    valida os tops no domínio e salva interacoes*.csv e a figura. Roda depois da
-    Etapa 15.
+    """Etapa 13b: carrega as interações, compara por modelo, resume a redundância e
+    salva interacoes*.csv e a figura.
 
     Usada em: python src/avaliacao/interacoes.py; main.py, etapa "interacoes";
     tests/test_interacao.py.
@@ -316,7 +232,6 @@ def main() -> None:
     interações.
     """
     interacao = carregar_interacoes()
-    dominio = carregar_base()
 
     linhas, tabelas_pares = [], []
     for modelo in MODELOS_H:
@@ -324,16 +239,14 @@ def main() -> None:
         linhas.extend(linhas_modelo)
         tabelas_pares.append(por_par)
     pares = pd.concat(tabelas_pares, ignore_index=True)
-    tipos = tipos_dos_pares(pares.drop_duplicates("par"), dominio)
+    tipos = tipos_dos_pares(pares.drop_duplicates("par"))
     pares["tipo"] = pares["par"].map(tipos)
 
     concordancia = pd.DataFrame(linhas)
     redundancia = resumo_redundancia(pares)
-    dominio_tops = validar_tops_no_dominio(pares, dominio)
     comum.salvar_tabela(concordancia.round(4), "interacoes.csv")
     comum.salvar_tabela(redundancia.round(2), "interacoes_redundancia.csv")
     comum.salvar_tabela(pares.drop(columns="par").round(6), "interacoes_pares.csv")
-    comum.salvar_tabela(dominio_tops.round(4), "interacoes_dominio.csv")
     figura_gawll_x_h(pares, DIR_FIGURAS / "interacao_gawll_x_h")
 
     with pd.option_context("display.width", 220, "display.max_columns", 20):
@@ -341,9 +254,6 @@ def main() -> None:
                     + concordancia[["model", "comparacao", "n_pares", "spearman", "rbo",
                                     "top5", "top10"]].round(3).to_string(index=False))
         logger.info("Onde caem os pares de cada tipo:\n" + redundancia.round(1).to_string(index=False))
-        logger.info("Top-10 de cada método no teste de domínio:\n"
-                    + dominio_tops.groupby(["model", "method", "classificacao"]).size()
-                    .to_string())
 
 
 if __name__ == "__main__":
