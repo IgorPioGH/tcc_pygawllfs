@@ -4,8 +4,8 @@ Recebe a subamostra estratificada (data/processed/subamostra.parquet, só
 treino e validação) e os hiperparâmetros escolhidos na Etapa 6
 (results/tables/baselines.csv). Para cada (modelo, semente), roda o GA com
 linkage learning e salva um checkpoint .npz com o melhor subconjunto, o vetor
-de importância (vimp), a matriz de interação (vint), o tempo e o número de
-treinos. Quem consome: Etapa 8 (protocolo completo), comparações a partir da
+de importância (vimp), a matriz de interação (vint), quantas vezes cada par foi
+sondado, o melhor fitness de cada geração, o tempo e o número de treinos. Quem consome: Etapa 8 (protocolo completo), comparações a partir da
 Etapa 9 e grafo de interação.
 
 Correções em relação ao código original (documentar no Cap. 3):
@@ -19,8 +19,14 @@ Nada dentro de PyGAwLLfs/ é editado: o motor do GA é usado por import e
 subclasse. Os dois src/ (projeto e PyGAwLLfs) são namespace packages, sem
 __init__.py, e se fundem no sys.path. Nunca criar __init__.py em nenhum deles.
 
+O número de gerações vem da variável de ambiente TCC_GERACOES (padrão 200), para
+um ensaio rápido não exigir editar o código; consolidar_gawll.py recusa
+checkpoints com outro número de gerações, então execuções de tamanhos diferentes
+nunca se misturam.
+
 Uso (da raiz do repositório):
     python src/modelagem/gawll.py --modelos random_forest --sementes 42 43
+    TCC_GERACOES=5 python src/modelagem/gawll.py      # ensaio rápido
 """
 
 import argparse
@@ -63,8 +69,10 @@ DIR_SAIDA = RAIZ / "experiments" / "runs" / "gawll"
 MODELOS = ["logreg", "random_forest", "xgboost"]
 SEMENTES = [42, 43, 44, 45, 46]
 
-# Parâmetros do artigo (Guimarães et al., 2026); pm = 1/N é calculado em executar()
-GERACOES = 100
+# Parâmetros do código PyGAwLLfs (população 50, pc = 0,8, pm = 1/N, calculado em
+# executar()). O artigo reporta pc = 0,4 e pm = 1/|P|; o código, que é o que roda,
+# usa os valores abaixo. 200 gerações (o dobro do artigo) dão 600 sondagens de pares.
+GERACOES = int(os.environ.get("TCC_GERACOES", "200"))
 POPULACAO = 50
 TAXA_CRUZAMENTO = 0.8
 TAU_RESET = 50
@@ -238,6 +246,42 @@ class MutacaoInPlace(Mutation):
         return chromosome
 
 
+class LinkageLearningComContador(LinkageLearning):
+    """O linkage learning original, mais a contagem de quantas vezes cada par (g, h)
+    foi sondado. O original só registra o par na vint quando a interação medida é
+    maior que zero, então um zero na vint mistura "par nunca sondado" com "sondado,
+    efeito nulo".
+
+    Usada em: GAwLLCorrigido.run; executar (sondagens vai para o checkpoint).
+    Importância: separa o que não foi medido do que foi medido e deu zero, e dá a
+    cobertura real da matriz de interação.
+    """
+
+    def __init__(self, evig, importance, eval_perf_batch, calc_fitness, n_features: int):
+        """Inicializa o original e zera a matriz de sondagens (N x N).
+
+        Usada em: GAwLLCorrigido.run.
+        Importância: cada execução começa com a contagem zerada.
+        """
+        super().__init__(evig, importance, eval_perf_batch, calc_fitness)
+        self.sondagens = np.zeros((n_features, n_features), dtype=int)
+
+    def mutation_ll(self, parent) -> list[np.ndarray]:
+        """Roda a sondagem original e soma 1 no par sorteado. Os dois primeiros filhos são
+        o pai com só o bit g (e só o bit h) invertido, então o par é recuperado deles sem
+        consumir o gerador aleatório: a busca fica idêntica à do original.
+
+        Usada em: _generation_ll do GAwLL (motor do clone).
+        Importância: é a contagem em si.
+        """
+        filhos = super().mutation_ll(parent)
+        g = np.flatnonzero(filhos[0] != parent.chromosome)[0]
+        h = np.flatnonzero(filhos[1] != parent.chromosome)[0]
+        self.sondagens[g, h] += 1
+        self.sondagens[h, g] += 1
+        return filhos
+
+
 class GAwLLCorrigido(GAwLL):
     """GAwLL com as correções 4 e 5 (§4.12); o resto do motor é o original do clone.
 
@@ -268,11 +312,14 @@ class GAwLLCorrigido(GAwLL):
         )
 
     def run(self, seed: int) -> None:
-        """Cópia do GAwLL.run original, trocando Mutation por MutacaoInPlace e print por
-        logger (uma linha de progresso por geração).
+        """Cópia do GAwLL.run original, trocando Mutation por MutacaoInPlace,
+        LinkageLearning por LinkageLearningComContador e print por logger (uma linha de
+        progresso por geração). Guarda o melhor fitness de cada geração (mais o final)
+        em historico_fitness e as gerações com reset em geracoes_reset.
 
         Usada em: executar.
-        Importância: único trecho do laço do GA reescrito; todo o resto é do clone.
+        Importância: único trecho do laço do GA reescrito; todo o resto é do clone. O
+        histórico é a curva de convergência; com o elitismo corrigido, ele nunca cai.
         """
         random.seed(seed)
         np.random.seed(seed)
@@ -284,15 +331,19 @@ class GAwLLCorrigido(GAwLL):
         self.selection = Selection()
         self.crossover = Crossover()
         self.mutation = MutacaoInPlace()
-        self.mutation_ll = LinkageLearning(
-            self.evig, self.importance, self.perf_batch, self._calculate_fitness_value
+        self.mutation_ll = LinkageLearningComContador(
+            self.evig, self.importance, self.perf_batch, self._calculate_fitness_value,
+            n_features=self.chrom_size,
         )
+        self.historico_fitness = []
+        self.geracoes_reset = []
 
         last_improvement_gen = 0
         best_fitness_track = 0.0
 
         for generation in range(self.max_generations):
             fittest = self.population_analyzer.get_fittest_individual(self.population)
+            self.historico_fitness.append(fittest.fitness)
             logger.info(
                 f"  geração {generation:3d} | fitness {fittest.fitness:.4f} "
                 f"| acurácia {fittest.f_perf:.4f} | {int(fittest.chromosome.sum())} features"
@@ -305,6 +356,7 @@ class GAwLLCorrigido(GAwLL):
             # Tau-reset: sem melhora há tau_reset gerações -> perturba a população
             if generation - last_improvement_gen > self.tau_reset_generations:
                 logger.info(f"  [reset] geração {generation}: perturbando a população")
+                self.geracoes_reset.append(generation)
                 reset_pop = []
                 for _ in range(self.population_size):
                     c = fittest.chromosome.copy()
@@ -323,6 +375,7 @@ class GAwLLCorrigido(GAwLL):
         self.final_fittest = self.population_analyzer.get_fittest_individual(
             self.population
         )
+        self.historico_fitness.append(self.final_fittest.fitness)
 
 
 def executar(
@@ -335,8 +388,8 @@ def executar(
     populacao: int = POPULACAO,
 ) -> None:
     """Roda uma execução (modelo, semente) e salva o checkpoint .npz: cromossomo x*,
-    fitness, acurácia de validação, vimp, vint, features, tempo, nº de treinos e
-    cobertura de pares.
+    fitness, acurácia de validação, vimp, vint, sondagens, histórico do fitness,
+    gerações com reset, features, tempo, nº de treinos e cobertura de pares.
 
     Usada em: main; sintetico_aplicar.rodar_gawll; tests/test_gawll.py.
     Importância: o checkpoint por execução permite retomar após uma queda. O
@@ -367,9 +420,10 @@ def executar(
     cromossomo, fitness, acuracia_validacao = ga.get_feature_selection_results()
     vimp = ga.importance.export_importance_vector()
     vint = ga.evig.export_interaction_matrix()
+    sondagens = ga.mutation_ll.sondagens
 
-    # Fração dos pares (i < j) com alguma interação registrada
-    cobertura_pares = float((vint[np.triu_indices(n, k=1)] > 0).mean())
+    # Fração dos pares (i < j) sondados ao menos uma vez
+    cobertura_pares = float((sondagens[np.triu_indices(n, k=1)] > 0).mean())
 
     # Grava num arquivo temporário e só depois renomeia: se a execução morrer
     # no meio da gravação, não sobra um .npz incompleto que a retomada pularia
@@ -382,6 +436,9 @@ def executar(
             acuracia_validacao=acuracia_validacao,
             vimp=vimp,
             vint=vint,
+            sondagens=sondagens,
+            historico_fitness=np.array(ga.historico_fitness),
+            geracoes_reset=np.array(ga.geracoes_reset, dtype=int),
             features=np.array(features),
             modelo=nome_modelo,
             parametros=str(parametros),
@@ -400,6 +457,7 @@ def executar(
         f"Fim: {nome_modelo} semente {semente} | {tempo / 60:.1f} min | "
         f"{avaliador.n_treinos} treinos / {avaliador.n_avaliacoes} avaliações | "
         f"acurácia na validação {acuracia_validacao:.4f} | cobertura de pares {cobertura_pares:.2f}"
+        f" | resets nas gerações {ga.geracoes_reset}"
     )
     logger.info(f"Selecionadas ({len(selecionadas)}): {selecionadas}")
 

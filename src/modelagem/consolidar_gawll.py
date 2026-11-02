@@ -31,6 +31,7 @@ from src.modelagem.comum import (  # noqa: E402
     salvar_tabela,
     tabela_importancia,
 )
+from src.modelagem.gawll import GERACOES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -41,17 +42,19 @@ COLUNAS_INTERACAO = ["feature_a", "feature_b", "interaction", "method", "model",
 
 
 def tabela_interacao(
-    features: list[str], matriz: np.ndarray, method: str, model: str, seed: int
+    features: list[str], matriz: np.ndarray, method: str, model: str, seed: int,
+    sondagens: np.ndarray | None = None,
 ) -> pd.DataFrame:
     """Matriz simétrica N x N -> uma linha por par (i < j), com feature_a, feature_b,
-    interaction, method, model e seed.
+    interaction, method, model e seed. Com a matriz de sondagens, acrescenta a coluna
+    booleana "sondada" (o par foi sondado ao menos uma vez nessa execução).
 
     Usada em: consolidar; tests/test_sintetico.py.
     Importância: o formato longo é o que o H de Friedman, o grafo e a validação de
     domínio leem.
     """
     linhas_i, colunas_j = np.triu_indices(len(features), k=1)
-    return pd.DataFrame({
+    tabela = pd.DataFrame({
         "feature_a": [features[i] for i in linhas_i],
         "feature_b": [features[j] for j in colunas_j],
         "interaction": matriz[linhas_i, colunas_j],
@@ -59,6 +62,9 @@ def tabela_interacao(
         "model": model,
         "seed": seed,
     })
+    if sondagens is not None:
+        tabela["sondada"] = sondagens[linhas_i, colunas_j] > 0
+    return tabela
 
 
 def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list[dict]]:
@@ -67,7 +73,9 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
     Usada em: main; sintetico_aplicar.main (sintético).
     Importância: transforma os checkpoints do GA em tabelas comparáveis com as dos
-    outros métodos; o mesmo código serve aos dados reais e ao sintético.
+    outros métodos; o mesmo código serve aos dados reais e ao sintético. Recusa
+    checkpoint com número de gerações diferente de GERACOES, para um ensaio rápido
+    nunca se misturar com a execução completa.
     """
     arquivos = sorted(dir_execucoes.glob("*_seed*.npz"))
     if not arquivos:
@@ -79,6 +87,11 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
         features = [str(f) for f in execucao["features"]]
         modelo = str(execucao["modelo"])
         semente = int(execucao["semente"])
+        if int(execucao["geracoes"]) != GERACOES:
+            raise ValueError(
+                f"{arquivo.name} tem {int(execucao['geracoes'])} gerações e o esperado é "
+                f"{GERACOES} (TCC_GERACOES); apague os checkpoints antigos ou ajuste a variável"
+            )
 
         if not np.allclose(execucao["vint"], execucao["vint"].T):
             raise ValueError(f"vint não simétrica em {arquivo.name}")
@@ -87,7 +100,8 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
             tabela_importancia(features, execucao["vimp"], METODO, modelo, semente)
         )
         interacoes.append(
-            tabela_interacao(features, execucao["vint"], METODO, modelo, semente)
+            tabela_interacao(features, execucao["vint"], METODO, modelo, semente,
+                             sondagens=execucao["sondagens"])
         )
 
         selecionadas = [f for f, bit in zip(features, execucao["cromossomo"]) if bit]

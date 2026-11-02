@@ -202,7 +202,8 @@ def teste_determinismo_e_cache():
 def teste_artificial():
     """Validação no Artificial do artigo: as informativas precisam aparecer. Com
     shuffle=False, as colunas 0-3 são informativas, 4-5 redundantes (combinações
-    lineares das informativas) e 6-9 ruído.
+    lineares das informativas) e 6-9 ruído. Confere também o checkpoint: contagem de
+    sondagens, histórico do fitness e gerações com reset.
 
     Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
     python main.py --testes).
@@ -220,12 +221,26 @@ def teste_artificial():
     features = [f"x{i}" for i in range(10)]
     dados = (x_treino, y_treino, x_val, y_val, features)
 
+    geracoes = 20
     with tempfile.TemporaryDirectory() as pasta:
         caminho = Path(pasta) / "artificial.npz"
         gawll.executar(
-            "random_forest", {"max_depth": 10}, 42, dados, caminho, geracoes=20
+            "random_forest", {"max_depth": 10}, 42, dados, caminho, geracoes=geracoes
         )
-        vimp = np.load(caminho)["vimp"]
+        execucao = dict(np.load(caminho))
+    vimp = execucao["vimp"]
+
+    # Checkpoint: com população 50 e pc = 0,8, cada geração faz 3 sondagens de pares;
+    # toda interação registrada veio de um par sondado; o melhor fitness nunca cai
+    sondagens, vint = execucao["sondagens"], execucao["vint"]
+    assert (sondagens == sondagens.T).all() and (np.diag(sondagens) == 0).all()
+    assert sondagens[np.triu_indices(len(features), k=1)].sum() == 3 * geracoes
+    assert (sondagens[vint > 0] > 0).all()
+    historico = execucao["historico_fitness"]
+    assert len(historico) == geracoes + 1
+    assert (np.diff(historico) >= -1e-12).all(), "o melhor fitness caiu entre gerações"
+    assert np.isclose(historico[-1], execucao["fitness"])
+    assert len(execucao["geracoes_reset"]) == 0  # tau_reset = 50 > 20 gerações
 
     informativas, redundantes, ruido = vimp[:4], vimp[4:6], vimp[6:]
     piso = 0.02 / len(features)
