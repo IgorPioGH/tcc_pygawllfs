@@ -10,6 +10,8 @@ Produz, em results/tables/:
     eda_qualidade.csv          por coluna da base bruta: tipo, nulos, valores
                                distintos, categorias raras e o valor mais comum
     eda_descartes.csv          o funil da base bruta até a base com o alvo
+    eda_vazamento.csv          por que as colunas que só existem depois do voo
+                               ficam fora dos atributos
     eda_taxa_por_atributo.csv  voos e taxa de atraso por valor de cada atributo
 e, em results/figures/:
     eda_funil                  os descartes, passo a passo
@@ -134,6 +136,35 @@ def funil_de_descartes(bruto: pd.DataFrame) -> pd.DataFrame:
     if tabela["voos"].iloc[0] != VOOS_BRUTOS or tabela["voos"].iloc[-1] != VOOS_COM_ALVO:
         raise ValueError(f"O funil mudou: {tabela['voos'].tolist()}; os dados não são a versão esperada")
     return tabela
+
+
+def evidencias_de_vazamento(bruto: pd.DataFrame) -> pd.DataFrame:
+    """Números que mostram por que as colunas pós-voo ficam fora dos atributos: Situação
+    Voo e Partida Real andam juntas; o atraso na chegada acompanha o atraso na partida;
+    o Código Justificativa está vazio. O atraso usa só voos realizados, com os quatro
+    horários, antes de FIM_ANALISE e dentro da janela de plausibilidade.
+
+    Usada em: main.
+    Importância: a lista de colunas proibidas tem uma evidência produzida pelo pipeline.
+    """
+    cancelado = bruto["Situação Voo"] != "REALIZADO"
+    horarios = ["Partida Prevista", "Partida Real", "Chegada Prevista", "Chegada Real"]
+    voos = bruto[~cancelado & bruto[horarios].notna().all(axis=1)
+                 & (bruto["Partida Prevista"] < FIM_ANALISE)]
+    partida = (voos["Partida Real"] - voos["Partida Prevista"]).dt.total_seconds() / 60
+    chegada = (voos["Chegada Real"] - voos["Chegada Prevista"]).dt.total_seconds() / 60
+    plausivel = partida.between(target.ATRASO_MIN_PLAUSIVEL, target.ATRASO_MAX_PLAUSIVEL)
+    partida, chegada = partida[plausivel], chegada[plausivel]
+    atrasado_na_partida = partida >= LIMIAR_ATRASO
+    return pd.DataFrame([
+        ("Situação Voo", "cancelados sem Partida Real", bruto.loc[cancelado, "Partida Real"].isna().mean()),
+        ("Situação Voo", "realizados com Partida Real", bruto.loc[~cancelado, "Partida Real"].notna().mean()),
+        ("Chegada Real", "correlação de Pearson entre o atraso na partida e na chegada",
+         partida.corr(chegada)),
+        ("Chegada Real", "fração dos atrasados na partida que chegam atrasados",
+         (chegada[atrasado_na_partida] >= LIMIAR_ATRASO).mean()),
+        ("Código Justificativa", "fração vazia", bruto["Código Justificativa"].isna().mean()),
+    ], columns=["coluna", "evidencia", "valor"])
 
 
 def base_ate_outubro() -> pd.DataFrame:
@@ -396,6 +427,7 @@ def main() -> None:
     bruto = pd.read_parquet(ARQUIVO_BRUTO)
     qualidade = tabela_qualidade(bruto)
     funil = funil_de_descartes(bruto)
+    vazamento = evidencias_de_vazamento(bruto)
     del bruto
 
     base = base_ate_outubro()
@@ -406,6 +438,7 @@ def main() -> None:
     DIR_TABELAS.mkdir(parents=True, exist_ok=True)
     qualidade.round(4).to_csv(DIR_TABELAS / "eda_qualidade.csv", index=False)
     funil.to_csv(DIR_TABELAS / "eda_descartes.csv", index=False)
+    vazamento.round(4).to_csv(DIR_TABELAS / "eda_vazamento.csv", index=False)
     taxas.round(4).to_csv(DIR_TABELAS / "eda_taxa_por_atributo.csv", index=False)
 
     figura_funil(funil, DIR_FIGURAS / "eda_funil")
@@ -418,6 +451,7 @@ def main() -> None:
     with pd.option_context("display.width", 200, "display.max_columns", 10):
         logger.info("Qualidade da base bruta:\n" + qualidade.round(3).to_string(index=False))
         logger.info("Funil de descartes:\n" + funil.to_string(index=False))
+        logger.info("Colunas pós-voo:\n" + vazamento.round(3).to_string(index=False))
         logger.info(f"Voos até out/2025: {len(base)} | taxa de atraso média {decimal(media)}")
 
 

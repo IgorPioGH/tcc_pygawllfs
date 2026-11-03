@@ -9,8 +9,8 @@ Mastery):
     RF          redução média de impureza (MDI)
     XGBoost     ganho médio por divisão (gain)
     Permutation queda média de acurácia na validação
-    SHAP        média de |SHAP| na validação (log-odds)
-    PyGAwLLfs   v_imp (soma das variações de fitness atribuídas à feature)
+    SHAP        média de |SHAP| na validação (probabilidade no RF, log-odds no XGBoost)
+    PyGAwLLfs   v_imp (a maior variação de fitness já observada ao inverter a feature)
 Confere que cada painel tem 29 barras e que os 3 maiores valores batem com o
 ranking_consolidado.csv. Produz results/figures/importancia_barras_<modelo>.{png,pdf}.
 Só lê CSVs.
@@ -55,7 +55,8 @@ UNIDADE = {
     ("intrinseca", "random_forest"): "redução média de impureza (MDI)",
     ("intrinseca", "xgboost"): "ganho médio por divisão (gain)",
     "permutation": "queda média de acurácia",
-    "shap": "média de |SHAP| (log-odds)",
+    ("shap", "random_forest"): "média de |SHAP| (probabilidade)",
+    ("shap", "xgboost"): "média de |SHAP| (log-odds)",
     "gawll": "v_imp",
 }
 
