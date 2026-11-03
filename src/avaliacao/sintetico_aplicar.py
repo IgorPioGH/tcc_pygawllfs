@@ -1,21 +1,21 @@
-"""Etapa 10 — Diferencial 1: aplica os quatro métodos ao dataset sintético.
+"""Avaliação — aplica os quatro métodos ao dataset sintético.
 
 Recebe data/processed/sintetico.parquet (sintetico_gerar.py) e os hiperparâmetros
-escolhidos na Etapa 6 (baselines.csv). Treina os três modelos com
+escolhidos na etapa baselines (baselines.csv). Treina os três modelos com
 criar_modelo() — os mesmos do VRA — e roda exatamente o mesmo código das
-Etapas 7 e 9 (docs/metodologia.md §5: "usa exatamente o mesmo código de comparação"):
+etapas pygawllfs e importancias (docs/05-avaliacao.md: o mesmo código de comparação):
 
     intrínseca   intrinsic.importancia_intrinseca        determinística, seed 42
     permutation  permutation.calcular_permutation        5 sementes
     shap         shap_global.calcular_shap (RF, XGBoost) a validação inteira
                  (1.500 linhas < 10k) entra toda, então é determinístico: seed 42
-    gawll        gawll.executar, 3 modelos x 5 sementes, 100 gerações,
-                 checkpoints em experiments/runs/sintetico/ (retomada igual à Etapa 8)
-    H Friedman   modelagem/friedman_h.calcular_h (Etapa 13), RF e XGBoost, todos os
+    gawll        gawll.executar, 3 modelos x 5 sementes, gawll.GERACOES gerações,
+                 checkpoints em experiments/runs/sintetico/ (retomada igual à etapa pygawllfs)
+    H Friedman   modelagem/friedman_h.calcular_h (etapa importancias), RF e XGBoost, todos os
                  45 pares, 5 amostras de 500 linhas da validação
 
 Produz, em results/tables/:
-    sintetico_importancia.csv  formato padrão (§7), os quatro métodos
+    sintetico_importancia.csv  formato padrão, os quatro métodos
     sintetico_interacao.csv    vint do PyGAwLLfs e H de Friedman, em formato longo
     sintetico_selecao.csv      o x* de cada execução
     sintetico_custo.csv        tempo e nº de treinos
@@ -72,7 +72,7 @@ def carregar_sintetico() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Seri
 
 def importancias_modelo_fixo(modelos, x_val, y_val) -> tuple[list[pd.DataFrame], list[dict]]:
     """Intrínseca, Permutation e SHAP sobre os modelos já treinados, na validação, com
-    as mesmas funções da Etapa 9.
+    as mesmas funções da etapa importancias.
 
     Usada em: main.
     Importância: o gabarito julga os métodos exatamente como foram usados nos dados
@@ -139,7 +139,7 @@ def rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes) -> None:
     pula as que já têm checkpoint.
 
     Usada em: main.
-    Importância: é a parte cara do Diferencial 1 (~30 min).
+    Importância: é a parte cara da verificação no sintético (~30 min).
     """
     dados = (
         x_treino.to_numpy(dtype=float), y_treino.to_numpy(dtype=int),
@@ -157,11 +157,11 @@ def rodar_gawll(x_treino, y_treino, x_val, y_val, configuracoes) -> None:
 
 
 def main() -> None:
-    """Etapa 10b: treina os três modelos no sintético, roda os quatro métodos e o H e
+    """Treina os três modelos no sintético, roda os quatro métodos e o H e
     salva sintetico_{importancia,interacao,selecao,custo}.csv.
 
     Usada em: python src/avaliacao/sintetico_aplicar.py; main.py, etapa "sintetico".
-    Importância: produz o material do Diferencial 1 (qual método recupera a verdade).
+    Importância: produz o material da verificação no sintético (qual método recupera a verdade).
     """
     x_treino, y_treino, x_val, y_val = carregar_sintetico()
     configuracoes = ler_configuracoes_escolhidas()

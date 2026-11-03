@@ -58,7 +58,7 @@ def features_sem_alvo(df: pd.DataFrame) -> pd.DataFrame:
 
     Usada em: bloco __main__ deste script (main.py, etapa "preparacao") e
     recortes.py, uma vez sobre a base inteira.
-    Importância: só usa informação conhecida antes da partida (§4.3) e não usa o
+    Importância: só usa informação conhecida antes da partida e não usa o
     alvo, por isso pode rodar antes do split sem vazamento. O congestionamento conta
     os voos da malha inteira, então tem de ser calculado antes de qualquer recorte.
     """
@@ -109,7 +109,7 @@ def dividir_temporal(
     max(treino) ≤ min(validação) e max(validação) ≤ min(teste).
 
     Usada em: montar_conjuntos.
-    Importância: implementa o split temporal do §4.4 (prever o futuro a partir do
+    Importância: implementa o split temporal (prever o futuro a partir do
     passado, nada de shuffle), para qualquer recorte de RECORTES.
     """
     janela = df[(df["Partida Prevista"] >= inicio) & (df["Partida Prevista"] < fim)]
@@ -159,7 +159,7 @@ def ajustar_porte_aeroporto(treino: pd.DataFrame) -> dict:
     volume de pousos e decolagens no treino.
 
     Usada em: montar_conjuntos.
-    Importância: resume a alta cardinalidade dos aeroportos em 4 faixas (N ≤ 40, §3);
+    Importância: resume a alta cardinalidade dos aeroportos em 4 faixas (N ≤ 40);
     ajustado só no treino, para não vazar volume de validação e teste.
     """
     vol_origem = treino["ICAO Aeródromo Origem"].value_counts()
@@ -227,7 +227,7 @@ def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
     refit em validação e teste.
 
     Usada em: montar_conjuntos, para empresa, origem e destino.
-    Importância: é a correção do §4.10; nenhuma linha de treino usa o próprio rótulo
+    Importância: é o target encoding sem vazamento; nenhuma linha de treino usa o próprio rótulo
     no seu encoding.
     """
     codificado = pd.Series(index=treino.index, dtype=float)
@@ -247,7 +247,7 @@ def target_encoding_oof(treino, coluna, alvo, k=K_FOLDS, m=SUAVIZACAO):
 
 
 def verifica_vazamento(df, coluna, codificado, media_global):
-    """Teste do §4.10: nas categorias com uma única linha, o encoding OOF não pode
+    """Teste de vazamento do target encoding: nas categorias com uma única linha, o encoding OOF não pode
     depender do rótulo dela, então a média do encoding com atrasado = 0 e com
     atrasado = 1 tem de ser igual (dentro da TOLERANCIA). Levanta erro se não for.
 

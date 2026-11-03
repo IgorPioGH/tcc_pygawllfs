@@ -1,17 +1,17 @@
-"""Etapa 12 — fidelidade por retenção: as features que cada método aponta bastam?
+"""Avaliação — fidelidade por retenção: as features que cada método aponta bastam?
 
-Recebe o ranking_consolidado.csv (Etapa 11), o selecao_gawll.csv (Etapa 9),
-os conjuntos congelados train/val/test e os hiperparâmetros da Etapa 6.
-Para cada modelo (mesma classe e hiperparâmetros da Etapa 6, treinado no
-treino COMPLETO, §3.1), treina e avalia:
+Recebe o ranking_consolidado.csv (etapa rankings), o selecao_gawll.csv (etapa importancias),
+os conjuntos congelados train/val/test e os hiperparâmetros da etapa baselines.
+Para cada modelo (mesma classe e hiperparâmetros da etapa baselines, treinado no
+treino COMPLETO), treina e avalia:
     top-k        as k features mais importantes de cada método (k = 5, 10, 15)
     gawll_x*     o subconjunto que o PyGAwLLfs selecionou em cada uma das 5 execuções
     aleatorio    k features sorteadas (N_SORTEIOS por k): a referência de acaso
-    todas        as 29 features (o modelo da Etapa 6): a referência de cima
+    todas        as 29 features (o modelo da etapa baselines): a referência de cima
 Um método é fiel se o modelo com só as suas top-k chega perto do modelo com
 todas — e bem acima de k features sorteadas.
 
-Isolamento do teste (§4.9): este é um dos dois únicos lugares do projeto que
+Isolamento do teste: este é um dos dois únicos lugares do projeto que
 tocam o teste. Cada configuração é treinada no treino e avaliada na validação
 e, por último, no teste. Nada é escolhido a partir do teste: todas as listas
 de features vêm de etapas anteriores, calculadas sem ele.
@@ -21,7 +21,7 @@ Produz:
     results/tables/fidelidade_resumo.csv  média por (modelo, método, k, conjunto),
                                           e a fração do desempenho de "todas"
     results/figures/fidelidade.{png,pdf}  curvas de acurácia no teste
-Quem consome: o Cap. 4 (fidelidade é um dos quatro critérios da pergunta de pesquisa).
+Quem consome: a síntese e o texto (a fidelidade é um dos quatro critérios da pergunta de pesquisa).
 """
 
 import logging
@@ -67,7 +67,7 @@ SEMENTE = 42
 METRICAS = ["acuracia", "f1", "pr_auc", "roc_auc", "acuracia_balanceada"]
 CONJUNTOS = ["val", "test"]  # o teste sempre por último
 
-# Cor e marcador por método (cores das figuras da Etapa 11 + o 4º slot da paleta).
+# Cor e marcador por método (cores das figuras da etapa rankings + o 4º slot da paleta).
 # Marcador diferente e rótulo na ponta da linha: a cor não carrega a identidade sozinha.
 ESTILO = {
     "intrinseca": ("#eda100", "s"),
@@ -115,8 +115,8 @@ def avaliar_configuracoes(modelo_nome: str, configuracoes: list[dict],
     reaproveitam o resultado: mesmo treino, mesmos números.
 
     Usada em: main.
-    Importância: é um dos dois únicos usos do teste (§4.9); usa os hiperparâmetros da
-    Etapa 6, então a diferença vem só das features.
+    Importância: é um dos dois únicos usos do teste; usa os hiperparâmetros da
+    etapa baselines, então a diferença vem só das features.
     """
     x_treino, y_treino = dados["train"]
     parametros = ler_configuracoes_escolhidas()[modelo_nome]
@@ -238,7 +238,7 @@ def figura_fidelidade(resumo: pd.DataFrame, fidelidade: pd.DataFrame, caminho_ba
 
 
 def main() -> None:
-    """Etapa 12: lê os três conjuntos, o ranking consolidado e o x* do GA, avalia as
+    """Lê os três conjuntos, o ranking consolidado e o x* do GA, avalia as
     configurações dos três modelos e salva fidelidade.csv, fidelidade_resumo.csv e a
     figura.
 

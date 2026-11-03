@@ -32,7 +32,7 @@ def montar_url_vra(ano: int, mes: int) -> str:
     """Monta a URL do CSV mensal do VRA no portal da ANAC para um ano e um mês (pasta do
     mês com zero à esquerda, nome do arquivo sem).
 
-    Usada em: laço principal deste script (Etapa 1; main.py, etapa "download").
+    Usada em: laço principal deste script (main.py, etapa "download").
     Importância: o portal tem um padrão de caminho irregular; centralizar aqui evita
     erro nos 24 downloads.
     """

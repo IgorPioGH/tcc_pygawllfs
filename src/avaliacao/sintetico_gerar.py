@@ -1,4 +1,4 @@
-"""Etapa 10 — Diferencial 1: gerador do dataset sintético com gabarito.
+"""Avaliação — gerador do dataset sintético com gabarito.
 
 Recebe só os parâmetros abaixo (nenhum dado real). Gera um problema de
 classificação cuja estrutura é conhecida por construção:
@@ -13,7 +13,7 @@ classificação cuja estrutura é conhecida por construção:
              não entram em z — são proxies, não ruído
     x7..x10  ruído puro
 
-Os parâmetros foram calibrados para que, com os modelos da Etapa 6, a
+Os parâmetros foram calibrados para que, com os modelos da etapa baselines, a
 interação valha +0,09 de F1 no RF e +0,19 no XGBoost (a LogReg, linear,
 não consegue usá-la), e para que tirar x3 custe pouco quando x5 está
 presente (é a redundância).
@@ -45,7 +45,7 @@ FRACAO_VALIDACAO = 0.3
 
 FEATURES = [f"x{i}" for i in range(1, 11)]
 
-# Gabarito em três categorias (docs/metodologia.md §5): redundante não é erro
+# Gabarito em três categorias (docs/05-avaliacao.md): redundante não é erro
 GABARITO = {
     "x1": "direta", "x2": "direta", "x3": "direta", "x4": "direta",
     "x5": "redundante", "x6": "redundante",
@@ -69,7 +69,7 @@ def gerar(
     x7..x10 são ruído puro.
 
     Usada em: main; tests/test_sintetico.py.
-    Importância: a estrutura conhecida por construção é o gabarito do Diferencial 1.
+    Importância: a estrutura conhecida por construção é o gabarito da verificação no sintético.
     """
     rng = np.random.default_rng(semente)
     x = {nome: rng.standard_normal(n) for nome in ["x1", "x2", "x3", "x4"]}
@@ -108,11 +108,11 @@ def dividir(df: pd.DataFrame, fracao_validacao: float = FRACAO_VALIDACAO,
 
 
 def main() -> None:
-    """Etapa 10a: gera e divide o sintético, registra as checagens (corr(x1, y) ≈ 0,
+    """Gera e divide o sintético, registra as checagens (corr(x1, y) ≈ 0,
     corr(x3, x5) ≈ rho) e salva sintetico.parquet.
 
     Usada em: python src/avaliacao/sintetico_gerar.py; main.py, etapa "sintetico".
-    Importância: ponto de partida do Diferencial 1.
+    Importância: ponto de partida da verificação no sintético.
     """
     df = dividir(gerar())
     logger.info(f"Linhas por conjunto:\n{df['conjunto'].value_counts().to_string()}")

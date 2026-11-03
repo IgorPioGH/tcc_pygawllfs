@@ -1,11 +1,11 @@
 """Consolidação final — quadro-síntese dos métodos e dos modelos.
 
-Recebe as tabelas já produzidas pelas Etapas 6, 9, 11 e 12 (só CSV: nenhum
+Recebe as tabelas já produzidas pelas etapas baselines, importancias, rankings e fidelidade (só CSV: nenhum
 dado é lido e nenhum modelo é treinado) e junta, lado a lado, os quatro
 critérios da pergunta de pesquisa, para cada método e para cada modelo:
 
     concordância   Spearman e RBO médios com os outros métodos do MESMO modelo
-                   (concordancia.csv, pares mesmo_modelo, §4.11)
+                   (concordancia.csv, pares mesmo_modelo)
     estabilidade   Spearman e top-5 médios entre as 10 duplas de sementes
                    (estabilidade.csv; a intrínseca é determinística e fica vazia)
     fidelidade     fração da acurácia do modelo completo retida no TESTE pelo
@@ -16,7 +16,7 @@ critérios da pergunta de pesquisa, para cada método e para cada modelo:
 
 Produz:
     sintese_metodos.csv       uma linha por (método, modelo)
-    sintese_modelos.csv       uma linha por modelo: desempenho no teste (Etapa 6),
+    sintese_modelos.csv       uma linha por modelo: desempenho no teste (etapa baselines),
                               concordância média entre os métodos e fidelidade
                               média do top-5, contra o acaso
     sintese_top_features.csv  as 5 features mais importantes de cada (método,
@@ -49,7 +49,7 @@ def concordancia_intra(concordancia: pd.DataFrame) -> pd.DataFrame:
 
     Usada em: sintese_metodos; tests/test_sintese.py.
     Importância: resume o critério de concordância por método, sempre dentro do
-    mesmo modelo (§4.11), para caber numa linha do quadro-síntese.
+    mesmo modelo, para caber numa linha do quadro-síntese.
     """
     intra = concordancia[concordancia["tipo_par"] == "mesmo_modelo"]
     # Cada dupla conta para os dois lados: (a, b) entra na média de a e na de b
@@ -102,7 +102,7 @@ def custo_por_metodo(custo: pd.DataFrame) -> pd.DataFrame:
     médio de treinos de modelo por execução.
 
     Usada em: sintese_metodos.
-    Importância: o nº de treinos é a medida de custo que não depende da máquina (§7).
+    Importância: o nº de treinos é a medida de custo que não depende da máquina.
     """
     return (custo[custo["method"].isin(METODOS)]
             .groupby(["method", "model"], as_index=False)
@@ -136,7 +136,7 @@ def sintese_metodos(concordancia: pd.DataFrame, estabilidade: pd.DataFrame,
 
 def sintese_modelos(baselines: pd.DataFrame, concordancia: pd.DataFrame,
                     metodos: pd.DataFrame) -> pd.DataFrame:
-    """Uma linha por modelo: métricas no teste (Etapa 6), concordância média entre os
+    """Uma linha por modelo: métricas no teste (etapa baselines), concordância média entre os
     métodos daquele modelo e fidelidade média do top-5, contra o acaso.
 
     Usada em: main; tests/test_sintese.py.

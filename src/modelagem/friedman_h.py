@@ -1,7 +1,7 @@
-"""Etapa 13 — estatística H de Friedman e Popescu (2008) para pares de features.
+"""Modelagem — estatística H de Friedman e Popescu (2008) para pares de features.
 
-Recebe o RF e o XGBoost treinados na Etapa 6 e a VALIDAÇÃO (nunca o teste,
-§4.9). Para cada modelo, calcula o H nos 406 pares das 29 features: o mesmo
+Recebe o RF e o XGBoost treinados na etapa baselines e a VALIDAÇÃO (nunca o
+teste). Para cada modelo, calcula o H nos 406 pares das 29 features: o mesmo
 universo de pares que o PyGAwLLfs pode sondar.
 
 Como o H é calculado (dependência parcial, PD):
@@ -14,7 +14,7 @@ Todas as PDs são centradas e avaliadas nos próprios pontos da amostra
 (AMOSTRA linhas, que servem de pontos e de fundo). Custo por PD: AMOSTRA²
 previsões.
 
-Escolhas (docs/decisoes.md §12):
+Escolhas (docs/decisoes.md, decisão 12):
     - Escala logit (log-odds): "sem interação" = efeitos que se somam no logit.
     - H_abs é a versão principal para ordenar os pares (como em Inglis et al.,
       2022): o H normalizado fica instável quando o efeito conjunto do par é
@@ -28,7 +28,7 @@ Escolhas (docs/decisoes.md §12):
 
 Produz results/tables/interacao_h.csv (formato longo, como interacao_gawll.csv,
 com method = "friedman_h_abs" e "friedman_h" e sondada = True), mais o custo em
-custo_importancia.csv. Quem consome: avaliacao/interacoes.py e o Diferencial 1
+custo_importancia.csv. Quem consome: avaliacao/interacoes.py e a verificação no sintético
 (src/avaliacao/sintetico_aplicar.py usa calcular_h).
 """
 
@@ -51,7 +51,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 MODELOS_H = ["random_forest", "xgboost"]
-AMOSTRA = 500             # pontos (e fundo) das dependências parciais (§4.7)
+AMOSTRA = 500             # pontos (e fundo) das dependências parciais
 LIMITE_PROBABILIDADE = 1e-6
 
 
@@ -141,7 +141,7 @@ def formato_longo(h: pd.DataFrame, modelo: str, semente: int, ordem: list[str]) 
 
 
 def main() -> None:
-    """Etapa 13a: para RF e XGBoost, calcula o H nos 406 pares em 5 amostras de 500
+    """Para RF e XGBoost, calcula o H nos 406 pares em 5 amostras de 500
     linhas da validação e salva interacao_h.csv e o custo.
 
     Usada em: python src/modelagem/friedman_h.py; main.py, etapa "importancias";

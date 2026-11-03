@@ -1,12 +1,12 @@
-"""Etapa 6b — matrizes de confusão dos modelos de referência, no teste.
+"""Avaliação — matrizes de confusão dos modelos de referência, no teste.
 
-Recebe os modelos salvos pela Etapa 6 (experiments/runs/baselines/<modelo>.joblib),
+Recebe os modelos salvos pela etapa baselines (experiments/runs/baselines/<modelo>.joblib),
 o conjunto de teste congelado (data/processed/test.parquet) e o baselines.csv.
 Não treina nem escolhe nada: são as mesmas previsões (corte em 0,5) que geraram
 o baselines.csv, vistas como contagens de acertos e erros por classe.
 
-Isolamento do teste (§4.9): não é um novo uso do teste. É parte da avaliação
-final da Etapa 6, com o mesmo modelo e as mesmas previsões; para garantir isso,
+Isolamento do teste: não é um novo uso do teste. É parte da avaliação
+final da etapa baselines, com o mesmo modelo e as mesmas previsões; para garantir isso,
 acurácia, precisão, recall e F1 recalculados a partir das quatro células têm de
 bater com o baselines.csv, senão o script para.
 
@@ -17,7 +17,7 @@ Produz:
 Quem consome: a seção de modelos do texto do TCC.
 
 Roda em segundos, sem retreinar: python src/avaliacao/matriz_confusao.py (depois
-da Etapa 6; no pipeline, logo depois de baselines.py).
+da etapa baselines; no pipeline, logo depois de baselines.py).
 """
 
 import logging
@@ -58,7 +58,7 @@ TOLERANCIA = 1e-9
 
 
 def matriz_do_modelo(nome: str, x: pd.DataFrame, y: pd.Series) -> np.ndarray:
-    """Matriz 2×2 do modelo salvo na Etapa 6 no teste: linhas = classe real,
+    """Matriz 2×2 do modelo salvo na etapa baselines no teste: linhas = classe real,
     colunas = classe prevista, [[vn, fp], [fn, vp]].
 
     Usada em: main.
@@ -91,8 +91,8 @@ def conferir_com_baselines(nome: str, matriz: np.ndarray, baselines: pd.DataFram
     baselines.csv; levanta ValueError se alguma divergir.
 
     Usada em: main.
-    Importância: prova que a matriz é a da avaliação final da Etapa 6 (mesmo
-    modelo, mesmas previsões), e não uma reavaliação do teste (§4.9).
+    Importância: prova que a matriz é a da avaliação final da etapa baselines (mesmo
+    modelo, mesmas previsões), e não uma reavaliação do teste.
     """
     recalculadas = metricas_da_matriz(matriz)
     divergentes = {
@@ -103,7 +103,7 @@ def conferir_com_baselines(nome: str, matriz: np.ndarray, baselines: pd.DataFram
     if divergentes:
         raise ValueError(
             f"A matriz de '{nome}' não reproduz baselines.csv: {divergentes}. "
-            "O .joblib não é o modelo avaliado na Etapa 6; rode a etapa de novo "
+            "O .joblib não é o modelo avaliado na etapa baselines; rode a etapa de novo "
             "(python main.py --so baselines)."
         )
 
@@ -162,11 +162,11 @@ def figura_matrizes(matrizes: dict[str, np.ndarray], caminho_base: Path) -> None
 
 
 def main() -> None:
-    """Etapa 6b: matriz de confusão de cada modelo da Etapa 6 no teste, conferida
+    """Matriz de confusão de cada modelo da etapa baselines no teste, conferida
     contra baselines.csv; salva matriz_confusao.csv e a figura.
 
     Usada em: python src/avaliacao/matriz_confusao.py; main.py, etapa "desempenho".
-    Importância: complementa a avaliação final da Etapa 6 sem retreinar nada.
+    Importância: complementa a avaliação final da etapa baselines sem retreinar nada.
     """
     teste_x, teste_y = carregar("test")
     baselines = pd.read_csv(comum.DIR_TABELAS / "baselines.csv").set_index("modelo")

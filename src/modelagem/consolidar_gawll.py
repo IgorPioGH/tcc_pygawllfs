@@ -1,7 +1,7 @@
-"""Etapa 9 — consolida as 15 execuções do PyGAwLLfs em tabelas.
+"""Modelagem — consolida as 15 execuções do PyGAwLLfs em tabelas.
 
-Recebe os checkpoints .npz da Etapa 8 (experiments/runs/gawll/) e produz:
-    results/tables/importancia_gawll.csv  vimp no formato padrão (§7)
+Recebe os checkpoints .npz da etapa pygawllfs (experiments/runs/gawll/) e produz:
+    results/tables/importancia_gawll.csv  vimp no formato padrão
     results/tables/interacao_gawll.csv    vint em formato longo, um par (i < j)
                                           por linha: feature_a, feature_b,
                                           interaction, method, model, seed
@@ -9,10 +9,10 @@ Recebe os checkpoints .npz da Etapa 8 (experiments/runs/gawll/) e produz:
     custo_importancia.csv                 tempo e nº de treinos de cada execução
 
 Cada execução vira uma "semente" das tabelas. A média entre as 5 sementes
-fica para quem consome: Etapa 11 (rankings e estabilidade), Etapa 12
-(fidelidade do x*), Etapa 13 e Diferencial 4 (interações).
+fica para quem consome: etapa rankings (rankings e estabilidade), etapa fidelidade
+(fidelidade do x*), etapa interacoes.
 
-A função consolidar() também é usada pelo Diferencial 1
+A função consolidar() também é usada pela verificação no sintético
 (src/avaliacao/sintetico_aplicar.py), sobre os checkpoints do dataset sintético.
 """
 
@@ -130,7 +130,7 @@ def consolidar(dir_execucoes: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.Data
 
 
 def main() -> None:
-    """Etapa 8: consolida experiments/runs/gawll/ em importancia_gawll.csv,
+    """Consolida experiments/runs/gawll/ em importancia_gawll.csv,
     interacao_gawll.csv, selecao_gawll.csv e no custo.
 
     Usada em: python src/modelagem/consolidar_gawll.py; main.py, etapa "pygawllfs";

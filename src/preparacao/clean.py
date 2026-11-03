@@ -13,9 +13,9 @@ def separar_realizados_cancelados(
     """Separa o DataFrame em voos realizados e cancelados pela coluna 'Situação Voo':
     "REALIZADO" vai para o primeiro DataFrame, todo o resto para o segundo.
 
-    Usada em: bloco __main__ deste script (Etapa 3; main.py, etapa "dados").
+    Usada em: bloco __main__ deste script (main.py, etapa "dados").
     Importância: só voo realizado tem atraso. Os cancelados saem aqui, e por isso o
-    congestionamento conta só realizados (limitação em docs/dicionario-features.md).
+    congestionamento conta só realizados (limitação em docs/03-preparacao.md).
 
     Args:
         df (pd.DataFrame): DataFrame bruto do VRA, contendo a coluna
@@ -33,7 +33,7 @@ def separar_realizados_cancelados(
 def remover_sem_horario(df: pd.DataFrame) -> pd.DataFrame:
     """Remove as linhas sem 'Partida Prevista' ou sem 'Partida Real'.
 
-    Usada em: bloco __main__ deste script (Etapa 3).
+    Usada em: bloco __main__ deste script (etapa preparacao).
     Importância: sem os dois horários não dá para calcular o atraso, então essas
     linhas ficariam sem alvo.
 
@@ -58,7 +58,7 @@ def assert_sem_vazamento(df: pd.DataFrame) -> None:
     atrasado).
 
     Usada em: baselines.carregar e gawll.carregar_subamostra, antes de todo treino.
-    Importância: trava automática contra o vazamento do §4.3; se uma coluna proibida
+    Importância: trava automática contra o vazamento; se uma coluna proibida
     voltar, o pipeline para.
 
     Args:

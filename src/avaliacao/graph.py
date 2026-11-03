@@ -1,4 +1,4 @@
-"""Etapa 13 — grafo de interação reduzido, como no artigo do PyGAwLLfs.
+"""Avaliação — grafo de interação reduzido, como no artigo do PyGAwLLfs.
 
 Recebe uma tabela de interação em formato longo (feature_a, feature_b,
 interaction, method, model, seed, sondada) — a do PyGAwLLfs (interacao_gawll.csv)
@@ -8,7 +8,7 @@ ou a do H de Friedman (interacao_h.csv) — e faz três coisas:
     arestas_reduzidas()    as FRACAO_ARESTAS arestas mais fortes de cada
                            (método, modelo): o "grafo reduzido" (5% no artigo)
     tipo_por_construcao()  o tipo de cada par, lido da definição dos atributos
-Agregação das sementes (docs/decisoes.md, decisão 15): no PyGAwLLfs, o vint de
+Agregação das sementes (docs/decisoes.md, decisão 13): no PyGAwLLfs, o vint de
 uma execução começa em 0 e só registra o par quando uma sondagem do linkage
 learning o sorteia; um zero mistura "par não sondado" com "sondado, efeito
 nulo". A coluna "sondada", gravada pelo próprio GA (contador de sondagens),

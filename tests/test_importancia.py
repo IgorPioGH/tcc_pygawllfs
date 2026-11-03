@@ -1,11 +1,11 @@
-"""Testes da Etapa 9 — métodos de importância (src/modelagem/).
+"""Testes — métodos de importância (src/modelagem/).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
-depois de rodar os scripts da Etapa 9:
+depois de rodar os scripts da etapa importancias:
     python tests/test_importancia.py
 
-Verifica a regra de rank do formato padrão, o isolamento do teste (§4.9),
-a coerência da importância intrínseca com a Etapa 6 e a consolidação das
+Verifica a regra de rank do formato padrão, o isolamento do teste,
+a coerência da importância intrínseca com a etapa baselines e a consolidação das
 execuções do PyGAwLLfs.
 """
 
@@ -50,7 +50,7 @@ def teste_regra_de_rank():
 
 
 def teste_nenhum_metodo_le_o_teste():
-    """§4.9: os quatro scripts rodam inteiros (em miniatura) sem abrir test.parquet.
+    """Isolamento do teste: os quatro scripts rodam inteiros (em miniatura) sem abrir test.parquet.
 
     Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
     python main.py --testes).
@@ -63,7 +63,7 @@ def teste_nenhum_metodo_le_o_teste():
         o conjunto de teste e, senão, lê normalmente.
 
         Usada em: teste_nenhum_metodo_le_o_teste.
-        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        Importância: é o fiscal automático do isolamento do teste.
         """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"Um método de importância tentou ler o teste: {caminho}")
@@ -98,7 +98,7 @@ def teste_formato_das_saidas():
 
     Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
     python main.py --testes).
-    Importância: a Etapa 11 depende desse formato.
+    Importância: a etapa rankings depende desse formato.
     """
     for nome in ["intrinseca", "permutation", "shap", "gawll"]:
         tabela = pd.read_csv(DIR_TABELAS / f"importancia_{nome}.csv")
@@ -110,7 +110,7 @@ def teste_formato_das_saidas():
 
 
 def teste_intrinseca_bate_com_baselines():
-    """O coeficiente da LogReg aqui é o mesmo salvo pela Etapa 6.
+    """O coeficiente da LogReg aqui é o mesmo salvo pela etapa baselines.
 
     Usada em: bloco __main__ desta suíte (python tests/test_importancia.py; também em
     python main.py --testes).

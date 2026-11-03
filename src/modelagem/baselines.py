@@ -1,4 +1,4 @@
-"""Etapa 6 — modelos de referência.
+"""Modelagem — modelos de referência.
 
 Recebe os três conjuntos congelados de data/processed/, treina um baseline
 trivial, Regressão Logística, Random Forest e XGBoost, escolhe a melhor
@@ -15,7 +15,7 @@ Saídas:
 
 Também é a fonte única dos modelos do PyGAwLLfs (src/modelagem/gawll.py):
 criar_modelo() monta o estimador e ler_configuracoes_escolhidas() devolve os
-hiperparâmetros escolhidos aqui, para que o GA explique o mesmo modelo (§4.11).
+hiperparâmetros escolhidos aqui, para que o GA explique o mesmo modelo.
 """
 
 import ast
@@ -54,14 +54,14 @@ NAO_ATRIBUTOS = ["Partida Prevista", "Chegada Prevista", "atrasado", "atraso_min
 # fitness do PyGAwLLfs e da Permutation. Com os conjuntos 50/50, o trivial acerta 0,5.
 METRICA_SELECAO = "acuracia"
 
-# Gatilhos de vazamento (docs/metodologia.md §9), checados na validação ANTES do teste.
+# Gatilhos de vazamento (docs/04-modelagem.md), checados na validação ANTES do teste.
 LIMITE_ROC_AUC = 0.90
 LIMITE_F1 = 0.85
 LIMITE_ACURACIA = 0.85
 
 # Grade de hiperparâmetros: para cada modelo, a lista de configurações testadas.
 # O RF é fixo, igual ao RF dentro do PyGAwLLfs (n_estimators=100,
-# max_depth=10), para que a comparação de importâncias do §4.11 seja feita
+# max_depth=10), para que a comparação de importâncias seja feita
 # sobre o mesmo modelo.
 GRADE = {
     "dummy": [{"strategy": "most_frequent"}],
@@ -95,7 +95,7 @@ def criar_modelo(nome: str, parametros: dict, n_jobs: int = -1):
 
     Usada em: montar_configuracoes; gawll.treinar_e_medir, fidelity e sintetico_aplicar.
     Importância: fonte única dos modelos; o GA, a fidelidade e o sintético treinam
-    exatamente o mesmo modelo da Etapa 6 (§4.11).
+    exatamente o mesmo modelo da etapa baselines.
     """
     if nome == "dummy":
         return DummyClassifier(**parametros)
@@ -131,7 +131,7 @@ def montar_configuracoes() -> list[tuple[str, dict, object]]:
     """Uma tupla (nome do modelo, parâmetros, estimador) por item da GRADE de tuning.
 
     Usada em: main.
-    Importância: define o espaço de busca de hiperparâmetros da Etapa 6.
+    Importância: define o espaço de busca de hiperparâmetros da etapa baselines.
     """
     return [(nome, parametros, criar_modelo(nome, parametros))
             for nome, lista_parametros in GRADE.items() for parametros in lista_parametros]
@@ -164,7 +164,7 @@ def avaliar_modelo(modelo, x: pd.DataFrame, y: pd.Series) -> dict[str, float]:
 
 def auditar_vazamento(nome: str, metricas: dict[str, float]) -> None:
     """Interrompe a execução se alguma métrica de validação for boa demais: ROC-AUC, F1
-    ou acurácia acima dos limites do §9 de docs/metodologia.md.
+    ou acurácia acima dos limites LIMITE_*.
 
     Usada em: main, antes de tocar o teste.
     Importância: alarme automático de vazamento silencioso; nada chega ao teste sem
@@ -180,13 +180,13 @@ def auditar_vazamento(nome: str, metricas: dict[str, float]) -> None:
     if gatilhos:
         raise ValueError(
             f"Possível vazamento em '{nome}': {gatilhos}. "
-            "Audite as features contra o §4.3 antes de tocar o teste."
+            "Audite os atributos (só os conhecidos antes da partida) antes de tocar o teste."
         )
 
 
 def salvar_coeficientes_logreg(pipeline, colunas: pd.Index, caminho: Path) -> None:
     """Salva os coeficientes padronizados da LogReg no formato padrão de importância
-    (§7), com o sinal mantido (§4.8) e o rank pelo valor absoluto.
+   , com o sinal mantido e o rank pelo valor absoluto.
 
     Usada em: main.
     Importância: é a importância intrínseca da LogReg; tests/test_importancia.py
@@ -204,14 +204,14 @@ def salvar_coeficientes_logreg(pipeline, colunas: pd.Index, caminho: Path) -> No
 
 
 def main() -> None:
-    """Etapa 6: tuning no treino com escolha na validação (com as métricas também no
+    """Tuning no treino com escolha na validação (com as métricas também no
     treino, para o diagnóstico de ajuste), auditoria de vazamento e avaliação única da
     melhor configuração de cada modelo no teste. Salva baselines*.csv, os coeficientes
     da LogReg e os modelos .joblib.
 
     Usada em: python src/modelagem/baselines.py; main.py, etapa "baselines".
     Importância: produz os modelos que todos os métodos de importância explicam e o
-    desempenho de referência; é um dos dois únicos usos do teste (§4.9).
+    desempenho de referência; é um dos dois únicos usos do teste.
     """
     treino_x, treino_y = carregar("train")
     val_x, val_y = carregar("val")
@@ -273,7 +273,7 @@ def main() -> None:
 
     # 3. Teste: uma única vez, só com a melhor configuração de cada modelo.
     # O modelo avaliado é o mesmo treinado no treino; é ele que os métodos
-    # de importância vão explicar na Etapa 9.
+    # de importância vão explicar na etapa importancias.
     DIR_MODELOS.mkdir(parents=True, exist_ok=True)
     finais = []
     for nome, melhor in melhores.items():

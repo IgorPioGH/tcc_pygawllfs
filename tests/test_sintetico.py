@@ -1,4 +1,4 @@
-"""Testes da Etapa 10 — Diferencial 1 (src/avaliacao/sintetico_*.py).
+"""Testes — verificação no sintético (src/avaliacao/sintetico_*.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz:
     python tests/test_sintetico.py
@@ -34,7 +34,7 @@ def teste_gerador():
 
     Usada em: bloco __main__ desta suíte (python tests/test_sintetico.py; também em
     python main.py --testes).
-    Importância: se o gerador errar, todo o Diferencial 1 mede contra uma verdade
+    Importância: se o gerador errar, toda a verificação no sintético mede contra uma verdade
     falsa.
     """
     a = sintetico_gerar.gerar(n=20_000)

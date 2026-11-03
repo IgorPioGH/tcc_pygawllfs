@@ -1,4 +1,4 @@
-"""Etapa 13 — PyGAwLLfs × H de Friedman: os dois concordam sobre quais pares interagem?
+"""Avaliação — PyGAwLLfs × H de Friedman: os dois concordam sobre quais pares interagem?
 
 Recebe interacao_gawll.csv (vint, 5 execuções) e interacao_h.csv (H, 5
 amostras), e classifica cada par pela definição dos atributos
@@ -13,7 +13,7 @@ Para o RF e o XGBoost (a LogReg tem H = 0 por construção):
    ranqueados (no PyGAwLLfs, sondados em pelo menos 2 sementes).
 3. Estabilidade entre sementes de cada método, nos mesmos pares (no
    PyGAwLLfs, cada dupla de sementes compara os pares sondados nas duas).
-4. Hipótese da redundância (docs/sintetico.md §3): onde os pares
+4. Hipótese da redundância (docs/05-avaliacao.md): onde os pares
    redundantes caem em cada ranking — rank médio (em percentil) e quantos
    entram no top-10.
 
@@ -103,7 +103,7 @@ def comparar_modelo(interacao: pd.DataFrame, modelo: str) -> tuple[list[dict], p
     estabilidade de cada método entre sementes.
 
     Usada em: main.
-    Importância: produz o resultado principal da Etapa 13 (os dois métodos apontam as
+    Importância: produz o resultado principal da etapa interacoes (os dois métodos apontam as
     mesmas interações?).
     """
     do_modelo = interacao[interacao["model"] == modelo]
@@ -227,7 +227,7 @@ def figura_gawll_x_h(pares: pd.DataFrame, caminho_base: Path) -> None:
 
 
 def main() -> None:
-    """Etapa 13b: carrega as interações, compara por modelo, resume a redundância e
+    """Carrega as interações, compara por modelo, resume a redundância e
     salva interacoes*.csv e a figura.
 
     Usada em: python src/avaliacao/interacoes.py; main.py, etapa "interacoes";

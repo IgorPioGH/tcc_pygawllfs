@@ -1,17 +1,17 @@
-"""Etapa 9 — Permutation Feature Importance.
+"""Modelagem — Permutation Feature Importance.
 
-Recebe os três modelos treinados na Etapa 6 e o conjunto de VALIDAÇÃO
-(nunca o teste, §4.9). Para cada feature, embaralha a coluna e mede quanto
+Recebe os três modelos treinados na etapa baselines e o conjunto de VALIDAÇÃO
+(nunca o teste). Para cada feature, embaralha a coluna e mede quanto
 a acurácia cai; repete n_repeats vezes e tira a média. A métrica é a mesma do
 fitness do PyGAwLLfs: os dois métodos medem "quanto a acurácia piora sem essa
 informação".
 
 O valor pode ser negativo (embaralhar pode melhorar a acurácia por acaso). Ele é
-salvo bruto (§4.8); o rank usa o valor bruto, então negativo vai para o fim.
+salvo bruto; o rank usa o valor bruto, então negativo vai para o fim.
 
 É estocástica (o embaralhamento), então roda com as 5 sementes. Produz
 results/tables/importancia_permutation.csv no formato padrão. Quem consome:
-Etapa 11 (comparação de rankings e estabilidade entre sementes).
+etapa rankings (comparação de rankings e estabilidade entre sementes).
 """
 
 import logging
@@ -63,7 +63,7 @@ def calcular_permutation(modelo, x: pd.DataFrame, y: pd.Series, semente: int,
 
 
 def main() -> None:
-    """Roda a Permutation nos três modelos e nas 5 sementes, sempre na validação (§4.9),
+    """Roda a Permutation nos três modelos e nas 5 sementes, sempre na validação,
     e salva importancia_permutation.csv e o custo.
 
     Usada em: python src/modelagem/permutation.py; main.py, etapa "importancias";

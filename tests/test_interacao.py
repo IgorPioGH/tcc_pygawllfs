@@ -1,4 +1,4 @@
-"""Testes da Etapa 13 — H de Friedman e comparação com o PyGAwLLfs.
+"""Testes — H de Friedman e comparação com o PyGAwLLfs.
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de friedman_h.py, avaliacao/interacoes.py e avaliacao/sintetico_aplicar.py:
@@ -7,7 +7,7 @@ depois de friedman_h.py, avaliacao/interacoes.py e avaliacao/sintetico_aplicar.p
 Os primeiros conferem o H, o tipo dos pares e a agregação das sementes em
 casos com resposta conhecida (inclusive a justificativa de deixar a LogReg de
 fora); o penúltimo roda os scripts inteiros em miniatura com o test.parquet
-bloqueado (§4.9); o último confere as tabelas reais.
+bloqueado; o último confere as tabelas reais.
 """
 
 import logging
@@ -165,7 +165,7 @@ def teste_agregacao_das_sementes():
 
 
 def teste_scripts_nao_leem_o_teste():
-    """§4.9: H e comparação rodam inteiros (em miniatura) sem abrir test.parquet.
+    """Isolamento do teste: H e comparação rodam inteiros (em miniatura) sem abrir test.parquet.
 
     Usada em: bloco __main__ desta suíte (python tests/test_interacao.py; também em
     python main.py --testes).
@@ -178,10 +178,10 @@ def teste_scripts_nao_leem_o_teste():
         o conjunto de teste e, senão, lê normalmente.
 
         Usada em: teste_scripts_nao_leem_o_teste.
-        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        Importância: é o fiscal automático do isolamento do teste.
         """
         if Path(caminho).name.startswith("test"):
-            raise AssertionError(f"A Etapa 13 tentou ler o teste: {caminho}")
+            raise AssertionError(f"A etapa interacoes tentou ler o teste: {caminho}")
         return ler_parquet_original(caminho, *args, **kwargs)
 
     with tempfile.TemporaryDirectory() as pasta:
@@ -201,7 +201,7 @@ def teste_scripts_nao_leem_o_teste():
 
 
 def teste_tabelas_reais():
-    """Saídas reais da Etapa 13: os 406 pares por (método, modelo, semente), H ≥ 0, H
+    """Saídas reais da Os 406 pares por (método, modelo, semente), H ≥ 0, H
     normalizado acima de 1 em menos de 1% dos pares não estruturais, Spearman em
     [-1, 1] e "sondada" preenchida no PyGAwLLfs.
 
@@ -230,7 +230,7 @@ def teste_tabelas_reais():
     comparacao = pd.read_csv(DIR_TABELAS / "interacoes.csv")
     assert comparacao["spearman"].between(-1, 1).all()
 
-    # Diferencial 1: o H acha o par verdadeiro em 1º, e não põe a redundância no topo
+    # Sintético: o H acha o par verdadeiro em 1º, e não põe a redundância no topo
     recuperacao = pd.read_csv(DIR_TABELAS / "recuperacao_sintetico_interacao.csv")
     h_sintetico = recuperacao[recuperacao["method"].str.startswith("friedman")]
     assert len(h_sintetico) == 4

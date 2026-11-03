@@ -1,12 +1,12 @@
-"""Etapa 10 — Diferencial 1: mede o quanto cada método recupera o gabarito.
+"""Avaliação — mede o quanto cada método recupera o gabarito.
 
 Recebe as tabelas de sintetico_aplicar.py (results/tables/sintetico_*.csv) e
 o GABARITO de sintetico_gerar.py. Responde "qual método recupera a verdade?" em
 três partes, sempre por (método, modelo) — a comparação é intra-modelo
-primeiro (§4.11): a LogReg, linear, não consegue usar x1*x2 em nenhum método.
+primeiro: a LogReg, linear, não consegue usar x1*x2 em nenhum método.
 
 1. Importância (recuperacao_sintetico.csv), média das sementes. Relevantes =
-   diretas + redundantes (redundante não é erro, docs/metodologia.md §5); ruído = x7..x10.
+   diretas + redundantes (redundante não é erro, docs/05-avaliacao.md); ruído = x7..x10.
      auc_relevante_ruido    fração dos pares (relevante, ruído) em que a
                             relevante fica à frente no ranking; 1 = separação
                             perfeita, 0,5 = acaso. Não depende de limiar.
@@ -26,7 +26,7 @@ primeiro (§4.11): a LogReg, linear, não consegue usar x1*x2 em nenhum método.
      acerto_por_semente     fração das sementes com (x1, x2) em 1º lugar
    Hipótese central: o PyGAwLLfs põe os pares de redundância no topo (tirar
    uma só quase não custa, tirar as duas custa); o H de Friedman, que mede
-   interação na função do modelo, não deveria (entra na Etapa 13).
+   interação na função do modelo, não deveria (entra na etapa interacoes).
 
 3. Seleção do PyGAwLLfs (recuperacao_sintetico_selecao.csv): o x* contra o
    conjunto mínimo suficiente, as 4 diretas: precision, recall e F1, mais
@@ -153,11 +153,11 @@ def metricas_selecao(features_selecionadas: str) -> dict:
 
 
 def main() -> None:
-    """Etapa 10c: lê as tabelas do sintético, calcula as métricas de importância,
+    """Lê as tabelas do sintético, calcula as métricas de importância,
     interação e seleção e salva recuperacao_sintetico*.csv.
 
     Usada em: python src/avaliacao/sintetico_recuperar.py; main.py, etapa "sintetico".
-    Importância: gera a tabela método × recuperação da verdade do Diferencial 1.
+    Importância: gera a tabela método × recuperação da verdade da verificação no sintético.
     """
     importancia = pd.read_csv(DIR_TABELAS / "sintetico_importancia.csv")
     interacao = pd.read_csv(DIR_TABELAS / "sintetico_interacao.csv")

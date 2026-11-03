@@ -1,28 +1,28 @@
-"""Etapa 11 — concordância entre os rankings de importância.
+"""Avaliação — concordância entre os rankings de importância.
 
-Recebe as quatro tabelas da Etapa 9 (results/tables/importancia_*.csv, no
+Recebe as quatro tabelas da etapa importancias (results/tables/importancia_*.csv, no
 formato padrão feature,importance,rank,method,model,seed) e faz três coisas:
 
 1. Consolida cada (método, modelo) num ranking só, pela média da importância
    nas sementes — o pipeline original do PyGAwLLfs também tira a média do
    vimp entre execuções. A variação entre sementes fica para o stability.py.
-   → ranking_consolidado.csv (com a magnitude normalizada, só para figuras, §4.8)
+   → ranking_consolidado.csv (com a magnitude normalizada, só para figuras)
 
 2. Compara todos os pares de rankings (11 rankings → 55 pares) com as métricas
-   do §4.5: Spearman, Kendall tau-b, RBO (p = 0,9) e sobreposição top-5/10/15.
+   da comparação de rankings (docs/05-avaliacao.md): Spearman, Kendall tau-b, RBO (p = 0,9) e sobreposição top-5/10/15.
    A comparação é por rank, nunca por valor: as escalas dos métodos não se
-   comparam (§4.8).
+   comparam.
    → concordancia.csv
 
-3. Classifica cada par para separar os dois efeitos do §4.11:
+3. Classifica cada par para separar os dois efeitos da comparação dentro do mesmo modelo:
      mesmo_modelo   métodos diferentes sobre o mesmo modelo (comparação primária)
      mesmo_metodo   o mesmo método sobre modelos diferentes
      diferentes     método e modelo diferentes
    → concordancia_resumo.csv, que responde: "os métodos concordam mais entre
      si quando aplicados ao mesmo modelo do que a modelos diferentes?"
 
-Quem consome: src/interpretacao/figuras_concordancia.py (heatmaps), Etapa 12 (top-k de cada
-método, em ranking_consolidado.csv), Etapa 13 (top-15 por consenso) e o Cap. 4.
+Quem consome: src/interpretacao/ (figuras), a fidelidade (top-k de cada método, em
+ranking_consolidado.csv), a síntese e os recortes.
 """
 
 import logging
@@ -66,7 +66,7 @@ def pontuacao(tabela: pd.DataFrame) -> pd.Series:
 
 
 def normalizar_magnitude(valores: pd.Series) -> pd.Series:
-    """Para figuras de magnitude (§4.8): negativos viram 0 ("sem evidência de
+    """Para figuras de magnitude: negativos viram 0 ("sem evidência de
     importância"; só a Permutation tem) e depois min-max para [0, 1]. Nunca soma-1,
     porque há valores com sinal.
 
@@ -107,7 +107,7 @@ def rbo(lista_a: list[str], lista_b: list[str], p: float = P_RBO) -> float:
     Vale 1 para listas iguais e fica perto de 0 quando os topos não se cruzam.
 
     Usada em: comparar; tests/test_comparacao.py.
-    Importância: é a métrica que pondera o topo do ranking (§4.5), onde a escolha de
+    Importância: é a métrica que pondera o topo do ranking, onde a escolha de
     features acontece.
     """
     k = min(len(lista_a), len(lista_b))
@@ -148,7 +148,7 @@ def comparar(pontuacoes_a: pd.Series, pontuacoes_b: pd.Series) -> dict:
     lista_a, lista_b = ordenar(pontuacoes_a.dropna()), ordenar(pontuacoes_b.dropna())
     resultado = {
         "spearman": spearmanr(pontuacoes_a[comuns], pontuacoes_b[comuns]).statistic,
-        # scipy usa tau-b por padrão; explícito porque empates importam (§4.5)
+        # scipy usa tau-b por padrão; explícito porque empates importam
         "kendall_tau_b": kendalltau(pontuacoes_a[comuns], pontuacoes_b[comuns],
                                     variant="b").statistic,
         "rbo": rbo(lista_a, lista_b),
@@ -162,7 +162,7 @@ def tipo_de_par(chave_a: tuple[str, str], chave_b: tuple[str, str]) -> str:
     """Chaves (método, modelo) -> mesmo_modelo, mesmo_metodo ou diferentes.
 
     Usada em: concordancia_entre_rankings; tests/test_comparacao.py.
-    Importância: implementa o §4.11, que separa divergência de método de divergência
+    Importância: implementa a comparação dentro do mesmo modelo, que separa divergência de método de divergência
     de modelo.
     """
     (metodo_a, modelo_a), (metodo_b, modelo_b) = chave_a, chave_b
@@ -178,10 +178,10 @@ def tipo_de_par(chave_a: tuple[str, str], chave_b: tuple[str, str]) -> str:
 # ---------------------------------------------------------------------------
 
 def carregar_importancias() -> pd.DataFrame:
-    """As quatro tabelas da Etapa 9 juntas, com a coluna "pontuacao".
+    """As quatro tabelas da etapa importancias juntas, com a coluna "pontuacao".
 
     Usada em: main; stability.main.
-    Importância: ponto único de entrada das importâncias na Etapa 11.
+    Importância: ponto único de entrada das importâncias na etapa rankings.
     """
     tabelas = [pd.read_csv(comum.DIR_TABELAS / f"importancia_{m}.csv") for m in METODOS]
     importancias = pd.concat(tabelas, ignore_index=True)
@@ -194,8 +194,7 @@ def consolidar_rankings(importancias: pd.DataFrame) -> pd.DataFrame:
     normalizada.
 
     Usada em: main.
-    Importância: gera ranking_consolidado.csv, que alimenta a fidelidade (Etapa 12) e
-    a escolha de features do H (Etapa 13).
+    Importância: gera ranking_consolidado.csv, que alimenta a fidelidade e as figuras.
     """
     consolidado = (importancias
                    .groupby(["method", "model", "feature"], as_index=False)
@@ -240,7 +239,7 @@ def resumir(concordancia: pd.DataFrame) -> pd.DataFrame:
     fidelity.resumir.
 
     Usada em: main.
-    Importância: dá o número-resumo da Etapa 11: concordância dentro do mesmo modelo
+    Importância: dá o número-resumo da Concordância dentro do mesmo modelo
     × entre modelos.
     """
     metricas = ["spearman", "kendall_tau_b", "rbo"] + [f"top{k}" for k in TOP_K]
@@ -253,7 +252,7 @@ def resumir(concordancia: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
-    """Etapa 11a: carrega as importâncias, consolida os rankings, compara todas as
+    """Carrega as importâncias, consolida os rankings, compara todas as
     duplas e salva ranking_consolidado.csv, concordancia.csv e
     concordancia_resumo.csv.
 

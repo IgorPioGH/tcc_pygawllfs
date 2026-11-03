@@ -1,23 +1,23 @@
-"""Etapa 9 — importância global por SHAP (TreeSHAP).
+"""Modelagem — importância global por SHAP (TreeSHAP).
 
-Recebe o RF e o XGBoost treinados na Etapa 6 e o conjunto de VALIDAÇÃO
-(nunca o teste, §4.9). Sorteia TAMANHO_AMOSTRA linhas da validação, calcula
+Recebe o RF e o XGBoost treinados na etapa baselines e o conjunto de VALIDAÇÃO
+(nunca o teste). Sorteia TAMANHO_AMOSTRA linhas da validação, calcula
 o valor SHAP de cada feature em cada linha com shap.TreeExplainer (exato e
-rápido para árvores, §4.6) e resume a importância global como a média do
+rápido para árvores) e resume a importância global como a média do
 valor absoluto: mean(|SHAP|).
 
-Detalhes que vão para o Cap. 3:
+Detalhes do cálculo:
     - feature_perturbation="tree_path_dependent": o TreeSHAP original, que
       usa a contagem de amostras de cada nó (vinda do treino) no lugar de um
       conjunto de background.
     - Unidades diferentes: o RF explica a probabilidade da classe 1; o XGBoost
-      explica a margem (log-odds). Por isso a comparação é por rank (§4.8).
+      explica a margem (log-odds). Por isso a comparação é por rank.
     - A LogReg não entra: seus coeficientes padronizados já são a importância
-      intrínseca (§4.6, intrinsic.py).
+      intrínseca (intrinsic.py).
 
 A amostra é sorteada, então roda com as 5 sementes. Produz
 results/tables/importancia_shap.csv no formato padrão. Quem consome:
-Etapa 11 (comparação de rankings e estabilidade entre sementes).
+etapa rankings (comparação de rankings e estabilidade entre sementes).
 """
 
 import logging
@@ -55,7 +55,7 @@ def calcular_shap(modelo, amostra: pd.DataFrame) -> list[float]:
 
     Usada em: main; sintetico_aplicar.importancias_modelo_fixo.
     Importância: importância global a partir de explicações locais; TreeSHAP é exato
-    em árvores, e KernelSHAP seria inviável nesta escala (§4.6).
+    em árvores, e KernelSHAP seria inviável nesta escala.
     """
     explicador = shap.TreeExplainer(modelo, feature_perturbation="tree_path_dependent")
     valores = explicador(amostra).values
@@ -74,7 +74,7 @@ def main() -> None:
     Usada em: python src/modelagem/shap_global.py; main.py, etapa "importancias";
     tests/test_importancia.py.
     Importância: um dos quatro métodos; a LogReg fica de fora porque os coeficientes
-    padronizados já cumprem esse papel (§4.6).
+    padronizados já cumprem esse papel.
     """
     x_val, _ = carregar("val")
     logger.info(f"Validação: {x_val.shape}, amostra de {TAMANHO_AMOSTRA} linhas por semente")

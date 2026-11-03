@@ -15,9 +15,9 @@ def avaliar(y_verdade, y_previsto, y_score) -> dict[str, float]:
     """Calcula as sete métricas de um classificador binário: acurácia, acurácia
     balanceada, precisão, recall, F1, ROC-AUC e PR-AUC.
 
-    Usada em: baselines.avaliar_modelo (e, por ela, na Etapa 6 e na fidelidade).
-    Importância: fonte única das métricas do projeto; F1 e PR-AUC são as principais
-    por causa do desbalanceamento (§4.2).
+    Usada em: baselines.avaliar_modelo (e, por ela, na etapa baselines e na fidelidade).
+    Importância: fonte única das métricas do projeto; a acurácia é a métrica central
+    (conjuntos 50/50), e as demais ficam como apoio.
 
     Args:
         y_verdade: rótulos reais (0/1).

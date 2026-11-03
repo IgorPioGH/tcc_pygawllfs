@@ -1,9 +1,9 @@
-"""Testes da Etapa 7 — PyGAwLLfs corrigido (src/modelagem/gawll.py).
+"""Testes — PyGAwLLfs corrigido (src/modelagem/gawll.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz:
     python tests/test_gawll.py
 
-Verifica as duas correções de bug, o isolamento do teste (§4.1, §4.9), o
+Verifica as duas correções de bug, o isolamento do teste, o
 determinismo do fitness e uma validação no dataset Artificial do artigo.
 """
 
@@ -115,7 +115,7 @@ def teste_subamostra_sem_teste():
 
     Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
     python main.py --testes).
-    Importância: garante que o GA nunca vê o teste (§4.1).
+    Importância: garante que o GA nunca vê o teste.
     """
     subamostra = pd.read_parquet(DIR_DADOS / "subamostra.parquet")
     indice_teste = pd.read_parquet(DIR_DADOS / "test.parquet", columns=[]).index
@@ -126,7 +126,7 @@ def teste_subamostra_sem_teste():
 
 
 def teste_busca_nao_le_o_teste():
-    """§4.1: um GA completo (mini) roda sem nunca abrir test.parquet.
+    """Isolamento do teste: um GA completo (mini) roda sem nunca abrir test.parquet.
 
     Usada em: bloco __main__ desta suíte (python tests/test_gawll.py; também em
     python main.py --testes).
@@ -139,7 +139,7 @@ def teste_busca_nao_le_o_teste():
         o conjunto de teste e, senão, lê normalmente.
 
         Usada em: teste_busca_nao_le_o_teste.
-        Importância: é o fiscal automático do §4.9 (docs/metodologia.md).
+        Importância: é o fiscal automático do isolamento do teste.
         """
         if Path(caminho).name.startswith("test"):
             raise AssertionError(f"A busca tentou ler o teste: {caminho}")

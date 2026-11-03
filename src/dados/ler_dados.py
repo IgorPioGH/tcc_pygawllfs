@@ -37,7 +37,7 @@ def carregar_todos_os_meses(pasta: Path) -> pd.DataFrame:
     horário para data (valor inválido vira NaT) e o Código Autorização (DI) para
     texto.
 
-    Usada em: bloco __main__ deste script (Etapa 2; main.py, etapa "dados").
+    Usada em: bloco __main__ deste script (main.py, etapa "dados").
     Importância: produz vra_bruto.parquet, a base única de onde todo o pipeline
     parte.
 
@@ -72,7 +72,7 @@ def verificar_meses_completos(pasta: Path) -> None:
     mês) esperados com os nomes VRA_{ano}_{mes:02d}.csv encontrados, e registra no
     log os meses ausentes, os arquivos inesperados e os duplicados.
 
-    Usada em: bloco __main__ deste script (Etapa 2).
+    Usada em: bloco __main__ deste script (etapa dados).
     Importância: um mês faltando distorceria o split temporal e as taxas de atraso
     sem dar erro nenhum.
 

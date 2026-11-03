@@ -1,4 +1,4 @@
-"""Testes da Etapa 11 — comparação de rankings (src/avaliacao/).
+"""Testes — comparação de rankings (src/avaliacao/).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de rankings.py, stability.py e figuras_concordancia.py:
@@ -6,7 +6,7 @@ depois de rankings.py, stability.py e figuras_concordancia.py:
 
 Os quatro primeiros conferem as métricas em casos montados à mão; o quinto
 roda os três scripts inteiros numa pasta temporária, sem nenhum parquet
-(a Etapa 11 só lê CSVs); o último confere as tabelas reais.
+(a etapa rankings só lê CSVs); o último confere as tabelas reais.
 """
 
 import logging
@@ -62,7 +62,7 @@ def teste_metricas_e_ordenacao():
 
     Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
     python main.py --testes).
-    Importância: as métricas de concordância são a base da Etapa 11.
+    Importância: as métricas de concordância são a base da etapa rankings.
     """
     crescente = pd.Series(np.arange(29, 0, -1, dtype=float), index=FEATURES)
     igual = rankings.comparar(crescente, crescente)
@@ -88,7 +88,7 @@ def teste_pontuacao_normalizacao_e_tipo_de_par():
 
     Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
     python main.py --testes).
-    Importância: regras do §4.8 e do §4.11.
+    Importância: regras da comparação por rank e dentro do mesmo modelo.
     """
     tabela = pd.DataFrame({
         "feature": ["a", "b", "a", "b"],
@@ -137,15 +137,15 @@ def teste_scripts_so_leem_csv():
 
     Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
     python main.py --testes).
-    Importância: prova que a Etapa 11 só usa as tabelas da Etapa 9, nunca os dados.
+    Importância: prova que a etapa rankings só usa as tabelas da etapa importancias, nunca os dados.
     """
     def proibir_parquet(*args, **kwargs):
         """Substituto de pandas.read_parquet (via mock.patch) que falha se for chamado.
 
         Usada em: teste_scripts_so_leem_csv.
-        Importância: qualquer leitura de dados na Etapa 11 vira erro.
+        Importância: qualquer leitura de dados na etapa rankings vira erro.
         """
-        raise AssertionError("A Etapa 11 não deveria ler parquet")
+        raise AssertionError("A etapa rankings não deveria ler parquet")
 
     with tempfile.TemporaryDirectory() as pasta:
         pasta = Path(pasta)
@@ -167,7 +167,7 @@ def teste_scripts_so_leem_csv():
 
 
 def teste_tabelas_reais():
-    """Estrutura e faixas das saídas da Etapa 11.
+    """Estrutura e faixas das saídas da etapa rankings.
 
     Usada em: bloco __main__ desta suíte (python tests/test_comparacao.py; também em
     python main.py --testes).

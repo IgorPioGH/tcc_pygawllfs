@@ -1,16 +1,17 @@
-"""Etapa 7 — PyGAwLLfs corrigido.
+"""Modelagem — PyGAwLLfs corrigido.
 
 Recebe a subamostra estratificada (data/processed/subamostra.parquet, só
-treino e validação) e os hiperparâmetros escolhidos na Etapa 6
+treino e validação) e os hiperparâmetros escolhidos na etapa baselines
 (results/tables/baselines.csv). Para cada (modelo, semente), roda o GA com
 linkage learning e salva um checkpoint .npz com o melhor subconjunto, o vetor
 de importância (vimp), a matriz de interação (vint), quantas vezes cada par foi
-sondado, o melhor fitness de cada geração, o tempo e o número de treinos. Quem consome: Etapa 8 (protocolo completo), comparações a partir da
-Etapa 9 e grafo de interação.
+sondado, o melhor fitness de cada geração, o tempo e o número de treinos. Quem
+consome: consolidar_gawll.py, que transforma os checkpoints nas tabelas usadas nas
+comparações, no grafo de interação e nas figuras.
 
-Correções em relação ao código original (documentar no Cap. 3):
-    1. fitness calculado na VALIDAÇÃO, não no teste (§4.1);
-    2. split temporal, não train_test_split embaralhado (§4.4);
+Correções em relação ao código original (docs/04-modelagem.md):
+    1. fitness calculado na VALIDAÇÃO, não no teste;
+    2. split temporal, não train_test_split embaralhado;
     3. mutação bit-flip que de fato altera o cromossomo (MutacaoInPlace);
     4. elitismo gravado na população nova (GAwLLCorrigido._apply_elitism).
 A métrica do fitness é a acurácia, como no artigo e no código original.
@@ -90,7 +91,7 @@ def separar_subamostra(df: pd.DataFrame) -> tuple[
 
     Usada em: carregar_subamostra; recortes.importancias_do_recorte.
     Importância: o mesmo formato serve à subamostra principal e à de cada recorte
-    temporal; o teste nunca entra na busca (§4.1).
+    temporal; o teste nunca entra na busca.
     """
     origens = set(df["origem"].unique())
     if not origens <= {"treino", "validacao"}:
@@ -118,7 +119,7 @@ def carregar_subamostra() -> tuple[
     (separar_subamostra). Nunca lê test.parquet.
 
     Usada em: main; tests/test_gawll.py.
-    Importância: aplica a subamostra só ao GA (§3).
+    Importância: aplica a subamostra só ao GA.
     """
     return separar_subamostra(pd.read_parquet(ARQUIVO_SUBAMOSTRA))
 
@@ -153,7 +154,7 @@ class AvaliadorFitness:
 
     Usada em: executar; tests/test_gawll.py.
     Importância: é onde o custo do GA acontece; n_treinos é a medida honesta de custo
-    (§7).
+   .
     """
 
     def __init__(self, nome_modelo, parametros, x_treino, y_treino, x_val, y_val):
@@ -171,7 +172,7 @@ class AvaliadorFitness:
         self.y_val = y_val
 
         self.cache: dict[bytes, float] = {}
-        self.n_treinos = 0  # treinos de modelo realmente feitos (a "moeda" do §7)
+        self.n_treinos = 0  # treinos de modelo realmente feitos (a "moeda" do custo)
         self.n_avaliacoes = 0  # pedidos recebidos do GA, contando acertos de cache
 
     def __call__(self, mascaras: list[np.ndarray]) -> list[float]:
@@ -232,7 +233,7 @@ class AvaliadorFitness:
 
 
 class MutacaoInPlace(Mutation):
-    """Correção 4 (§4.12): a mutação original devolve um array NOVO, mas o GAwLL ignora
+    """Correção da mutação (Adendo A de docs/04-modelagem.md): a mutação original devolve um array NOVO, mas o GAwLL ignora
     o retorno, então nenhum bit era invertido (nem no reset por estagnação). Aqui o
     XOR é feito no próprio array, e o gerador aleatório é consumido do mesmo jeito
     que no original.
@@ -293,14 +294,14 @@ class LinkageLearningComContador(LinkageLearning):
 
 
 class GAwLLCorrigido(GAwLL):
-    """GAwLL com as correções 4 e 5 (§4.12); o resto do motor é o original do clone.
+    """GAwLL com as correções da mutação e do elitismo (Adendo A de docs/04-modelagem.md); o resto do motor é o original do clone.
 
     Usada em: executar; tests/test_gawll.py.
     Importância: corrige os dois bugs por subclasse, sem editar o clone.
     """
 
     def _apply_elitism(self, new_population, fittest_individual):
-        """Correção 5 (§4.12): o original gravava o elite em self.population (a
+        """Correção do elitismo: o original gravava o elite em self.population (a
         população antiga, descartada logo depois), e o melhor indivíduo podia se
         perder. Aqui o elite vai para new_population.
 
@@ -403,7 +404,7 @@ def executar(
 
     Usada em: main; sintetico_aplicar.rodar_gawll; tests/test_gawll.py.
     Importância: o checkpoint por execução permite retomar após uma queda. O
-    acuracia_validacao salva é otimista e nunca é reportada como desempenho (§4.1).
+    acuracia_validacao salva é otimista e nunca é reportada como desempenho.
     """
     x_treino, y_treino, x_val, y_val, features = dados
     n = len(features)
@@ -473,14 +474,14 @@ def executar(
 
 
 def main() -> None:
-    """Etapas 7 e 8: roda as execuções pedidas (--modelos, --sementes, --geracoes,
+    """Roda as execuções pedidas (--modelos, --sementes, --geracoes,
     --pop, --saida), com log em arquivo, e pula as que já têm checkpoint.
 
     Usada em: python src/modelagem/gawll.py; main.py, etapa "pygawllfs".
     Importância: é a execução mais cara do projeto (~5,4 h); a retomada torna segura
     uma queda no meio.
     """
-    parser = argparse.ArgumentParser(description="PyGAwLLfs corrigido (Etapa 7)")
+    parser = argparse.ArgumentParser(description="PyGAwLLfs corrigido")
     parser.add_argument("--modelos", nargs="+", default=MODELOS, choices=MODELOS)
     parser.add_argument("--sementes", nargs="+", type=int, default=SEMENTES)
     parser.add_argument("--geracoes", type=int, default=GERACOES)

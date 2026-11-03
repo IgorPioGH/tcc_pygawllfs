@@ -1,11 +1,11 @@
-"""Testes da Etapa 12 — fidelidade por retenção (src/avaliacao/fidelity.py).
+"""Testes — fidelidade por retenção (src/avaliacao/fidelity.py).
 
 Script simples com assert (o pytest não está instalado). Rodar da raiz,
 depois de fidelity.py:
     python tests/test_fidelidade.py
 
 Conferem as listas de features de cada configuração, o resumo, uma execução
-em miniatura e a coerência da tabela real com a Etapa 6.
+em miniatura e a coerência da tabela real com a etapa baselines.
 """
 
 import logging
@@ -136,7 +136,7 @@ def teste_tabela_real():
 
     Usada em: bloco __main__ desta suíte (python tests/test_fidelidade.py; também em
     python main.py --testes).
-    Importância: confere a coerência entre a Etapa 12 e a Etapa 6.
+    Importância: confere a coerência entre a etapa fidelidade e a etapa baselines.
     """
     tabela = pd.read_csv(DIR_TABELAS / "fidelidade.csv")
     for coluna in fidelity.METRICAS:
@@ -149,7 +149,7 @@ def teste_tabela_real():
         n_metodos = 3 if modelo == "logreg" else 4
         assert sum(contagem.get(m, 0) for m in fidelity.ESTILO) == n_metodos * len(fidelity.TOP_K)
 
-    # Coerência com a Etapa 6: todas as features no teste = baselines.csv
+    # Coerência com a Todas as features no teste = baselines.csv
     baselines = pd.read_csv(DIR_TABELAS / "baselines.csv").set_index("modelo")
     todas = tabela[(tabela["method"] == "todas") & (tabela["conjunto"] == "test")]
     for linha in todas.itertuples():

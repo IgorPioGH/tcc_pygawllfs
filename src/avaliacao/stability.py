@@ -1,6 +1,6 @@
-"""Etapa 11 — estabilidade dos rankings entre sementes.
+"""Avaliação — estabilidade dos rankings entre sementes.
 
-Recebe as tabelas de importância da Etapa 9 (results/tables/importancia_*.csv)
+Recebe as tabelas de importância da etapa importancias (results/tables/importancia_*.csv)
 e, para cada (método, modelo) que tem 5 sementes, mede quanto o ranking muda
 de uma semente para outra. A intrínseca fica de fora: é determinística.
 
@@ -15,7 +15,7 @@ Produz:
                                RBO e sobreposição top-5/10/15
     estabilidade_features.csv  por feature: rank médio, desvio-padrão do rank e
                                frequência no top-5 e no top-10 entre as sementes
-Quem consome: o Cap. 4 (estabilidade é um dos quatro critérios da pergunta de
+Quem consome: a síntese e o texto (a estabilidade é um dos quatro critérios da pergunta de
 pesquisa) e a figura de estabilidade em src/interpretacao/figuras_concordancia.py.
 """
 
@@ -80,7 +80,7 @@ def estabilidade_por_feature(grupo: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
-    """Etapa 11b: mede a estabilidade de cada (método, modelo) com mais de uma semente e
+    """Mede a estabilidade de cada (método, modelo) com mais de uma semente e
     salva estabilidade.csv e estabilidade_features.csv.
 
     Usada em: python src/avaliacao/stability.py; main.py, etapa "rankings";

@@ -38,7 +38,7 @@ def teste_concordancia_intra():
 
     Usada em: bloco __main__ desta suíte (python tests/test_sintese.py; também em
     python main.py --testes).
-    Importância: a concordância do quadro-síntese é sempre intra-modelo (§4.11).
+    Importância: a concordância do quadro-síntese é sempre intra-modelo.
     """
     concordancia = pd.DataFrame([
         {"method_a": "a", "model_a": "m", "method_b": "b", "model_b": "m",
@@ -119,7 +119,7 @@ def teste_coerencia_com_as_fontes():
                                & (fidelidade["method"] == linha.method)]["features"].iloc[0]
         assert treinadas.split(";") == [linha.top1, linha.top2, linha.top3, linha.top4, linha.top5]
 
-    # Desempenho dos modelos = Etapa 6
+    # Desempenho dos modelos = etapa baselines
     modelos = pd.read_csv(DIR_TABELAS / "sintese_modelos.csv").set_index("model")
     baselines = pd.read_csv(DIR_TABELAS / "baselines.csv").set_index("modelo")
     for modelo in modelos.index:

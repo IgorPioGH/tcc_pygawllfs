@@ -1,10 +1,10 @@
-"""Funções compartilhadas pelos métodos de importância da Etapa 9.
+"""Funções compartilhadas pelos métodos de importância da etapa importancias.
 
 Recebe valores de importância já calculados por cada método e os coloca no
-formato padrão do projeto (docs/metodologia.md §7), feature,importance,rank,method,
+formato padrão do projeto, feature,importance,rank,method,
 model,seed, além de registrar tempo e número de treinos de cada cálculo em
 results/tables/custo_importancia.csv. Quem consome: permutation.py,
-shap_global.py, intrinsic.py, consolidar_gawll.py e, depois, a Etapa 11.
+shap_global.py, intrinsic.py, consolidar_gawll.py e, depois, a etapa rankings.
 """
 
 import sys
@@ -26,11 +26,11 @@ ARQUIVO_CUSTO = "custo_importancia.csv"
 
 
 def carregar_modelo(nome: str):
-    """Carrega o modelo treinado na Etapa 6 (treino completo), o mesmo avaliado no
+    """Carrega o modelo treinado na etapa baselines (treino completo), o mesmo avaliado no
     teste.
 
     Usada em: intrinsic, permutation, shap_global, friedman_h e testes.
-    Importância: todos os métodos explicam exatamente o mesmo modelo (§4.11).
+    Importância: todos os métodos explicam exatamente o mesmo modelo.
     """
     return joblib.load(DIR_MODELOS / f"{nome}.joblib")
 
@@ -46,7 +46,7 @@ def tabela_importancia(
     """Monta a tabela no formato padrão (feature, importance, rank, method, model,
     seed). Rank 1 = feature mais importante. rank_por_absoluto=True é para valores
     com sinal em que conta o tamanho (coeficientes da LogReg); o valor bruto, com
-    sinal, fica em "importance" (§4.8). Na Permutation o rank usa o valor bruto:
+    sinal, fica em "importance". Na Permutation o rank usa o valor bruto:
     negativo fica no fim.
 
     Usada em: intrinsic, permutation, shap_global, consolidar_gawll, sintetico_aplicar

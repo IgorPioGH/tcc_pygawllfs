@@ -1,6 +1,6 @@
-"""Etapa 9 — importância intrínseca de cada modelo.
+"""Modelagem — importância intrínseca de cada modelo.
 
-Recebe os três modelos treinados na Etapa 6 (experiments/runs/baselines/) e
+Recebe os três modelos treinados na etapa baselines (experiments/runs/baselines/) e
 lê a importância que o próprio modelo já carrega depois do treino. Não usa
 nenhum conjunto de dados, nem o teste.
 
@@ -17,7 +17,7 @@ barras por src/interpretacao/figura_barras.py.
 
 É determinística: um valor por modelo, com seed = 42 (o random_state do
 modelo). Produz results/tables/importancia_intrinseca.csv no formato padrão.
-Quem consome: Etapa 11 (comparação de rankings).
+Quem consome: etapa rankings (comparação de rankings).
 """
 
 import logging
@@ -65,7 +65,7 @@ def main() -> None:
 
     Usada em: python src/modelagem/intrinsic.py; main.py, etapa "importancias";
     tests/test_importancia.py.
-    Importância: um dos quatro métodos comparados na Etapa 11.
+    Importância: um dos quatro métodos comparados na etapa rankings.
     """
     tabelas, custos = [], []
     for nome in MODELOS:

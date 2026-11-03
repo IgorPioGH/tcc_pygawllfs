@@ -101,7 +101,7 @@ def figura_intra_modelo(concordancia: pd.DataFrame, caminho_base: Path) -> None:
 
     Usada em: main.
     Importância: é a figura da comparação intra-modelo, feita antes da comparação
-    entre modelos (§4.11).
+    entre modelos.
     """
     fig, eixos = plt.subplots(1, len(MODELOS), figsize=(LARGURA_CHEIA, 2.7), layout="constrained")
     anteriores = None
