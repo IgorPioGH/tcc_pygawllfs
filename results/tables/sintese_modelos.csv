@@ -1,4 +1,0 @@
-model,f1,pr_auc,roc_auc,acuracia_balanceada,n_metodos,concordancia_spearman_media,concordancia_spearman_min,fidelidade_top5_media,acaso_top5
-logreg,0.4167,0.3541,0.6439,0.6025,3,0.8662,0.8113,0.9171,0.81
-random_forest,0.4404,0.4035,0.6817,0.6027,4,0.7703,0.5345,0.9568,0.717
-xgboost,0.4506,0.3942,0.676,0.622,4,0.5553,0.3342,0.9458,0.7187
