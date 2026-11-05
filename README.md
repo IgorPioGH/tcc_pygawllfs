@@ -84,8 +84,12 @@ python main.py --testes    # o pipeline inteiro e as suítes de teste
 
 O XGBoost usa a GPU (`device="cuda"`). O pipeline completo leva cerca de 16 horas
 num notebook com Core i7 e RTX 4050, quase tudo no PyGAwLLfs; as etapas longas
-retomam do último checkpoint. Detalhes em
-[`docs/reprodutibilidade.md`](docs/reprodutibilidade.md).
+retomam do último checkpoint. Para o notebook não suspender no meio, use
+`systemd-inhibit --what=idle:sleep python main.py --testes`.
+
+A etapa `download` baixa a versão atual da série da ANAC. Este trabalho usa a versão
+marcada "Atualizado em: 2026-10-07"; outra versão pode mudar um pouco os números.
+Detalhes em [`docs/reprodutibilidade.md`](docs/reprodutibilidade.md).
 
 ## Referências principais
 

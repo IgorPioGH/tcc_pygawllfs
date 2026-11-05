@@ -11,9 +11,14 @@ Como reproduzir os resultados a partir de um clone limpo, e o que fixa cada núm
 | Python | 3.13, em ambiente conda |
 | Bibliotecas | `requirements.txt` (entre elas pandas 3.0.5, scikit-learn 1.9.0, xgboost 3.4.1, shap 0.52.0, matplotlib 3.11.1, holidays 0.103) |
 
-A ANAC atualiza a série histórica. Se `download.py` baixar outra versão, a etapa
-`eda` para, porque o número de registros muda; para reproduzir exatamente, é
-preciso usar os arquivos da versão acima.
+A ANAC atualiza a série histórica, e uma nova versão pode mudar registros e a ordem
+das linhas; a primeira linha de cada CSV traz a marca da versão. A etapa `eda` só
+para se o número de registros mudar. A versão de 2026-10-28, por exemplo, passa: tem
+os mesmos totais, difere em 20 linhas e traz as linhas em outra ordem. Como o *target
+encoding*, o balanceamento e a subamostra sorteiam por posição, os conjuntos mudam, e
+com eles os resultados: nessa versão, a acurácia dos modelos no teste varia até 0,003
+e o XGBoost escolhe profundidade 8 em vez de 6. Com os arquivos da versão indicada na
+tabela, a preparação e os modelos se repetem exatamente num clone e num ambiente novos.
 
 ## Hardware
 

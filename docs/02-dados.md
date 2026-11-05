@@ -15,8 +15,10 @@ de `src/dados/eda.py` (etapa `eda`), em `results/tables/eda_*.csv` e
   (`src/dados/download.py`), com separador `;`, codificação UTF-8 com BOM e uma
   linha extra antes do cabeçalho (`src/dados/ler_dados.py`).
 - **Versão:** arquivos com a marca "Atualizado em: 2026-10-07", baixados em
-  23/10/2026. A ANAC atualiza a série; outra versão pode ter outro número de
-  linhas, e `eda.py` para se o total mudar.
+  23/10/2026. A ANAC atualiza a série: outra versão pode mudar registros e a ordem
+  das linhas, o que altera um pouco os resultados
+  ([`reprodutibilidade.md`](reprodutibilidade.md)). `eda.py` para se o total de
+  registros mudar.
 
 ## Qualidade da base bruta
 
